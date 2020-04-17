@@ -1,0 +1,2 @@
+recursive-include caesar_rest/templates *
+global-exclude *.pyc
