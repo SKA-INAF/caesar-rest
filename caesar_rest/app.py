@@ -35,111 +35,54 @@ from caesar_rest.config import Config
 ## Get logger
 logger = logging.getLogger(__name__)
 
-logger.info("Module __name__: %s " % __name__)
-logger.info("Module __package__: %s " % __package__)
 
 
-
-
-
-ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'fits'])
-
-def allowed_file(filename):
-	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 ##############################
 #   APP CREATION CLASS
 ##############################
-logger.info("Creating Flask app using default config settings ...")
+#logger.info("Creating Flask app using default config settings ...")
 
-app = Flask(__name__, instance_relative_config=True)
+#app = Flask(__name__, instance_relative_config=True)
 #app = Flask(__name__)
-app.config.from_object(Config())
+#app.config.from_object(Config())
 
+def create_app(cfg,dm):
+	""" Create app """
+
+	# - Create app
+	app = Flask(__name__,instance_relative_config=True)
+
+	# - Configure app from class 
+	app.config.from_object(cfg)
+	
+	# - Add helper classes to app
+	app.config['datamgr'] = dm
+
+	# - Register routes as blueprints
+	from caesar_rest.index_route import index_bp
+	from caesar_rest.upload_route import upload_bp
+	from caesar_rest.download_route import download_path_bp, download_id_bp
+	app.register_blueprint(index_bp)
+	app.register_blueprint(upload_bp)
+	app.register_blueprint(download_path_bp)
+	app.register_blueprint(download_id_bp)
+    
+	return app
+
+
+##############################
+#   APP SETUP ACTIONS
+##############################
+#@app.before_first_request
+#def register_data_files():
+#	""" Register data file(s) """
+#	logger.info("Running register data files ...")
+	
 
 ##############################
 #   APP ENDPOINTS
 ##############################
-# - Base entry point
-#@app.route('/')
-#def index():
-#	""" App entry point """
-#	return "Hello, World!"
 
-@app.route('/')
-def index():
-	return render_template('index.html')
-
-# - Upload image
-@app.route('/upload', methods=['POST'])
-#@app.route('/', methods=['POST'])
-def upload_file():
-	""" Upload image """
-	if request.method == 'POST':
-		# Check if the post request has the file part
-		if 'file' not in request.files:
-			flash('No file part')
-			return redirect(request.url)
-		
-		f = request.files['file']
-		
-		if f.filename == '':
-			flash('No file selected for uploading')
-			return redirect(request.url)
-
-		if f and allowed_file(f.filename):
-			filename = secure_filename(f.filename)
-			f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-			flash('File successfully uploaded')
-			return redirect('/')
-		else:
-			flash('Allowed file types are: {png, jpg, jpeg, gif}')
-			return redirect(request.url)
-
-# - Download data by file name
-@app.route('/download', methods=['GET', 'POST'])
-def download():
-	""" Download data by path (only for testing) """
-	if request.method == 'POST':
-		filename = request.form['filename']
-	else:
-		filename = request.args.get('filename')
-
-	logger.info("download filename: %s" % filename)
-	return redirect(url_for('download_by_name',filename=str(filename)))
-
-
-@app.route('/download/<string:filename>', methods=['GET', 'POST'])
-def download_by_name(filename):
-	""" Download data by path (only for testing) """
-	try:
-		return send_from_directory(
-			directory=app.config['UPLOAD_FOLDER'], 
-			filename=filename, 
-			as_attachment=True
-		)
-	except FileNotFoundError:
-		abort(404)
-
-
-
-
-# - Download data by uuid
-@app.route('/download/<uuid:file_uuid>', methods=['GET', 'POST'])
-def download_by_uuid(file_uuid):
-	""" Download data by uuid """
-
-	# Search file uuid
-	# ...
-	file_path= ''
-
-	# Return file to client
-	try:
-		return send_file(
-			file_path, 
-			as_attachment=True
-		)
-	except FileNotFoundError:
-		abort(404)
 
