@@ -18,7 +18,10 @@ import argparse
 import caesar_rest
 from caesar_rest import __version__, __date__
 from caesar_rest import logger
-from caesar_rest.app import app 
+from caesar_rest.config import Config
+from caesar_rest.config import DataManager
+from caesar_rest.app import create_app
+#from caesar_rest.app import app 
 
 
 
@@ -39,7 +42,8 @@ def get_args():
 	parser = argparse.ArgumentParser(description="Parse args.")
 
 	# - Specify cmd options
-	parser.add_argument('-config','--config', dest='config', required=False, type=str, help='Configuration file') 
+	#parser.add_argument('-config','--config', dest='config', required=False, type=str, help='Configuration file') 
+	parser.add_argument('-datadir','--datadir', dest='datadir', default='/opt/data', required=False, type=str, help='Data directory where to store files') 
 	
 	args = parser.parse_args()	
 
@@ -63,15 +67,33 @@ def main():
 		return 1
 
 	# - Input filelist
-	configfile= args.config
+	datadir= args.datadir
 
 	#===============================
-	#==   CONFIGURE APP
+	#==   INIT
 	#===============================
-	if configfile:
-		logger.info("Configuring app options from file %s ..." % configfile)
-		app.config.from_pyfile(configfile, silent=False)
+	# - Create config class
+	logger.info("Creating app configuration ...")
+	config= Config()
+	config.UPLOAD_FOLDER= datadir
+
+	# - Create data manager	
+	logger.info("Creating data manager ...")
+	datamgr= DataManager(rootdir=config.UPLOAD_FOLDER)
+
+	#===============================
+	#==   CREATE APP
+	#===============================
+	logger.info("Creating and configuring app ...")
+	app= create_app(config,datamgr)
+
 	
+	#if configfile:
+		#logger.info("Configuring app options from file %s ..." % configfile)
+		#app.config.from_pyfile(configfile, silent=False)
+	
+		
+
 
 	#===============================
 	#==   RUN APP
