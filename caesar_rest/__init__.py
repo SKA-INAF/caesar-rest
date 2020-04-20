@@ -17,3 +17,11 @@ logging.basicConfig(format="%(asctime)-15s %(levelname)s - %(message)s",datefmt=
 logger= logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.info("This is caesar_rest {0}-({1})".format(__version__, __date__))
+
+
+# Create celery 
+from celery import Celery
+celery= Celery(
+	__name__,
+	config_source='caesar_rest.celery_config'
+)

@@ -32,8 +32,10 @@ logger = logging.getLogger(__name__)
 ##############################
 #   CREATE BLUEPRINTS
 ##############################
-download_path_bp = Blueprint('download_path', __name__)
-download_id_bp = Blueprint('download_id', __name__)
+#download_path_bp = Blueprint('download_path', __name__)
+#download_id_bp = Blueprint('download_id', __name__)
+download_path_bp = Blueprint('download_path', __name__,url_prefix='/caesar/api/v1.0')
+download_id_bp = Blueprint('download_id', __name__,url_prefix='/caesar/api/v1.0')
 
 
 # - Download data by file name

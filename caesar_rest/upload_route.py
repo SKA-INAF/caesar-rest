@@ -34,13 +34,14 @@ logger = logging.getLogger(__name__)
 ##############################
 #   CREATE BLUEPRINT
 ##############################
-ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'fits'])
+#ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'fits'])
 
 def allowed_file(filename):
-	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+	#return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+	return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['UPLOAD_ALLOWED_FILE_FORMATS']
 
-#upload = Blueprint('upload', __name__, url_prefix='/upload')
-upload_bp = Blueprint('upload', __name__)
+upload_bp = Blueprint('upload', __name__, url_prefix='/caesar/api/v1.0')
+#upload_bp = Blueprint('upload', __name__)
 
 
 @upload_bp.route('/upload', methods=['POST'])
@@ -52,6 +53,8 @@ def upload_file():
 	# - Init response
 	res= {
 		'filename_orig': '',
+		'format': '',
+		'size': '',
 		'uuid': '',
 		'date': '',
 		'status': ''
@@ -96,11 +99,10 @@ def upload_file():
 		#return redirect(request.url)
 
 	filename= secure_filename(f.filename)
-	file_ext= os.path.splitext(filename)[1]
+	file_ext= os.path.splitext(filename)[1].split('.')[1]
 	file_uuid= uuid.uuid4().hex
-	filename_dest= ''.join([file_uuid,file_ext])
+	filename_dest= '.'.join([file_uuid,file_ext])
 	filename_dest_fullpath= os.path.join(current_app.config['UPLOAD_FOLDER'], filename_dest)
-	
 	
 	# - Save file
 	logger.info("Saving file %s ..." % filename_dest_fullpath)
@@ -110,8 +112,11 @@ def upload_file():
 	# - Set file info
 	now = datetime.datetime.now()
 	file_upload_date= now.isoformat()
+	file_size= os.path.getsize(filename_dest_fullpath)/(1024.*1024.) # in MB
 
 	res['filename_orig']= filename
+	res['format']= file_ext
+	res['size']= file_size
 	res['uuid']= file_uuid
 	res['date']= file_upload_date
 	res['status']= 'File uploaded with success'
