@@ -29,25 +29,47 @@ from flask import flash, request, redirect, render_template, url_for
 from flask import send_file, send_from_directory, safe_join, abort
 from werkzeug.utils import secure_filename
 
+# Import Celery
+#from celery import Celery
+from caesar_rest import celery
+
 # Import config class
 from caesar_rest.config import Config
+
 
 ## Get logger
 logger = logging.getLogger(__name__)
 
 
-
-
-
 ##############################
-#   APP CREATION CLASS
+#   CELERY APP CREATION
 ##############################
-#logger.info("Creating Flask app using default config settings ...")
+# - Create celery class
+#celery= Celery(
+#	__name__
+#)
 
-#app = Flask(__name__, instance_relative_config=True)
-#app = Flask(__name__)
-#app.config.from_object(Config())
+# - When called configure celery 
+def configure_celery_app(app):
+	""" Create a Celery app """
+    
+	# - Configure app from Flask config
+	#celery.conf.update(app.config)
 
+	# - Subclass task
+	TaskBase = celery.Task
+	class ContextTask(TaskBase):
+		abstract = True
+		def __call__(self, *args, **kwargs):
+			with app.app_context():
+				return TaskBase.__call__(self, *args, **kwargs)
+    
+	celery.Task = ContextTask
+
+	
+##############################
+#   FLASK APP CREATION 
+##############################
 def create_app(cfg,dm):
 	""" Create app """
 
@@ -60,29 +82,23 @@ def create_app(cfg,dm):
 	# - Add helper classes to app
 	app.config['datamgr'] = dm
 
+	# - Configure Celery app
+	configure_celery_app(app)
+
 	# - Register routes as blueprints
 	from caesar_rest.index_route import index_bp
 	from caesar_rest.upload_route import upload_bp
 	from caesar_rest.download_route import download_path_bp, download_id_bp
+	from caesar_rest.job_route import job_bp, job_status_bp
 	app.register_blueprint(index_bp)
 	app.register_blueprint(upload_bp)
 	app.register_blueprint(download_path_bp)
 	app.register_blueprint(download_id_bp)
+	app.register_blueprint(job_bp)
+	app.register_blueprint(job_status_bp)
     
 	return app
 
 
-##############################
-#   APP SETUP ACTIONS
-##############################
-#@app.before_first_request
-#def register_data_files():
-#	""" Register data file(s) """
-#	logger.info("Running register data files ...")
-	
-
-##############################
-#   APP ENDPOINTS
-##############################
 
 
