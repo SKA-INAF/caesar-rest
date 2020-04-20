@@ -16,7 +16,7 @@
 </p>
 
 <!--<form method="post" action="/" enctype="multipart/form-data">-->
-<form method="post" action="/upload" enctype="multipart/form-data">
+<form method="post" action="caesar/api/v1.0/upload" enctype="multipart/form-data">
 	<dl>
 		<p>
 			<input type="file" name="file" autocomplete="off" required>
@@ -30,7 +30,7 @@
 <!-- FILE DOWNLOAD -->
 <h2>Specify file to download by path </h2>
 
-<form method="post" action="/download-path">
+<form method="post" action="caesar/api/v1.0/download-path">
   <p>Filename:</p>
   <p><input type = "text" name = "filename" /></p>
   <p><input type = "submit" value = "submit" /></p>
@@ -38,7 +38,7 @@
 
 <h2>Specify file to download by uuid </h2>
 
-<form method="post" action="/download-id">
+<form method="post" action="caesar/api/v1.0/download-id">
   <p>UUID:</p>
   <p><input type = "text" name = "uuid" /></p>
   <p><input type = "submit" value = "submit" /></p>
