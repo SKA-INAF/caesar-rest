@@ -24,20 +24,24 @@ PY_MINOR_VERSION=sys.version_info.minor
 print("PY VERSION: maj=%s, min=%s" % (PY_MAJOR_VERSION,PY_MINOR_VERSION))
 
 reqs= []
+
 reqs.append('numpy>=1.10')
 
 if PY_MAJOR_VERSION<=2:
 	print("PYTHON 2 detected")
 	reqs.append('future')
-	
+	#reqs.append('zipp==0.6.0')
+	reqs.append('zipp==1.2.0')
+	reqs.append('more_itertools==5.0.0')
 else:
 	print("PYTHON 3 detected")
 	reqs.append('MarkupSafe==1.1') # There is syntax error in pre-release version 2.0.0a for python3
 	
 reqs.append('jinja2==2.10.1')
 reqs.append('werkzeug>=1.0')
-#reqs.append('requests')
 reqs.append('flask>=1.0.0')
+
+#reqs.append('celery')
 	
 
 data_dir = 'data'
