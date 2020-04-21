@@ -70,7 +70,7 @@ def configure_celery_app(app):
 ##############################
 #   FLASK APP CREATION 
 ##############################
-def create_app(cfg,dm):
+def create_app(cfg,dm,jc):
 	""" Create app """
 
 	# - Create app
@@ -81,6 +81,7 @@ def create_app(cfg,dm):
 	
 	# - Add helper classes to app
 	app.config['datamgr'] = dm
+	app.config['jobcfg'] = jc
 
 	# - Configure Celery app
 	configure_celery_app(app)

@@ -19,7 +19,8 @@ import caesar_rest
 from caesar_rest import __version__, __date__
 from caesar_rest import logger
 from caesar_rest.config import Config
-from caesar_rest.config import DataManager
+from caesar_rest.data_manager import DataManager
+from caesar_rest.job_configurator import JobConfigurator
 from caesar_rest.app import create_app
 #from caesar_rest.app import app 
 
@@ -81,11 +82,15 @@ def main():
 	logger.info("Creating data manager ...")
 	datamgr= DataManager(rootdir=config.UPLOAD_FOLDER)
 
+	# - Create job configurator
+	logger.info("Creating job configurator ...")
+	jobcfg= JobConfigurator()
+
 	#===============================
 	#==   CREATE APP
 	#===============================
 	logger.info("Creating and configuring app ...")
-	app= create_app(config,datamgr)
+	app= create_app(config,datamgr,jobcfg)
 
 	
 	#if configfile:

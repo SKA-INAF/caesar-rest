@@ -10,6 +10,7 @@ import uuid
 
 # Import module files
 from caesar_rest.data_manager import DataManager
+from caesar_rest.job_configurator import JobConfigurator
 
 ##############################
 #   APP CONFIG CLASS
@@ -25,12 +26,8 @@ class Config(object):
 	UPLOAD_FOLDER= '/opt/data'
 	MAX_CONTENT_LENGTH= 16 * 1024 * 1024 # 16 MB
 
-	# - Celery options (do not change variable names)
-	#broker_url= 'amqp://rabbitmq:rabbitmq@rabbit:5672/'
-	###broker_url= 'redis://localhost:6379'
-	#result_backend= 'rpc://'
-	###result_backend= 'redis://localhost:6379'
-	#imports = ('caesar_rest.workers',)
-	
 	# - Additional options
+	JOB_DIR= '/opt/jobs'
 	UPLOAD_ALLOWED_FILE_FORMATS= set(['png', 'jpg', 'jpeg', 'gif', 'fits'])
+	APP_NAMES= set(['sfinder']) 
+	

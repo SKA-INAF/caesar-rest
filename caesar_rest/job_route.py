@@ -57,6 +57,10 @@ def submit_job():
 
 	# - Get request data
 	req_data = request.get_json(silent=True)
+	if not req_data:
+		logger.error("Invalid request data!")
+		res['status']= 'Invalid request data!'
+		return make_response(jsonify(res),400)
 	logger.info("Received job data %s " % str(req_data))
 
 	app_name = req_data['app']
@@ -66,23 +70,42 @@ def submit_job():
 		res['status']= 'No app name found in request!'
 		return make_response(jsonify(res),400)
 
+	res['app']= app_name
+
 	if not job_inputs:
-		logger.error("No job inputs given!")
-		res['app']= app_name
+		logger.error("No job inputs given!")		
 		res['status']= 'No job inputs name found in request!'
 		return make_response(jsonify(res),400)
 
+	# - Check if valid app given
+	supported_app= app_name in current_app.config['APP_NAMES']
+	if not supported_app:
+		logger.warn("App %s not supported..." % app_name)
+		res['status']= 'App ' + app_name + ' is unknown or not yet supported!'
+		return make_response(jsonify(res),400)
+
+	# - Validate job inputs
+	val_res= current_app.config['jobcfg'].validate(app_name,job_inputs)
+	if not val_res:
+		logger.warn("Job input validation failed!")
+		res['status']= 'Job input validation failed for app ' + app_name + '!'
+		return make_response(jsonify(res),400)
+
+	cmd= val_res[0]
+	cmd_arg_list= val_res[1]
+	cmd_args= ''
+	if cmd_arg_list:
+		cmd_args= ' '.join(cmd_arg_list)
+
 	# - Submit task async	
-	logger.info("Submitting job %s async ..." % app_name)
+	logger.info("Submitting job %s async (cmd=%s, args=%s) ..." % (app_name,cmd,cmd_args))
 	now = datetime.datetime.now()
 	submit_date= now.isoformat()
 
-	task = background_task.apply_async([app_name,job_inputs])
+	#task = background_task.apply_async([app_name,job_inputs])
+	task = background_task.apply_async([cmd,cmd_args])
 	job_id= task.id
 	logger.info("Submitted job with id=%s ..." % job_id)
-
-	# ...
-	# ...
 
 	# - Fill response
 	res['job_id']= job_id
@@ -92,12 +115,6 @@ def submit_job():
 		
 	return make_response(jsonify(res),202)
 
-
-
-#@app.route('/longtask', methods=['POST'])
-#def longtask():
-#	task = long_task.apply_async()
-#	return jsonify({}), 202, {'Location': url_for('taskstatus',task_id=task.id)}
 
 
 @job_status_bp.route('/job/<task_id>/status',methods=['GET'])

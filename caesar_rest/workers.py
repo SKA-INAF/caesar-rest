@@ -43,12 +43,11 @@ logger = logging.getLogger(__name__)
 def background_task(self,cmd,cmd_args):
 	"""Background task """
 
-	#logger.info("Dummy bkg task started (sleeping for 30s) ...")
-	#time.sleep(30)		
-	#logger.info("Dummy task completed...")
+	# - Get access to task id
+	task_id= self.request.id.__str__()
 
-	task_info= 
-	{
+	task_info= {
+		'job_id': task_id, 
 		'cmd': cmd,	
 		'cmd_args': cmd_args,
 		'status': 'Task pending to be executed',
@@ -59,9 +58,10 @@ def background_task(self,cmd,cmd_args):
 	logger.info("Executing cmd %s with args %s ..." % (cmd,cmd_args))
 	self.update_state(state='PENDING', meta=task_info)
 
+	exec_cmd= ' '.join([cmd,cmd_args])
 	
 	#p= subprocess.Popen([cmd,cmd_args], shell=True,universal_newlines=True, stdout = subprocess.PIPE, stderr=subprocess.PIPE)
-	p= subprocess.Popen([cmd,cmd_args], shell=True)
+	p= subprocess.Popen(exec_cmd, shell=True)
 	#output, err = process.communicate()
 	logger.info("Bkg task started  ...")
 	start = time.time()
@@ -125,6 +125,7 @@ def background_task(self,cmd,cmd_args):
 	task_info['exit_code']= p.returncode
 	self.update_state(state=task_state, meta=task_info)
 	res= {
+		'job_id': task_id,
 		'cmd': cmd,
 		'cmd_args': cmd_args,
 		'exit_code': p.returncode, 
