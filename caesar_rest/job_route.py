@@ -78,21 +78,19 @@ def submit_job():
 		return make_response(jsonify(res),400)
 
 	# - Check if valid app given
-	supported_app= app_name in current_app.config['APP_NAMES']
-	if not supported_app:
-		logger.warn("App %s not supported..." % app_name)
-		res['status']= 'App ' + app_name + ' is unknown or not yet supported!'
-		return make_response(jsonify(res),400)
+	#supported_app= app_name in current_app.config['APP_NAMES']
+	#if not supported_app:
+	#	logger.warn("App %s not supported..." % app_name)
+	#	res['status']= 'App ' + app_name + ' is unknown or not yet supported!'
+	#	return make_response(jsonify(res),400)
 
 	# - Validate job inputs
-	val_res= current_app.config['jobcfg'].validate(app_name,job_inputs)
-	if not val_res:
+	(cmd,cmd_arg_list,val_status)= current_app.config['jobcfg'].validate(app_name,job_inputs)
+	if not cmd or not cmd_arg_list: 
 		logger.warn("Job input validation failed!")
-		res['status']= 'Job input validation failed for app ' + app_name + '!'
+		res['status']= val_status
 		return make_response(jsonify(res),400)
 
-	cmd= val_res[0]
-	cmd_arg_list= val_res[1]
 	cmd_args= ''
 	if cmd_arg_list:
 		cmd_args= ' '.join(cmd_arg_list)
@@ -101,9 +99,10 @@ def submit_job():
 	logger.info("Submitting job %s async (cmd=%s, args=%s) ..." % (app_name,cmd,cmd_args))
 	now = datetime.datetime.now()
 	submit_date= now.isoformat()
+	job_top_dir= current_app.config['JOB_DIR']
 
 	#task = background_task.apply_async([app_name,job_inputs])
-	task = background_task.apply_async([cmd,cmd_args])
+	task = background_task.apply_async([cmd,cmd_args,job_top_dir])
 	job_id= task.id
 	logger.info("Submitted job with id=%s ..." % job_id)
 

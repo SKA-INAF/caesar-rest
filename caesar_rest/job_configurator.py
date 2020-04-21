@@ -43,8 +43,9 @@ class JobConfigurator(object):
 		# - Validate if job inputs are valid for app
 		#   Delegate validation to app configurator
 		if app_name not in self.app_configurators:
-			logger.warn("App %s not known or supported!" % app_name)
-			return ()
+			msg= 'App ' + app_name + ' not known or supported'
+			logger.warn(msg)
+			return (None,None,msg)
 
 		# - Create an instance of app configurator
 		configurator= self.app_configurators[app_name]()
@@ -52,14 +53,16 @@ class JobConfigurator(object):
 		#status= self.app_configurators[app_name].validate(job_inputs)
 		status= configurator.validate(job_inputs)
 		if status<0:
+			status_msg= configurator.validation_status
 			logger.warn("Given inputs for app %s failed to be validated!" % app_name)
-			return ()
+			return (None,None,status_msg)
 
 		# - Set app cmd & cmd args
 		cmd= configurator.cmd
 		cmd_args= configurator.cmd_args
+		status_msg= configurator.validation_status
 		
-		return (cmd,cmd_args)
+		return (cmd,cmd_args,status_msg)
 
 
 
@@ -221,8 +224,20 @@ class SFinderConfigurator(AppConfigurator):
 			#'filelist' : ValueOption('filelist','',True),
 		
 			# == OUTPUT OPTIONS==		
-			'save-inputmap' : Option('save-inputmap'),	
-		}
+			'save-inputmap' : Option('save-inputmap'),
+
+			# == RUN OPTIONS ==
+			'run' : Option('run'),
+			'envfile' : ValueOption('envfile','',str),
+			'loglevel' : ValueOption('loglevel','',str),
+			'maxfiles' : ValueOption('maxfiles','',int),
+			'addrunindex' : Option('addrunindex'),
+			'outdir' : ValueOption('outdir','',str),
+			'no-logredir' : Option('no-logredir'),
+			'no-mpi' : Option('no-mpi'),
+
+
+		} # close dict
 	
 			
 	

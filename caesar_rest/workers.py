@@ -40,10 +40,10 @@ logger = logging.getLogger(__name__)
 #   WORKERS
 ##############################
 @celery_app.task(bind=True)
-def background_task(self,cmd,cmd_args):
+def background_task(self,cmd,cmd_args,job_top_dir):
 	"""Background task """
 
-	# - Get access to task id
+	# - Initialize task info
 	task_id= self.request.id.__str__()
 
 	task_info= {
@@ -55,21 +55,46 @@ def background_task(self,cmd,cmd_args):
 		'exit_code': ''
 	}
 
+	res= {
+		'job_id': task_id,
+		'cmd': cmd,
+		'cmd_args': cmd_args,
+		'exit_code': '',
+		'status': 'Task pending to be executed',
+		'elapsed_time': '0'
+	}
+
+	# - Create job directory
+	job_dir_name= 'job_' + task_id
+	job_dir= os.path.join(job_top_dir,job_dir_name)
+
+	logger.info("Creating job dir %s ..." % job_dir)
+	try:
+		os.makedirs(job_dir)
+	except OSError as exc:
+		if exc.errno != errno.EEXIST:
+			errmsg= "Failed to create job directory " + job_dir + "!" 
+			logger.error(errmsg)
+			task_info['status']= errmsg
+			res['status']= errmsg
+			res['exit_code']= 126
+			self.update_state(state='ABORTED', meta=task_info)
+	
+	# - Execute command
 	logger.info("Executing cmd %s with args %s ..." % (cmd,cmd_args))
 	self.update_state(state='PENDING', meta=task_info)
 
 	exec_cmd= ' '.join([cmd,cmd_args])
 	
-	#p= subprocess.Popen([cmd,cmd_args], shell=True,universal_newlines=True, stdout = subprocess.PIPE, stderr=subprocess.PIPE)
-	p= subprocess.Popen(exec_cmd, shell=True)
-	#output, err = process.communicate()
+	p= subprocess.Popen(exec_cmd, shell=True, cwd=job_dir)
+	
 	logger.info("Bkg task started  ...")
 	start = time.time()
 	
 	task_info['status']= 'Task started in background'
 	self.update_state(state='STARTED', meta=task_info)
 
-	time.sleep(20)
+	#time.sleep(20)
 
 
 	# - Monitor task status 

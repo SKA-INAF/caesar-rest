@@ -23,11 +23,11 @@ class Config(object):
 	DEBUG = False
 	TESTING = False
 	SECRET_KEY= uuid.uuid4().hex
-	UPLOAD_FOLDER= '/opt/data'
+	UPLOAD_FOLDER= '/opt/caesar-rest/data'
 	MAX_CONTENT_LENGTH= 16 * 1024 * 1024 # 16 MB
 
 	# - Additional options
-	JOB_DIR= '/opt/jobs'
+	JOB_DIR= '/opt/caesar-rest/jobs'
 	UPLOAD_ALLOWED_FILE_FORMATS= set(['png', 'jpg', 'jpeg', 'gif', 'fits'])
-	APP_NAMES= set(['sfinder']) 
+	#APP_NAMES= set(['sfinder']) 
 	
