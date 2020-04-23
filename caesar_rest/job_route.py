@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 ##############################
 job_bp = Blueprint('job', __name__,url_prefix='/caesar/api/v1.0')
 job_status_bp = Blueprint('job_status', __name__,url_prefix='/caesar/api/v1.0')
+job_output_bp = Blueprint('job_output', __name__,url_prefix='/caesar/api/v1.0')
 
 
 
@@ -115,6 +116,45 @@ def submit_job():
 	return make_response(jsonify(res),202)
 
 
+def compute_job_status(task_id):
+	""" Compute job status """
+
+	# - Init reply
+	res= {}
+	res['job_id']= task_id
+	res['state']= ''
+	res['status']= ''
+	res['exit_status']= ''
+	res['elapsed_time']= ''
+
+	# - Get task
+	task = background_task.AsyncResult(task_id)
+	if not task:
+		errmsg= 'No task found with id ' + task_id + '!'
+		raise NameError(errmsg)
+			
+	# - Check if task ID not existing 
+	#   NB: Celery does not throw exceptions in case task id is not known, it just set task state to PENDING, so try to handle this...wtf!
+	if task.state=='PENDING' and (task.result==None or task.info==None): 
+		errmsg= 'No task found with id ' + task_id + '!'
+		raise NameError(errmsg)
+
+	# - Celery set to SUCCESS whenever task return a value, even if update_state is set to FAILURE before return or if returning Ignore() or a <0 code so need to handle this case ... wtf!
+	task_state= task.state 
+	task_exit= task.info.get('exit_code', '')
+	task_status= task.info.get('status', '')
+	task_elapsed= task.info.get('elapsed_time', '')
+	if task_state=='SUCCESS' and str(task_exit)!='0':
+		task_state= 'FAILURE'
+	
+	# - Fill task info
+	res['state']= task_state
+	res['status']= task_status
+	res['exit_status']= task_exit
+	res['elapsed_time']= task_elapsed
+
+	return res
+
 
 @job_status_bp.route('/job/<task_id>/status',methods=['GET'])
 def get_job_status(task_id):
@@ -128,38 +168,95 @@ def get_job_status(task_id):
 	res['exit_status']= ''
 	res['elapsed_time']= ''
 
+	# - Retrieve job status
+	try:
+		res= compute_job_status(task_id)
+		return make_response(jsonify(res),200)
+
+	except NameError as e:
+		res['status']= e
+		return make_response(jsonify(res),404)
+	
 
 	# - Get task 
-	task = background_task.AsyncResult(task_id)
-	if not task:
-		res['status']= 'No task found with given id'
-		return make_response(jsonify(res),404)
+	#task = background_task.AsyncResult(task_id)
+	#if not task:
+	#	res['status']= 'No task found with given id'
+	#	return make_response(jsonify(res),404)
 	
-	#print("Task type")
-	#print(type(task.info))
-	#print(task.info)
-	#print("Task state=%s" % task.state)
-	#print("Task result=%s" % task.result)
-
 	# - Check if task ID not existing 
 	#   NB: Celery does not throw exceptions in case task id is not known, it just set task state to PENDING, so try to handle this...wtf!
-	if task.state=='PENDING' and (task.result==None or task.info==None): 
-		res['status']= 'No task found with id ' + task_id + '!'
-		return make_response(jsonify(res),404)
+	#if task.state=='PENDING' and (task.result==None or task.info==None): 
+	#	res['status']= 'No task found with id ' + task_id + '!'
+	#	return make_response(jsonify(res),404)
 		
 	# - Celery set to SUCCESS whenever task return a value, even if update_state is set to FAILURE before return or if returning Ignore() or a <0 code so need to handle this case ... wtf!
-	task_state= task.state 
-	task_exit= task.info.get('exit_code', '')
-	task_status= task.info.get('status', '')
-	task_elapsed= task.info.get('elapsed_time', '')
-	if task_state=='SUCCESS' and task_exit!='0':
-		task_state= 'FAILURE'
+	#task_state= task.state 
+	#task_exit= task.info.get('exit_code', '')
+	#task_status= task.info.get('status', '')
+	#task_elapsed= task.info.get('elapsed_time', '')
+	#if task_state=='SUCCESS' and task_exit!='0':
+	#	task_state= 'FAILURE'
 	
 	# - Fill task info
-	res['state']= task_state
-	res['status']= task_status
-	res['exit_status']= task_exit
-	res['elapsed_time']= task_elapsed
+	#res['state']= task_state
+	#res['status']= task_status
+	#res['exit_status']= task_exit
+	#res['elapsed_time']= task_elapsed
 	
-	return make_response(jsonify(res),200)
+	#return make_response(jsonify(res),200)
 
+
+@job_output_bp.route('/job/<task_id>/output',methods=['GET'])
+def get_job_output(task_id):
+	""" Get job output """
+
+	# - Init response
+	res= {}
+	res['job_id']= task_id
+	res['state']= ''
+	res['status']= ''
+
+	# - Check job status
+	try:
+		job_status= compute_job_status(task_id)
+		
+	except NameError as e:
+		res['status']= e
+		return make_response(jsonify(res),404)
+	
+	# - If job state is PENDING/STARTED/RUNNING/ABORTED return 
+	job_state= job_status['state']
+	job_not_completed= (
+		job_state=='RUNNING' or 
+		job_state=='PENDING' or
+		job_state=='STARTED' or 
+		job_state=='ABORTED' 
+	)
+	if job_not_completed:
+		logger.info("Job %s not completed (status=%s)..." % (task_id,job_state))
+		res['state']= job_state
+		res['status']= 'Job aborted or not completed, no output data available'
+		return make_response(jsonify(res),202)
+
+	# - Send file
+	job_top_dir= current_app.config['JOB_DIR']
+	job_dir_name= 'job_' + task_id
+	job_dir= os.path.join(job_top_dir,job_dir_name)
+	tar_filename= 'job_' + task_id + '.tar.gz'
+	tar_file= os.path.join(job_dir,tar_filename)
+
+	logger.info("Sending tar file %s with job output data exists ..." % tar_file)
+	
+	try:
+		return send_file(
+			tar_file, 
+			as_attachment=True
+		)
+	except FileNotFoundError:
+		res['status']= 'Job output file ' + tar_filename + ' not found!'
+		return make_response(jsonify(res),500)
+
+
+	return make_response(jsonify(res),200)
+	

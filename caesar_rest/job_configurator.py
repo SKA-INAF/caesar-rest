@@ -225,6 +225,23 @@ class SFinderConfigurator(AppConfigurator):
 		
 			# == OUTPUT OPTIONS==		
 			'save-inputmap' : Option('save-inputmap'),
+			# ...
+
+			# == COMPACT SOURCE SEARCH OPTIONS ==
+			'no-compactsearch' : Option('no-compactsearch'),
+			'npixmin' : ValueOption('npixmin','',int,False),
+			'seedthr' : ValueOption('seedthr','',float,False),
+			'mergethr' : ValueOption('mergethr','',float,False),
+			'compactsearchiters' : ValueOption('compactsearchiters','',int,False),
+			'seedthrstep' : ValueOption('seedthrstep','',float,False),
+	
+			# == COMPACT NESTED SOURCE OPTIONS ==
+			'no-nestedsearch' : Option('no-nestedsearch'),
+			# ...
+
+			# == EXTENDED SOURCE SEARCH OPTIONS ==
+			'no-extendedsearch' : Option('no-extendedsearch'),
+			# ...
 
 			# == RUN OPTIONS ==
 			'run' : Option('run'),

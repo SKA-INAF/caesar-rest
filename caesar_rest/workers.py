@@ -32,6 +32,7 @@ from celery.exceptions import Ignore
 
 # Import Celery app
 from caesar_rest.app import celery as celery_app
+from caesar_rest import utils
 
 # Get logger
 logger = logging.getLogger(__name__)
@@ -120,6 +121,12 @@ def background_task(self,cmd,cmd_args,job_top_dir):
 	except KeyboardInterrupt:
 		logger.info("Task monitoring interrupted with ctrl-c signal")		
 		raise Ignore()
+
+	# - Create a tar.gz with job files (output, logs, submission scripts, etc)
+	tar_filename= 'job_' + task_id + '.tar.gz'
+	tar_file= os.path.join(job_dir,tar_filename)
+	logger.info("Creating a tar file %s with job output data ..." % tar_file)
+	utils.make_tar(tar_file,job_dir)
 
 	# - Check return code after task finish
 	res= {}
