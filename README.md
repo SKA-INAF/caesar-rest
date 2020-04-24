@@ -1,5 +1,5 @@
 # caesar-rest
-Rest API for caesar source finder application based on Flask framework. Celery task queue is used to execute caesar application jobs asynchronously. In this application Celery is configured by default to use a RabbitMQ broker for message exchange and Redis as task result store. 
+Rest API for caesar source finder application based on Flask framework [https://palletsprojects.com/p/flask/]. Celery task queue is used to execute caesar application jobs asynchronously. In this application Celery is configured by default to use a RabbitMQ broker for message exchange and Redis as task result store. 
 
 ## **Status**
 This software is under development. Not already tested with python 3.
@@ -32,9 +32,18 @@ To use package scripts:
 * Add binary directory to your ```PATH``` environment variable:   
   ``` export PATH=$PATH:$INSTALL_DIR/bin ```    
 
-## **Usage**  
+## **Run the application**  
 
 To run:
 
-* Run:   
-  ``` $INSTALL_DIR/bin/run_app.sh```   
+* Run rabbitmq service:  
+   ```systemctl start rabbitmq-server.service```   
+* Run redis service:    
+   ```systemctl status redis.service```   
+* Run celery worker with desired concurrency level (e.g. 2):    
+   ```celery -A caesar_rest worker --loglevel=INFO --concurrency=2```   
+* Run caesar-rest application:    
+  ```$INSTALL_DIR/bin/run_app.sh```   
+
+## **Usage**  
+
