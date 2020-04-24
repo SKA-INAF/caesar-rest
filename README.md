@@ -162,7 +162,9 @@ curl -X POST \
 ```
 
 Job data must contain a valid app name (in this case `sfinder`) and desired job inputs, e.g. a dictionary with app valid options. Valid options for `sfinder` app are named as in `caesar`. In the future additional endpoints will be added to return list of apps (e.g. http://server-address:port/caesar/api/v1.0/apps) and list of valid options per app (e.g. http://server-address:port/caesar/api/v1.0/app/[app_name]/describe).   
+
 Server response is:   
+
 ```
 {
   "app": "sfinder",
@@ -184,6 +186,36 @@ Server response is:
 A job id is returned in the response which can be used to query the status of the job or cancel it or retrieve output data at completion. 
 
 ### **Get job status**
+* URL:```http://server-address:port/caesar/api/v1.0/job/[job_id]/status```   
+* Request methods: GET   
+* Request header: None   
+
+A sample curl request would be:   
+
+curl --request GET \
+  --url http://localhost:5000/caesar/api/v1.0/job/f135bcee-562b-4f01-ad9b-103c35b13b36/status \
+  --cookie session=.eJyrVopPy0kszkgtVrKKrlZSKIFQSUpWSknhYVXJRm55UYG2tkq1OlDRoNyc4qhgp6qUcL-sqAi_qqi8sOIkj-z0lAin4iQjt-yo8ECg6liwemINq4wKTylINg7KSc4Ny_b0SClIcU9PTzYOy4o0AuoqtwUbGFsLAG9BN6M.EYDT3w.C9DrWFAveQsCOepth0Ge9frFBUU
+
+```
+curl -X GET \   
+  --url 'http://localhost:5000/caesar/api/v1.0/job/f135bcee-562b-4f01-ad9b-103c35b13b36/status'   
+```
+
+Server response is:   
+
+```
+{
+  "elapsed_time": "27.3435878754",
+  "exit_status": 0,
+  "job_id": "f135bcee-562b-4f01-ad9b-103c35b13b36",
+  "pid": "11539",
+  "state": "SUCCESS",
+  "status": "Process terminated with success"
+}
+```
+
+Exit status is the shell exit status of background task executed and pid the corresponding process id. Possible job states are: {STARTED, TIMED-OUT, ABORTED, RUNNING, SUCCESS, FAILURE}. 
+
 
 ### **Get job output**
 
