@@ -51,7 +51,7 @@ To run caesar-rest you must first run the message broker, the task store and wor
 ### **Run the application in development mode**   
 To run caesar-rest in development mode, e.g. for debug or testing purposes:   
 
-  ```$INSTALL_DIR/bin/run_app.sh --[ARGS]```
+  ```$INSTALL_DIR/bin/run_app.py --[ARGS]```
 
 where supported `ARGS` are:    
 
@@ -59,9 +59,37 @@ where supported `ARGS` are:
    * `jobdir=[JOBDIR]`: Top directory where to store job data (default: /opt/caesar-rest/data)
    * `debug`: Run Flask application in debug mode if given   
    
-Flask default options are defined in the `config.py`. Celery options are defined in the `celery_config.py`.
+Flask default options are defined in the `config.py`. Celery options are defined in the `celery_config.py`. Other options may be defined in the future to override default Flask and Celery options.   
 
 ### **Run the application in production**   
+In a production environment you can run the application behind a nginx+uwsgi (or nginx+gunicorn) server. For example:  
+
+* Start the application with uwsgi:   
+     
+  ```uwsgi --wsgi-file $INSTALL_DIR/bin/run_app.py --callable app [WSGI_CONFIG_FILE]```
+
+  where `WSGI_CONFIG_FILE` is a configuration file (.ini format) for uwsgi. A sample configuration file is provided in the `config` directory. You can run the application as system service as described below:
+  
+  WRITE ME    
+  
+
+* Specify nginx server configuration in file . A possible configuration file `/etc/nginx/conf.d/nginx.conf`(see example file provided in the `config` directory) include:   
+
+  ```
+  server {   
+	  listen 8080;    
+	  location / {   
+		  include uwsgi_params;    
+		  uwsgi_pass flask:5000;    
+	  }    
+  }    
+  ```
+  
+  With this sample configuration the nginx server will listen at port 8080 and call the caesar-rest application at port 5000. 
+   
+* Run nginx server:   
+
+  ```sudo systemctl start nginx```
 
 
 ## **Usage**  
