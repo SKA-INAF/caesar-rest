@@ -192,13 +192,9 @@ A job id is returned in the response which can be used to query the status of th
 
 A sample curl request would be:   
 
-curl --request GET \
-  --url http://localhost:5000/caesar/api/v1.0/job/f135bcee-562b-4f01-ad9b-103c35b13b36/status \
-  --cookie session=.eJyrVopPy0kszkgtVrKKrlZSKIFQSUpWSknhYVXJRm55UYG2tkq1OlDRoNyc4qhgp6qUcL-sqAi_qqi8sOIkj-z0lAin4iQjt-yo8ECg6liwemINq4wKTylINg7KSc4Ny_b0SClIcU9PTzYOy4o0AuoqtwUbGFsLAG9BN6M.EYDT3w.C9DrWFAveQsCOepth0Ge9frFBUU
-
 ```
 curl -X GET \   
-  --url 'http://localhost:5000/caesar/api/v1.0/job/f135bcee-562b-4f01-ad9b-103c35b13b36/status'   
+  --url 'http://localhost:8080/caesar/api/v1.0/job/f135bcee-562b-4f01-ad9b-103c35b13b36/status'   
 ```
 
 Server response is:   
@@ -218,5 +214,19 @@ Exit status is the shell exit status of background task executed and pid the cor
 
 
 ### **Get job output**
+* URL:```http://server-address:port/caesar/api/v1.0/job/[job_id]/output```   
+* Request methods: GET   
+* Request header: None   
+
+A sample curl request would be:   
+
+```
+curl -X GET \   
+  --url 'http://localhost:8080/caesar/api/v1.0/job/c3c9348a-bea0-4141-8fe9-7f64076a2327/output'   
+```
+
+Server response is:   
+
+
 
 ### **Cancel job**
