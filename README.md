@@ -125,5 +125,26 @@ Server response is:
 
 A file uuid (or file path) are returned and can be used to download the file or set job input file information.   
 
+### **Data download**
+
+* URL:```http://server-address:port/caesar/api/v1.0/download-id/[file_id]```   
+* Request methods: GET, POST   
+* Request header: None  
+
+A sample curl request would be:   
+
+```
+curl  -X GET \
+  --fail -o data.fits \
+  --url 'http://localhost:8080/caesar/api/v1.0/download-id/67a49bf7555b41739095681bf52a1f99'
+```
+
+The above request will fail if file is not found, otherwise the downloaded file will be saves as `data.fits`. Without the `-o` argument raw output is written to stdout. If file is not found a json response is returned:   
+
+```
+{
+  "status": "File with uuid 67a49bf7555b41739095681bf52a1f99 not found on the system!"
+}
+```
 
 
