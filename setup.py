@@ -40,11 +40,11 @@ else:
 reqs.append('jinja2==2.10.1')
 reqs.append('werkzeug>=1.0')
 reqs.append('flask>=1.0.0')
-
+reqs.append('uwsgi')
 #reqs.append('celery')
 	
 
-data_dir = 'data'
+#data_dir = 'data'
 
 setup(
 	name="caesar_rest",
@@ -58,8 +58,9 @@ setup(
 	long_description=read('README.md'),
 	#packages=['caesar_rest'],
 	packages=find_packages(),
+	data_files=[("config",["config/nginx.conf", "config/uwsgi.ini"])],
 	include_package_data=True,
 	zip_safe=False,
 	install_requires=reqs,
-	scripts=['apps/run_app.py'],
+	scripts=['apps/run_app_devel.py','apps/run_app.py'],
 )
