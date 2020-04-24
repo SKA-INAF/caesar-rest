@@ -222,11 +222,12 @@ A sample curl request would be:
 
 ```
 curl -X GET \   
+  --fail -o job_output.tar.gz \
   --url 'http://localhost:8080/caesar/api/v1.0/job/c3c9348a-bea0-4141-8fe9-7f64076a2327/output'   
 ```
 
-Server response is:   
-
-
+The response is a tar.gz file containing all job directory files (logs, output data, run scripts, etc).  
 
 ### **Cancel job**
+
+WRITE ME
