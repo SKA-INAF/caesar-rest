@@ -43,72 +43,69 @@ def get_args():
 	parser = argparse.ArgumentParser(description="Parse args.")
 
 	# - Specify cmd options
-	#parser.add_argument('-config','--config', dest='config', required=False, type=str, help='Configuration file') 
-	parser.add_argument('-datadir','--datadir', dest='datadir', default='/opt/data', required=False, type=str, help='Data directory where to store files') 
-	
+	parser.add_argument('-datadir','--datadir', dest='datadir', default='/opt/caesar-rest/data', required=False, type=str, help='Directory where to store uploaded data') 
+	parser.add_argument('-jobdir','--jobdir', dest='jobdir', default='/opt/caesar-rest/jobs', required=False, type=str, help='Directory where to store jobs') 
+	parser.add_argument('--debug', dest='debug', action='store_true')	
+	parser.set_defaults(debug=True)	
+
+
 	args = parser.parse_args()	
 
 	return args
 
 
-##############
-##   MAIN   ##
-##############
-def main():
-	"""Main function"""
+#===========================
+#==   PARSE ARGS
+#===========================
+logger.info("Parsing cmd line arguments ...")
+try:
+	args= get_args()
+except Exception as ex:
+	logger.error("Failed to get and parse options (err=%s)",str(ex))
+	sys.exit(1)
 
-	#===========================
-	#==   PARSE ARGS
-	#===========================
-	logger.info("Parsing cmd line arguments ...")
-	try:
-		args= get_args()
-	except Exception as ex:
-		logger.error("Failed to get and parse options (err=%s)",str(ex))
-		return 1
+# - Input filelist
+datadir= args.datadir
+jobdir= args.jobdir
+debug= args.debug
 
-	# - Input filelist
-	datadir= args.datadir
+#===========================
+#==   PARSE ARGS
+#===========================
+logger.info("Parsing cmd line arguments ...")
+try:
+	args= get_args()
+except Exception as ex:
+	logger.error("Failed to get and parse options (err=%s)",str(ex))
+	sys.exit(1)
 
-	#===============================
-	#==   INIT
-	#===============================
-	# - Create config class
-	logger.info("Creating app configuration ...")
-	config= Config()
-	config.UPLOAD_FOLDER= datadir
+# - Input filelist
+datadir= args.datadir
+jobdir= args.jobdir
+debug= args.debug
 
-	# - Create data manager	
-	logger.info("Creating data manager ...")
-	datamgr= DataManager(rootdir=config.UPLOAD_FOLDER)
+#===============================
+#==   INIT
+#===============================
+# - Create config class
+logger.info("Creating app configuration ...")
+config= Config()
+config.UPLOAD_FOLDER= datadir
+config.JOB_DIR= jobdir
 
-	# - Create job configurator
-	logger.info("Creating job configurator ...")
-	jobcfg= JobConfigurator()
+# - Create data manager	
+logger.info("Creating data manager ...")
+datamgr= DataManager(rootdir=config.UPLOAD_FOLDER)
 
-	#===============================
-	#==   CREATE APP
-	#===============================
-	logger.info("Creating and configuring app ...")
-	app= create_app(config,datamgr,jobcfg)
+# - Create job configurator
+logger.info("Creating job configurator ...")
+jobcfg= JobConfigurator()
 
-	
-	#if configfile:
-		#logger.info("Configuring app options from file %s ..." % configfile)
-		#app.config.from_pyfile(configfile, silent=False)
-	
-		
-
-
-	#===============================
-	#==   RUN APP
-	#===============================
-	logger.info("Running app ...")
-	app.run(debug=True)
-	#app.run()
-
-
-	return 0
+#===============================
+#==   CREATE APP
+#===============================
+logger.info("Creating and configuring app ...")
+app= create_app(config,datamgr,jobcfg)
 
 
 
@@ -116,5 +113,11 @@ def main():
 ##   MAIN EXEC   ##
 ###################
 if __name__ == "__main__":
-	sys.exit(main())
+	
+	#===============================
+	#==   RUN APP
+	#===============================
+	logger.info("Running app ...")
+	app.run(debug=debug)
 
+	sys.exit(0)

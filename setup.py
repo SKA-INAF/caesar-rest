@@ -62,5 +62,5 @@ setup(
 	include_package_data=True,
 	zip_safe=False,
 	install_requires=reqs,
-	scripts=['apps/run_app_devel.py','apps/run_app.py'],
+	scripts=['apps/run_app.py'],
 )
