@@ -147,4 +147,44 @@ The above request will fail if file is not found, otherwise the downloaded file 
 }
 ```
 
+### **Job submission**
+* URL:```http://server-address:port/caesar/api/v1.0/job```   
+* Request methods: POST   
+* Request header: ```content-type: application/json```   
 
+A sample curl request would be:   
+
+```
+curl -X POST \   
+  -H 'Content-Type: application/json' \   
+  -d '{"app":"sfinder","job_inputs":{"inputfile":"/opt/caesar-rest/data/67a49bf7555b41739095681bf52a1f99.fits","run":true,"no-logredir":true,"envfile":"/home/riggi/Software/setvars.sh","no-mpi":true,"no-nestedsearch":true,"no-extendedsearch":true}}' \   
+  --url 'http://localhost:8080/caesar/api/v1.0/job'   
+```
+
+Job data must contain a valid app name (in this case `sfinder`) and desired job inputs, e.g. a dictionary with app valid options. Valid options for `sfinder` app are named as in `caesar`. In the future additional endpoints will be added to return list of apps (e.g. http://server-address:port/caesar/api/v1.0/apps) and list of valid options per app (e.g. http://server-address:port/caesar/api/v1.0/app/[app_name]/describe).   
+Server response is:   
+```
+{
+  "app": "sfinder",
+  "job_id": "69ca62d7-5098-4fe7-a675-63895a2d06b1",
+  "job_inputs": {
+    "envfile": "/home/riggi/Software/setvars.sh",
+    "inputfile": "/opt/caesar-rest/data/67a49bf7555b41739095681bf52a1f99.fits",
+    "no-extendedsearch": true,
+    "no-logredir": true,
+    "no-mpi": true,
+    "no-nestedsearch": true,
+    "run": true
+  },
+  "status": "",
+  "submit_date": "2020-04-24T14:05:24.761766"
+}
+```
+
+A job id is returned in the response which can be used to query the status of the job or cancel it or retrieve output data at completion. 
+
+### **Get job status**
+
+### **Get job output**
+
+### **Cancel job**
