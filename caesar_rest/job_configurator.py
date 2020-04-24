@@ -223,25 +223,186 @@ class SFinderConfigurator(AppConfigurator):
 			'inputfile' : ValueOption('inputfile','',str,True),
 			#'filelist' : ValueOption('filelist','',True),
 		
-			# == OUTPUT OPTIONS==		
+			# == OUTPUT OPTIONS ==		
 			'save-inputmap' : Option('save-inputmap'),
-			# ...
+			'save-bkgmap' : Option('save-bkgmap'),
+			'save-rmsmap' : Option('save-rmsmap'),
+			'save-significancemap' : Option('save-significancemap'),
+			'save-residualmap' : Option('save-residualmap'),
+			'save-saliencymap' : Option('save-saliencymap'),
+			'save-segmentedmap' : Option('save-segmentedmap'),
+			'save-regions' : Option('save-regions'),
+			'convertregionstowcs' : Option('convertregionstowcs'),
+			'regionwcs' : ValueOption('regionwcs','',int),
+
+			# == IMG READ OPTIONS ==
+			'tilesize' : ValueOption('tilesize','',int),
+			'tilestep' : ValueOption('tilestep','',float),
+			'xmin' : ValueOption('xmin','',int),
+			'xmax' : ValueOption('xmax','',int),
+			'ymin' : ValueOption('ymin','',int),
+			'ymax' : ValueOption('ymax','',int),
+
+			# == STATS OPTIONS ==		
+			'no-parallelmedian' : Option('no-parallelmedian'),
+
+			# == BKG OPTIONS ==		
+			'bmaj' : ValueOption('bmaj','',float),
+			'bmin' : ValueOption('bmin','',float),
+			'bpa' : ValueOption('bpa','',float),
+			'mappixsize' : ValueOption('mappixsize','',float),
+			'globalbkg' : Option('globalbkg'),
+			'bkgestimator' : ValueOption('bkgestimator','',int),
+			'bkgbox' : ValueOption('bkgbox','',int),
+			'bkggrid' : ValueOption('bkggrid','',float),
+			'no-bkg2ndpass' : Option('no-bkg2ndpass'),
+			'bkgskipoutliers' : Option('bkgskipoutliers'),
+			'sourcebkgboxborder' : ValueOption('sourcebkgboxborder','',int),
+
+			# == SFINDER OPTIONS ==		
+			'mergeedgesources' : Option('mergeedgesources'),
+			'no-mergesources' : Option('no-mergesources'),
+			'no-mergecompactsources' : Option('no-mergecompactsources'),
+			'no-mergeextsources' : Option('no-mergeextsources'),
 
 			# == COMPACT SOURCE SEARCH OPTIONS ==
 			'no-compactsearch' : Option('no-compactsearch'),
-			'npixmin' : ValueOption('npixmin','',int,False),
-			'seedthr' : ValueOption('seedthr','',float,False),
-			'mergethr' : ValueOption('mergethr','',float,False),
-			'compactsearchiters' : ValueOption('compactsearchiters','',int,False),
-			'seedthrstep' : ValueOption('seedthrstep','',float,False),
+			'npixmin' : ValueOption('npixmin','',int),
+			'seedthr' : ValueOption('seedthr','',float),
+			'mergethr' : ValueOption('mergethr','',float),
+			'compactsearchiters' : ValueOption('compactsearchiters','',int),
+			'seedthrstep' : ValueOption('seedthrstep','',float),
 	
+			# == COMPACT SOURCE SELECTION OPTIONS ==
+			'selectsources' : Option('selectsources'),
+			'no-boundingboxcut' : Option('no-boundingboxcut'),
+			'minboundingbox' : ValueOption('minboundingbox','',int),
+			'no-circratiocut' : Option('no-circratiocut'),
+			'circratiothr' : ValueOption('circratiothr','',float),
+			'no-elongationcut' : Option('no-elongationcut'),
+			'elongationthr' : ValueOption('elongationthr','',float),
+			'ellipsearearatiocut' : Option('ellipsearearatiocut'),
+			'ellipsearearatiominthr' : ValueOption('ellipsearearatiominthr','',float),
+			'ellipsearearatiomaxthr' : ValueOption('ellipsearearatiomaxthr','',float),
+			'maxnpixcut' : Option('maxnpixcut'),
+			'maxnpix' : ValueOption('maxnpix','',int),
+			'no-nbeamscut' : Option('no-nbeamscut'),
+			'nbeamsthr' : ValueOption('nbeamsthr','',float),
+
 			# == COMPACT NESTED SOURCE OPTIONS ==
 			'no-nestedsearch' : Option('no-nestedsearch'),
-			# ...
+			'blobmaskmethod' : ValueOption('blobmaskmethod','',int),
+			'nested-sourcetobeamthr' : ValueOption('nested-sourcetobeamthr','',float),
+			'nested-blobthr' : ValueOption('nested-blobthr','',float),
+			'nested-minmotherdist' : ValueOption('nested-minmotherdist','',int),
+			'nested-maxmotherpixmatch' : ValueOption('nested-maxmotherpixmatch','',float),
+			'nested-blobpeakzthr' : ValueOption('nested-blobpeakzthr','',float),
+			'nested-blobpeakzthrmerge' : ValueOption('nested-blobpeakzthrmerge','',float),
+			'nested-blobminscale' : ValueOption('nested-blobminscale','',float),
+			'nested-blobmaxscale' : ValueOption('nested-blobmaxscale','',float),
+			'nested-blobscalestep' : ValueOption('nested-blobscalestep','',float),
+			'nested-blobkernfactor' : ValueOption('nested-blobkernfactor','',float),
 
 			# == EXTENDED SOURCE SEARCH OPTIONS ==
 			'no-extendedsearch' : Option('no-extendedsearch'),
-			# ...
+			'extsfinder' : ValueOption('extsfinder','',int),
+			'activecontour' : ValueOption('activecontour','',int),
+			
+			# == SOURCE RESIDUAL OPTIONS ==
+			'computeresiduals' : Option('computeresiduals'),
+			'res-removenested' : Option('res-removenested'),
+			'res-zthr' : ValueOption('res-zthr','',float),
+			'res-zhighthr' : ValueOption('res-zhighthr','',float),
+			'dilatekernsize' : ValueOption('dilatekernsize','',int),
+			'res-removedsourcetype' : ValueOption('res-removedsourcetype','',int),
+			'res-pssubtractionmethod' : ValueOption('res-pssubtractionmethod','',int),
+
+			# == SOURCE FITTING OPTIONS ==
+			'fitsources' : Option('fitsources'),
+			'fit-usethreads' : Option('fit-usethreads'),
+			'fit-minimizer' : ValueOption('fit-minimizer','',str),
+			'fit-minimizeralgo' : ValueOption('fit-minimizeralgo','',str),
+			'fit-printlevel' : ValueOption('fit-printlevel','',int),
+			'fit-strategy' : ValueOption('fit-strategy','',int),
+			'fit-maxnbeams' : ValueOption('fit-maxnbeams','',int),
+			'fit-maxcomponents' : ValueOption('fit-maxcomponents','',int),
+			'fit-usenestedascomponents' : Option('fit-usenestedascomponents'),
+			'fit-freebkg' : Option('fit-freebkg'),
+			'fit-estimatedbkg' : Option('fit-estimatedbkg'),
+			'fit-usebkgboxestimate' : Option('fit-usebkgboxestimate'),
+			'fit-bkg' : ValueOption('fit-bkg','',float),
+			'fit-ampllimit' : ValueOption('fit-ampllimit','',float),
+			'prefit-freeampl' : Option('prefit-freeampl'),
+			'fit-sigmalimit' : ValueOption('fit-sigmalimit','',float),
+			'fit-thetalimit' : ValueOption('fit-thetalimit','',float),
+			'fit-nobkglimits' : Option('fit-nobkglimits'),
+			'fit-noampllimits' : Option('fit-noampllimits'),
+			'fit-nosigmalimits' : Option('fit-nosigmalimits'),
+			'fit-noposlimits' : Option('fit-noposlimits'),
+			'fit-poslimit' : ValueOption('fit-poslimit','',int),
+			'prefit-freepos' : Option('prefit-freepos'),
+			'fit-nothetalimits' : Option('fit-nothetalimits'),
+			'fit-fixsigma' : Option('fit-fixsigma'),
+			'prefit-fixsigma' : Option('prefit-fixsigma'),
+			'fit-fixtheta' : Option('fit-fixtheta'),
+			'prefit-fixtheta' : Option('prefit-fixtheta'),
+			'fit-peakminkern' : ValueOption('fit-peakminkern','',int),
+			'fit-peakmaxkern' : ValueOption('fit-peakmaxkern','',int),
+			'fit-peakmultiplicitythr' : ValueOption('fit-peakmultiplicitythr','',int),
+			'fit-peakshifttol' : ValueOption('fit-peakshifttol','',int),
+			'fit-peakzthrmin' : ValueOption('fit-peakzthrmin','',float),
+			'fit-fcntol' : ValueOption('fit-fcntol','',float),
+			'fit-maxniters' : ValueOption('fit-maxniters','',int),
+			'fit-noimproveconvergence' : Option('fit-noimproveconvergence'),
+			'fit-noretry' : Option('fit-noretry'),
+			'fit-nretries' : ValueOption('fit-nretries','',int),
+			'fit-parboundincreasestep' : ValueOption('fit-parboundincreasestep','',float),
+			'fit-improveerrors' : Option('fit-improveerrors'),
+			'fit-scaledatatomax' : Option('fit-scaledatatomax'),
+			'fit-nochi2cut' : Option('fit-nochi2cut'),
+			'fit-chi2cut' : ValueOption('fit-chi2cut','',float),
+			'fit-useellipsecuts' : Option('fit-useellipsecuts'),
+			
+			# == SMOOTHING FILTER OPTIONS ==
+			'no-presmoothing' : Option('no-presmoothing'),
+			'smoothfilter' : ValueOption('smoothfilter','',int),
+			'guidedfilter-radius' : ValueOption('guidedfilter-radius','',float),
+			'guidedfilter-eps' : ValueOption('guidedfilter-eps','',float),
+
+			# == SALIENCY FILTER OPTIONS ==
+			'sp-size' : ValueOption('sp-size','',int),
+			'sp-beta' : ValueOption('sp-beta','',float),
+			'sp-minarea' : ValueOption('sp-minarea','',int),
+			'saliency-nooptimalthr' : Option('saliency-nooptimalthr'),
+			'saliency-thr' : ValueOption('saliency-thr','',float),
+			'saliency-minreso' : ValueOption('saliency-minreso','',int),
+			'saliency-maxreso' : ValueOption('saliency-maxreso','',int),
+			'saliency-resostep' : ValueOption('saliency-resostep','',int),
+			'saliency-nn' : ValueOption('saliency-nn','',float),
+			'saliency-usebkgmap' : Option('saliency-usebkgmap'),
+			'saliency-usermsmap' : Option('saliency-usermsmap'),
+			'saliency-userobustpars' : Option('saliency-userobustpars'),
+
+			# == ACTIVE-CONTOUR MAIN OPTIONS ==
+			'ac-niters' : ValueOption('ac-niters','',int),
+			'ac-levelset' : ValueOption('ac-levelset','',int),
+			'ac-levelsetsize' : ValueOption('ac-levelsetsize','',float),
+			'ac-tolerance' : ValueOption('ac-tolerance','',float),
+
+			# == CHAN-VESE OPTIONS ==
+			'cv-nitersinner' : ValueOption('cv-nitersinner','',int),
+			'cv-nitersreinit' : ValueOption('cv-nitersreinit','',int),
+			'cv-timestep' : ValueOption('cv-timestep','',float),
+			'cv-wsize' : ValueOption('cv-wsize','',float),
+			'cv-lambda1' : ValueOption('cv-lambda1','',float),
+			'cv-lambda2' : ValueOption('cv-lambda2','',float),
+			'cv-mu' : ValueOption('cv-mu','',float),
+			'cv-nu' : ValueOption('cv-nu','',float),
+			'cv-p' : ValueOption('cv-p','',float),
+
+			# == WAVELET TRANSFORM FILTER OPTIONS ==
+			'wtscalemin' : ValueOption('wtscalemin','',int),
+			'wtscalemax' : ValueOption('wtscalemax','',int),
 
 			# == RUN OPTIONS ==
 			'run' : Option('run'),
@@ -252,7 +413,23 @@ class SFinderConfigurator(AppConfigurator):
 			'outdir' : ValueOption('outdir','',str),
 			'no-logredir' : Option('no-logredir'),
 			'no-mpi' : Option('no-mpi'),
+			'mpioptions' : ValueOption('mpioptions','',str),
+			'nproc' : ValueOption('nproc','',int),
+			'nthreads' : ValueOption('nthreads','',int),
+			'hostfile' : ValueOption('hostfile','',str),
+			'containerrun' : Option('containerrun'),
+			'containerimg' : ValueOption('containerimg','',str),
+			'containeroptions' : ValueOption('containeroptions','',str),
 
+			# == SFINDER SUBMISSION OPTIONS ==
+			'submit' : Option('submit'),
+			'batchsystem' : ValueOption('batchsystem','',str),
+			'queue' : ValueOption('queue','',str),
+			'jobwalltime' : ValueOption('jobwalltime','',str),
+			'jobcpus' : ValueOption('jobcpus','',int),
+			'jobnodes' : ValueOption('jobnodes','',int),
+			'jobmemory' : ValueOption('jobmemory','',float),
+			'jobusergroup' : ValueOption('jobusergroup','',str),
 
 		} # close dict
 	
