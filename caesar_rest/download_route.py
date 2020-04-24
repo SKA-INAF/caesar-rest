@@ -22,7 +22,7 @@ except ImportError:
 
 # Import flask modules
 from flask import current_app, Blueprint, render_template, request, redirect, url_for
-from flask import send_file, send_from_directory, safe_join, abort
+from flask import send_file, send_from_directory, safe_join, abort, make_response, jsonify
 from werkzeug.utils import secure_filename
 
 # Get logger
@@ -81,11 +81,19 @@ def download_id():
 def download_by_uuid(file_uuid):
 	""" Download data by uuid """
 
+	# - Init response
+	res= {
+		'status': ''
+	}
+
 	# Search file uuid
 	file_path= current_app.config['datamgr'].get_filepath(file_uuid)
 	if not file_path:
-		logger.warn("File with uuid=%s not found on the system!" % file_uuid)
-		raise FileNotFoundError("File with given uuid not found on the system")
+		errmsg= 'File with uuid ' + file_uuid + ' not found on the system!'
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
+		#raise FileNotFoundError("File with given uuid not found on the system")
 
 	# Return file to client	
 	logger.info("Returning file %s to client ..." % file_path)
@@ -95,5 +103,8 @@ def download_by_uuid(file_uuid):
 			as_attachment=True
 		)
 	except FileNotFoundError:
-		abort(404)
-
+		#abort(404)
+		errmsg= 'File with uuid ' + file_uuid + ' not found on the system!'
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),404)

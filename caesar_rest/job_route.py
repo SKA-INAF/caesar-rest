@@ -114,7 +114,8 @@ def submit_job():
 	res['submit_date']= submit_date
 	res['app']= app_name
 	res['job_inputs']= job_inputs
-		
+	res['status']= 'Job submitted with success'
+	
 	return make_response(jsonify(res),202)
 
 
