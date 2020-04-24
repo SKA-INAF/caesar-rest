@@ -93,4 +93,37 @@ In a production environment you can run the application behind a nginx+uwsgi (or
 
 
 ## **Usage**  
-caesar-rest by default will
+caesar-rest provides the following REST endpoints:   
+
+### **Data upload**
+
+* URL:```http://server-address:port/caesar/api/v1.0/upload```   
+* Request methods: POST   
+* Request header: ```content-type: multipart/form-data```   
+
+A sample curl request would be:   
+
+```
+curl -X POST \   
+  -H 'Content-Type: multipart/form-data' \   
+  -F 'file=@VGPS_cont_MOS017.fits' \   
+  --url 'http://localhost:8080/caesar/api/v1.0/upload'   
+```
+
+Server response is:   
+```
+{
+  "date":"2020-04-24T17:04:26.174333",
+  "filename_orig":"VGPS_cont_MOS017.fits",
+  "format":"fits",
+  "path":"/opt/caesar-rest/data/250fdf5ed6a044888cf4406338f9e73b.fits",
+  "size":4.00726318359375,
+  "status":"File uploaded with success",
+  "uuid":"250fdf5ed6a044888cf4406338f9e73b"
+}
+```
+
+A file uuid (or file path) are returned and can be used to download the file or set job input file information.   
+
+
+
