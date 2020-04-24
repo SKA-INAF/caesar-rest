@@ -19,3 +19,7 @@ task_serializer = 'json'
 result_serializer = 'json'
 timezone = "UTC"
 
+task_time_limit = 86400 # 24 h
+task_soft_time_limit = 18000 # 5h
+
+

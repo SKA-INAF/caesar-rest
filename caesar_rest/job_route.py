@@ -3,6 +3,7 @@
 ##############################
 # Import standard modules
 import os
+import signal
 import sys
 import json
 import time
@@ -27,6 +28,7 @@ from werkzeug.utils import secure_filename
 
 # Import celery modules
 from celery import states
+from celery.task.control import revoke
 
 # Import Celery app
 from caesar_rest.app import celery as celery_app
@@ -42,7 +44,7 @@ logger = logging.getLogger(__name__)
 job_bp = Blueprint('job', __name__,url_prefix='/caesar/api/v1.0')
 job_status_bp = Blueprint('job_status', __name__,url_prefix='/caesar/api/v1.0')
 job_output_bp = Blueprint('job_output', __name__,url_prefix='/caesar/api/v1.0')
-
+job_cancel_bp = Blueprint('job_cancel', __name__,url_prefix='/caesar/api/v1.0')
 
 
 
@@ -116,12 +118,46 @@ def submit_job():
 	return make_response(jsonify(res),202)
 
 
+
+
+@job_status_bp.route('/job/<task_id>/cancel',methods=['GET','POST'])
+def cancel_job(task_id):
+	"""Cancel job """
+
+	# - Init response
+	res= {}
+	res['status']= ''
+	
+	# - Get task
+	task = background_task.AsyncResult(task_id)
+	if not task:
+		errmsg= 'No task found with id ' + task_id + '!'
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
+
+	# - Revoke task
+	logger.info("Revoking task %s ..." % task_id)
+	#task.revoke(task_id,terminate=True,signal='SIGKILL')
+	#task.revoke(task_id,terminate=True,signal='SIGUSR1')
+	revoke(task_id, terminate=True,signal='SIGTERM')
+	#revoke(task_id, terminate=True,signal='SIGUSR1') # force celery task to go to SOFT TIME OUT
+
+	# - Kill background process
+	pid= task.info.get('pid', '')
+	logger.info("Killing pid=%s ..." % pid)
+	os.killpg(os.getpgid(int(pid)), signal.SIGKILL)  # Send the signal to all the process groups
+
+	res['status']= 'Task canceled with success'
+	return make_response(jsonify(res),200)
+
+
 def compute_job_status(task_id):
 	""" Compute job status """
 
 	# - Init reply
 	res= {}
 	res['job_id']= task_id
+	res['pid']= ''
 	res['state']= ''
 	res['status']= ''
 	res['exit_status']= ''
@@ -142,12 +178,17 @@ def compute_job_status(task_id):
 	# - Celery set to SUCCESS whenever task return a value, even if update_state is set to FAILURE before return or if returning Ignore() or a <0 code so need to handle this case ... wtf!
 	task_state= task.state 
 	task_exit= task.info.get('exit_code', '')
+	task_pid= task.info.get('pid', '')
 	task_status= task.info.get('status', '')
 	task_elapsed= task.info.get('elapsed_time', '')
 	if task_state=='SUCCESS' and str(task_exit)!='0':
-		task_state= 'FAILURE'
+		if str(task_exit)=='124':
+			task_state= 'TIMED-OUT'
+		else:
+			task_state= 'FAILURE'
 	
 	# - Fill task info
+	res['pid']= task_pid
 	res['state']= task_state
 	res['status']= task_status
 	res['exit_status']= task_exit
@@ -163,6 +204,7 @@ def get_job_status(task_id):
 	# - Init response
 	res= {}
 	res['job_id']= task_id
+	res['pid']= ''
 	res['state']= ''
 	res['status']= ''
 	res['exit_status']= ''

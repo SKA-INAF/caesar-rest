@@ -3,6 +3,7 @@
 ##############################
 # Import standard modules
 import os
+import signal
 import sys
 import json
 import time
@@ -28,7 +29,7 @@ from werkzeug.utils import secure_filename
 
 # Import celery modules
 from celery import states
-from celery.exceptions import Ignore
+from celery.exceptions import Ignore, SoftTimeLimitExceeded
 
 # Import Celery app
 from caesar_rest.app import celery as celery_app
@@ -46,9 +47,10 @@ def background_task(self,cmd,cmd_args,job_top_dir):
 
 	# - Initialize task info
 	task_id= self.request.id.__str__()
-
+	
 	task_info= {
 		'job_id': task_id, 
+		'pid': '',
 		'cmd': cmd,	
 		'cmd_args': cmd_args,
 		'status': 'Task pending to be executed',
@@ -57,7 +59,8 @@ def background_task(self,cmd,cmd_args,job_top_dir):
 	}
 
 	res= {
-		'job_id': task_id,
+		'job_id': task_id,	
+		'pid': '',
 		'cmd': cmd,
 		'cmd_args': cmd_args,
 		'exit_code': '',
@@ -80,47 +83,64 @@ def background_task(self,cmd,cmd_args,job_top_dir):
 			res['status']= errmsg
 			res['exit_code']= 126
 			self.update_state(state='ABORTED', meta=task_info)
-	
+			
 	# - Execute command
 	logger.info("Executing cmd %s with args %s ..." % (cmd,cmd_args))
 	self.update_state(state='PENDING', meta=task_info)
-
+	
 	exec_cmd= ' '.join([cmd,cmd_args])
 	
-	p= subprocess.Popen(exec_cmd, shell=True, cwd=job_dir)
+	p= subprocess.Popen(exec_cmd, shell=True, cwd=job_dir,preexec_fn=os.setsid)
+	pid= p.pid
 	
-	logger.info("Bkg task started  ...")
+	logger.info("Bkg task started with pid=%s ..." % str(pid))
 	start = time.time()
 	
+	res['pid']= str(pid)
 	task_info['status']= 'Task started in background'
+	task_info['pid']= str(pid)
 	self.update_state(state='STARTED', meta=task_info)
 
-	#time.sleep(20)
 
-
-	# - Monitor task status 
+	# - Monitor long task catching soft time limit
 	waitTime= 3
 	try:
-		while True:
+		try:
+			while True:
+				logger.debug("Checking process status ...")
+				if p.poll() is None:
+					logger.info("Task %s (pid=%d) is still running ..." % (task_id,pid))
+					elapsed = time.time() - start
 
-			logger.info("Checking process status ...")
-			if p.poll() is None:
-				logger.info("Process is still running ...")
-				elapsed = time.time() - start
-
-				task_info['status']= 'Task running in background'
-				task_info['elapsed']= str(elapsed)
-				self.update_state(state='RUNNING', meta=task_info)
-
-				# - Sleeping a bit before retrying again
-				time.sleep(waitTime)
+					task_info['status']= 'Task running in background'
+					task_info['elapsed']= str(elapsed)
+					self.update_state(state='RUNNING', meta=task_info)
 				
-			else:
-				break
-					
+					# - Sleeping a bit before retrying again
+					time.sleep(waitTime)
+				
+				else:
+					break
+
+		except SoftTimeLimitExceeded:
+			logger.info("Task exceeded time limits, killing proc %d ..." % pid)
+			#os.kill(pid, signal.SIGTERM)
+			os.killpg(os.getpgid(pid), signal.SIGTERM)  # Send the signal to all the process groups
+
+			status_msg= "Task exceeded time limits"
+			logger.info(status_msg)
+			elapsed = time.time() - start
+			task_info['status']= status_msg
+			task_info['elapsed']= str(elapsed)
+			self.update_state(state='TIMED-OUT', meta=task_info)
+			res['exit_code']= 124 # equivalent sigterm
+			res['status']= status_msg
+			res['elapsed_time']= str(elapsed)
+			return res
+
 	except KeyboardInterrupt:
 		logger.info("Task monitoring interrupted with ctrl-c signal")		
-		raise Ignore()
+		raise Ignore()		
 
 	# - Create a tar.gz with job files (output, logs, submission scripts, etc)
 	tar_filename= 'job_' + task_id + '.tar.gz'
@@ -129,7 +149,6 @@ def background_task(self,cmd,cmd_args,job_top_dir):
 	utils.make_tar(tar_file,job_dir)
 
 	# - Check return code after task finish
-	res= {}
 	end = time.time()
 	elapsed = end - start	
 	task_state= 'SUCCESS'
@@ -158,6 +177,7 @@ def background_task(self,cmd,cmd_args,job_top_dir):
 	self.update_state(state=task_state, meta=task_info)
 	res= {
 		'job_id': task_id,
+		'pid': str(pid),
 		'cmd': cmd,
 		'cmd_args': cmd_args,
 		'exit_code': p.returncode, 

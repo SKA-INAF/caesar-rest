@@ -24,7 +24,7 @@ class Config(object):
 	TESTING = False
 	SECRET_KEY= uuid.uuid4().hex
 	UPLOAD_FOLDER= '/opt/caesar-rest/data'
-	MAX_CONTENT_LENGTH= 16 * 1024 * 1024 # 16 MB
+	MAX_CONTENT_LENGTH= 1000 * 1024 * 1024 # 16 MB
 
 	# - Additional options
 	JOB_DIR= '/opt/caesar-rest/jobs'
