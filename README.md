@@ -176,7 +176,7 @@ Server response is:
     "no-nestedsearch": true,
     "run": true
   },
-  "status": "",
+  "status": "Job submitted with success",
   "submit_date": "2020-04-24T14:05:24.761766"
 }
 ```
