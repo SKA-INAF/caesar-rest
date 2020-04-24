@@ -1,5 +1,5 @@
 # caesar-rest
-Rest API for caesar source finder application based on Flask framework [https://palletsprojects.com/p/flask/]. Celery task queue is used to execute caesar application jobs asynchronously. In this application Celery is configured by default to use a RabbitMQ broker for message exchange and Redis as task result store. In production Caesar server can be run behind nginx+uwsgi http server. 
+caesar-rest provides a rest interface for caesar [https://github.com/SKA-INAF/caesar] source finder and related applications based on Flask python framework [https://palletsprojects.com/p/flask/]. Celery task queue is used to execute caesar application jobs asynchronously. In this application Celery is configured by default to use a RabbitMQ broker for message exchange and Redis as task result store. In a production environment caesar rest service can be run behind nginx+uwsgi http server. 
 
 ## **Status**
 This software is under development. Not already tested with python 3.
@@ -25,6 +25,8 @@ To build and install the package:
 * Add installation path to your ```PYTHONPATH``` environment variable:   
   ``` export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python2.7/site-packages ```
 * Build and install package:   
+  ``` python setup.py sdist bdist_wheel```    
+  ``` python setup build```   
   ``` python setup install --prefix=$INSTALL_DIR```   
 
 All dependencies will be automatically downloaded and installed in ```$INSTALL_DIR```.   
@@ -34,18 +36,33 @@ To use package scripts:
 * Add binary directory to your ```PATH``` environment variable:   
   ``` export PATH=$PATH:$INSTALL_DIR/bin ```    
 
-## **Run the application**  
+## **How to run?**  
 
-To run:
+### **Run backend services**
+To run caesar-rest you must first run the message broker, the task store and worker services:
 
-* Run rabbitmq service:  
+* Run rabbitmq message broker service:  
    ```systemctl start rabbitmq-server.service```   
-* Run redis service:    
+* Run redis store service:    
    ```systemctl status redis.service```   
 * Run celery worker with desired concurrency level (e.g. 2):    
    ```celery -A caesar_rest worker --loglevel=INFO --concurrency=2```   
-* Run caesar-rest application in development mode (i.e. do not use in production):    
-  ```$INSTALL_DIR/bin/run_app.sh```   
+   
+### **Run the application in development mode**   
+To run caesar-rest in development mode, e.g. for debug or testing purposes:   
+
+  ```$INSTALL_DIR/bin/run_app.sh --[ARGS]```
+
+where supported `ARGS` are:    
+
+   * `datadir=[DATADIR]`: Directory where to store uploaded data (default: /opt/caesar-rest/data)   
+   * `jobdir=[JOBDIR]`: Top directory where to store job data (default: /opt/caesar-rest/data)
+   * `debug`: Run Flask application in debug mode if given   
+   
+Flask default options are defined in the `config.py`. Celery options are defined in the `celery_config.py`.
+
+### **Run the application in production**   
+
 
 ## **Usage**  
 caesar-rest by default will
