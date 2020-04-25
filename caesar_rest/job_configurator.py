@@ -64,7 +64,35 @@ class JobConfigurator(object):
 		
 		return (cmd,cmd_args,status_msg)
 
+	def get_app_description(self,app_name):
+		""" Return a json dict describing given app """
+		
+		# - Check app name if found
+		if app_name not in self.app_configurators:
+			msg= 'App ' + app_name + ' not known or supported'
+			logger.warn(msg)
+			return None
 
+		# - Create an instance of app configurator
+		configurator= self.app_configurators[app_name]()
+
+		# - Get description
+		#d= configurator.describe_json()
+		d= configurator.describe_dict()	
+
+		return d
+
+	def get_app_names(self):
+		""" Return app names """
+		
+		d= {}
+		app_names= []
+		for app_name in self.app_configurators:
+			app_names.append(app_name)
+		d.update({'apps':app_names})
+
+		#return json.loads(json.dumps(d))
+		return d
 
 ##############################
 #   APP CONFIGURATOR
@@ -75,8 +103,10 @@ class Option(object):
 		self.name= name
 		self.mandatory= mandatory
 		self.value_required= False
-		self.value= ''
-		self.value_type= bool
+		#self.value= ''
+		#self.value_type= bool
+		self.value= None
+		self.value_type= type(None)
 
 	def to_argopt(self):
 		""" Convert option to cmdline format """
@@ -88,6 +118,16 @@ class Option(object):
 
 		return argopt
 
+	def to_dict(self):
+		""" Convert option to dictionary """
+		
+		if self.value_required:
+			d= {self.name: {"mandatory":self.mandatory,"type":self.value_type.__name__}}
+		else:
+			d= {self.name: {"mandatory":self.mandatory,"type":"none"}}			
+			
+		return d
+	
 
 class ValueOption(Option):
 
@@ -111,6 +151,29 @@ class AppConfigurator(object):
 		self.validation_status= ''
 		self.valid_options= {}
 		self.options= []
+
+	def describe_dict(self):
+		""" Return a dictionary describing valid options """
+			
+		d= {}
+		for opt_name, option in self.valid_options.items():
+			option_dict= option.to_dict()
+			d.update(option_dict)
+
+		return d
+
+	def describe_str(self):
+		""" Return a json string describing valid options """
+			
+		d= self.describe()
+		return json.dumps(d)
+
+	def describe_json(self):
+		""" Return a json dictionary describing valid options """
+			
+		json_str= self.describe_str()
+		return json.loads(json_str)
+
 
 	def validate(self,job_inputs):
 		""" Validate job input """

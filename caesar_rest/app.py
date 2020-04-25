@@ -91,6 +91,7 @@ def create_app(cfg,dm,jc):
 	from caesar_rest.upload_route import upload_bp
 	from caesar_rest.download_route import download_path_bp, download_id_bp
 	from caesar_rest.job_route import job_bp, job_status_bp, job_output_bp, job_cancel_bp
+	from caesar_rest.app_route import app_names_bp, app_describe_bp
 	app.register_blueprint(index_bp)
 	app.register_blueprint(upload_bp)
 	app.register_blueprint(download_path_bp)
@@ -99,6 +100,8 @@ def create_app(cfg,dm,jc):
 	app.register_blueprint(job_status_bp)
 	app.register_blueprint(job_output_bp)
 	app.register_blueprint(job_cancel_bp)
+	app.register_blueprint(app_names_bp)
+	app.register_blueprint(app_describe_bp)
     
 	return app
 
