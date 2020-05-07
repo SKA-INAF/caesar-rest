@@ -1,15 +1,14 @@
 [Unit]
 Description=Caesar Celery Worker Service
-After=network.target
+After=network.target rabbitmq-server.target redis.target
 
 [Service]
 Type=forking
-User=ubuntu
-Group=ubuntu
+User=caesar
+Group=caesar
 EnvironmentFile=/etc/default/caesar-workers
 Environment="PATH=/opt/Software/CAESAR-REST/install/bin"
 Environment="PYTHONPATH=/opt/Software/CAESAR-REST/install/lib/python2.7/site-packages"
-##WorkingDirectory=/opt/Software/CAESAR-REST/install/bin
 WorkingDirectory=/opt/caesar-rest
 ExecStart=/bin/sh -c '${CELERY_BIN} multi start ${CELERYD_NODES} \
   -A ${CELERY_APP} --pidfile=${CELERYD_PID_FILE} \

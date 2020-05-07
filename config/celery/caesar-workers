@@ -21,5 +21,3 @@ CELERYD_LOG_LEVEL=INFO
 # Path to celery binary, that is in your virtual environment
 CELERY_BIN=/usr/local/bin/celery
 
-# Concurrency level
-CELERY_CONCURRENCY=2
