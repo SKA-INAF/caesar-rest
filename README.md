@@ -5,7 +5,7 @@ caesar-rest provides a rest interface for caesar [https://github.com/SKA-INAF/ca
 This software is under development. Not already tested with python 3.
 
 ## **Credit**
-This software is distributed with GPLv3 license. If you use caesar-rest for your research, please add repository link or acknowledge authors in your papers.
+This software is distributed with GPLv3 license. If you use caesar-rest for your research, please add repository link or acknowledge authors in your papers.   
 
 ## **Installation**  
 
@@ -38,15 +38,82 @@ To use package scripts:
 
 ## **How to run?**  
 
+### **Preliminary setup**
+Before running the application you must do some preparatory stuff:   
+
+* Create the application working dir (by default `/opt/caesar-rest`)   
+* Create the top directory for data upload (by default `/opt/caesar-rest/data`)   
+* Create the top directory for jobs (by default `/opt/caesar-rest/jobs`)   
+* (OPTIONAL) Create the log directory for system services (see below), e.g. `/opt/caesar-rest/logs` 
+* (OPTIONAL) Create the run directory for system services (see below), e.g. `/opt/caesar-rest/run` 
+* (OPTIONAL) Create a dedicated user & group (e.g. `caesar`) allowed to run the application and services and give it ownership of the directories previously created     
+
 ### **Run backend services**
 To run caesar-rest you must first run the message broker, the task store and worker services:
 
 * Run rabbitmq message broker service:  
    ```systemctl start rabbitmq-server.service```   
 * Run redis store service:    
-   ```systemctl status redis.service```   
-* Run celery worker with desired concurrency level (e.g. 2):    
+   ```systemctl start redis.service```   
+* Run celery worker with desired concurrency level (e.g. 2):  
    ```celery -A caesar_rest worker --loglevel=INFO --concurrency=2```   
+   
+   In production you may want to run this as a system service:   
+       
+   - Create a `/etc/default/caesar-workers` configuration file (e.g. see the example in the `config/celery` directory):  
+   
+     ```
+     # The names of the workers. Only one here. 
+     CELERYD_NODES="caesar_worker"    
+     
+     # The name of the Celery App   
+     CELERY_APP="caesar_rest"
+      
+     # Working dir    
+     CELERYD_CHDIR="/opt/caesar-rest"    
+     
+     # Additional options    
+     CELERYD_OPTS="--time-limit=300 --concurrency=4"
+
+     # Log and PID directories    
+     CELERYD_LOG_FILE="/opt/caesar-rest/logs/%n%I.log"    
+     CELERYD_PID_FILE="/opt/caesar-rest/run/%n.pid"    
+
+     # Log level    
+     CELERYD_LOG_LEVEL=INFO    
+
+     # Path to celery binary, that is in your virtual environment    
+     CELERY_BIN=/usr/local/bin/celery    
+     ```
+     
+   - Create a `/etc/systemd/system/caesar-workers.service` systemd service file:    
+   
+     ```
+     [Unit]    
+     Description=Caesar Celery Worker Service    
+     After=network.target rabbitmq-server.target redis.target   
+
+     [Service]    
+     Type=forking   
+     User=caesar   
+     Group=caesar   
+     EnvironmentFile=/etc/default/caesar-workers     
+     Environment="PATH=$INSTALL_DIR/bin"   
+     Environment="PYTHONPATH=$INSTALL_DIR/lib/python2.7/site-packages"   
+     WorkingDirectory=/opt/caesar-rest   
+     ExecStart=/bin/sh -c '${CELERY_BIN} multi start ${CELERYD_NODES} \    
+       -A ${CELERY_APP} --pidfile=${CELERYD_PID_FILE} \   
+       --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'    
+     ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait ${CELERYD_NODES} \    
+       --pidfile=${CELERYD_PID_FILE}'   
+     ExecReload=/bin/sh -c '${CELERY_BIN} multi restart ${CELERYD_NODES} \   
+       -A ${CELERY_APP} --pidfile=${CELERYD_PID_FILE} \   
+       --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'    
+
+     [Install]    
+     WantedBy=multi-user.target   
+     ```
+   
    
 ### **Run the application in development mode**   
 To run caesar-rest in development mode, e.g. for debug or testing purposes:   
@@ -62,7 +129,7 @@ where supported `ARGS` are:
 Flask default options are defined in the `config.py`. Celery options are defined in the `celery_config.py`. Other options may be defined in the future to override default Flask and Celery options.   
 
 ### **Run the application in production**   
-In a production environment you can run the application behind a nginx+uwsgi (or nginx+gunicorn) server. For example:  
+In a production environment you can run the application behind a nginx+uwsgi (or nginx+gunicorn) server. In the `config` directory of the repository you can find sample files to create and configure required services. For example:  
 
 * Start the application with uwsgi:   
      
