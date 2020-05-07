@@ -113,7 +113,9 @@ To run caesar-rest you must first run the message broker, the task store and wor
      [Install]    
      WantedBy=multi-user.target   
      ```
-   
+  
+  - Start the service:   
+     ```sudo systemctl caesar-workers.service start```    
    
 ### **Run the application in development mode**   
 To run caesar-rest in development mode, e.g. for debug or testing purposes:   
@@ -135,28 +137,90 @@ In a production environment you can run the application behind a nginx+uwsgi (or
      
   ```uwsgi --wsgi-file $INSTALL_DIR/bin/run_app.py --callable app [WSGI_CONFIG_FILE]```
 
-  where `WSGI_CONFIG_FILE` is a configuration file (.ini format) for uwsgi. A sample configuration file is provided in the `config` directory. You can run the application as system service as described below:
+  where `WSGI_CONFIG_FILE` is a configuration file (.ini format) for uwsgi. A sample configuration file is provided in the `config/uwgsi` directory:   
   
-  WRITE ME    
-  
-
-* Specify nginx server configuration in file . A possible configuration file `/etc/nginx/conf.d/nginx.conf`(see example file provided in the `config` directory) include:   
-
   ```
-  server {   
-	  listen 8080;    
-	  location / {   
-		  include uwsgi_params;    
-		  uwsgi_pass flask:5000;    
-	  }    
-  }    
+  [uwsgi]
+  processes = 4   
+  threads = 2   
+  socket = ./run/caesar-rest.sock   
+  ;socket = :5000
+  ;http-socket = :5000
+  socket-timeout = 65
+  
+  buffer-size = 32768  
+  master = true   
+  chmod-socket = 660   
+  vacuum = true  
+  die-on-term = true  
   ```
   
-  With this sample configuration the nginx server will listen at port 8080 and call the caesar-rest application at port 5000. 
+  In production you may want to run this as a system service: 
+  
+  - Create an `/etc/systemd/system/caesar-rest.service` systemd service file, for example following the example provided in the `config/uwsgi` directory:       
+       
+    ```
+    [Unit]
+    Description=uWSGI instance to serve caesar-rest application    
+    After=network.target caesar-workers.target   
+
+    [Service]
+    User=caesar  
+    Group=www-data   
+    WorkingDirectory=/opt/caesar-rest  
+    Environment="PATH=$INSTALL_DIR/bin"   
+    Environment="PYTHONPATH=$INSTALL_DIR/lib/python2.7/site-packages"  
+    ExecStart=/usr/bin/uwsgi --wsgi-file $INSTALL_DIR/bin/run_app.py --callable app --ini /opt/caesar-rest/config/uwsgi.ini
+
+    [Install]   
+    WantedBy=multi-user.target    
+    ```   
+    
+   - Start the service:   
+     ```sudo systemctl caesar-rest.service start```    
+
+* Start the nginx service:
+
+  - Create a `/etc/nginx/conf.d/nginx.conf` configuration file (see example file provided in the `config/nginx` directory):      
+    ```
+    server {   
+      listen 8080;   
+      client_max_body_size 1000M;   
+      sendfile on;    
+      keepalive_timeout 0;   
+      location / {   
+        include uwsgi_params;    
+        #uwsgi_pass flask:5000;   
+        uwsgi_pass unix:/opt/caesar-rest/run/caesar-rest.sock;   
+      }       
+    }    
+    ```
+  
+    With this sample configuration the nginx server will listen at port 8080 and call the caesar-rest application via socket.    
    
-* Run nginx server:   
+  - Create a `/etc/systemd/system/nginx.service` systemd file, e.g. see the example provided in the `config/nginx` directory:   
+  
+    ```
+    [Unit]   
+    Description=The NGINX HTTP and reverse proxy server  
+    After=syslog.target network.target remote-fs.target nss-lookup.target caesar-rest.target   
 
-  ```sudo systemctl start nginx```
+    [Service]   
+    Type=forking    
+    PIDFile=/run/nginx.pid   
+    ExecStartPre=/usr/sbin/nginx -t   
+    ExecStart=/usr/sbin/nginx   
+    ExecReload=/usr/sbin/nginx -s reload   
+    ExecStop=/bin/kill -s QUIT $MAINPID   
+    PrivateTmp=true    
+
+    [Install]   
+    WantedBy=multi-user.target   
+    ```
+  
+  - Run nginx server:   
+
+    ```sudo systemctl start nginx```
 
 
 ## **Usage**  
