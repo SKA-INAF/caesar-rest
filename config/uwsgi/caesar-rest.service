@@ -1,0 +1,15 @@
+[Unit]
+Description=uWSGI instance to serve caesar
+After=network.target caesar-workers.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/opt/caesar-rest
+Environment="PATH=/opt/Software/CAESAR-REST/install/bin"
+Environment="PYTHONPATH=/opt/Software/CAESAR-REST/install/lib/python2.7/site-packages"
+ExecStart=/usr/bin/uwsgi --wsgi-file /opt/Software/CAESAR-REST/install/bin/run_app.py --callable app --ini /opt/caesar-rest/config/uwsgi.ini
+
+
+[Install]
+WantedBy=multi-user.target
