@@ -220,7 +220,7 @@ In a production environment you can run the application behind a nginx+uwsgi (or
   
   - Run nginx server:   
 
-    ```sudo systemctl start nginx```
+    ```sudo systemctl start nginx.service```
 
 
 ## **Usage**  
