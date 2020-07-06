@@ -42,7 +42,7 @@ reqs.append('werkzeug>=1.0')
 reqs.append('flask>=1.0.0')
 reqs.append('uwsgi')
 #reqs.append('celery')
-	
+reqs.append('pyyaml')
 
 #data_dir = 'data'
 
