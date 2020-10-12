@@ -27,6 +27,7 @@ from flask import send_file, send_from_directory, safe_join, abort, make_respons
 #from flask_api import status
 from werkzeug.utils import secure_filename
 
+from caesar_rest import oidc
 # Get logger
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ upload_bp = Blueprint('upload', __name__, url_prefix='/caesar/api/v1.0')
 
 
 @upload_bp.route('/upload', methods=['POST'])
+@oidc.require_login
 def upload_file():
 	""" Upload image """
 

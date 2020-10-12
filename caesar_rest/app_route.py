@@ -26,6 +26,7 @@ from flask import current_app, Blueprint, render_template, request, redirect, ur
 from flask import send_file, send_from_directory, safe_join, abort, make_response, jsonify
 from werkzeug.utils import secure_filename
 
+from caesar_rest import oidc
 
 # Get logger
 logger = logging.getLogger(__name__)
@@ -39,14 +40,17 @@ app_describe_bp = Blueprint('app_describe', __name__,url_prefix='/caesar/api/v1.
 
 
 @app_names_bp.route('/apps',methods=['GET'])
+@oidc.require_login
 def get_app_names():
 	""" Get supported apps """
+	#oidc.require_login()
 
 	app_names= current_app.config['jobcfg'].get_app_names()
 	return make_response(jsonify(app_names),200)
 
 
 @app_describe_bp.route('/app/<app_name>/describe',methods=['GET'])
+@oidc.require_login
 def get_app_description(app_name):
 	""" Get description of given app """
 

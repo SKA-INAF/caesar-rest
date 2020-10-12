@@ -33,6 +33,7 @@ from celery.task.control import revoke
 # Import Celery app
 from caesar_rest.app import celery as celery_app
 from caesar_rest.workers import background_task
+from caesar_rest import oidc
 
 # Get logger
 logger = logging.getLogger(__name__)
@@ -49,6 +50,7 @@ job_cancel_bp = Blueprint('job_cancel', __name__,url_prefix='/caesar/api/v1.0')
 
 
 @job_bp.route('/job', methods=['POST'])
+@oidc.require_login
 def submit_job():
 	""" Submit a job asyncronously """
 	
@@ -122,6 +124,7 @@ def submit_job():
 
 
 @job_status_bp.route('/job/<task_id>/cancel',methods=['GET','POST'])
+@oidc.require_login
 def cancel_job(task_id):
 	"""Cancel job """
 
@@ -199,6 +202,7 @@ def compute_job_status(task_id):
 
 
 @job_status_bp.route('/job/<task_id>/status',methods=['GET'])
+@oidc.require_login
 def get_job_status(task_id):
 	""" Get job status """
     
@@ -251,6 +255,7 @@ def get_job_status(task_id):
 
 
 @job_output_bp.route('/job/<task_id>/output',methods=['GET'])
+@oidc.require_login
 def get_job_output(task_id):
 	""" Get job output """
 

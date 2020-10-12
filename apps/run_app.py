@@ -23,8 +23,7 @@ from caesar_rest.data_manager import DataManager
 from caesar_rest.job_configurator import JobConfigurator
 from caesar_rest.app import create_app
 #from caesar_rest.app import app 
-
-
+from caesar_rest import oidc
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
@@ -107,6 +106,18 @@ jobcfg= JobConfigurator()
 logger.info("Creating and configuring app ...")
 app= create_app(config,datamgr,jobcfg)
 
+#===============================
+#==   INIT OIDC TO APP
+#===============================
+# - Add Flask OIDC configuration
+app.config.update({
+	'SECRET_KEY': 'SomethingNotEntirelySecret',
+	'OIDC_CLIENT_SECRETS': '/home/ubuntu/Software/Sources/caesar-rest-aai/config/client_secrets.json',
+	'OIDC_OPENID_REALM': 'neanias-development',
+	'OIDC_SCOPES': ['openid', 'email', 'profile'],
+})
+oidc.init_app(app)
+
 
 
 ###################
@@ -117,7 +128,7 @@ if __name__ == "__main__":
 	#===============================
 	#==   RUN APP
 	#===============================
-	logger.info("Running app ...")
+	logger.info("Running app on SSL ...")
 	app.run(debug=debug)
 
 	sys.exit(0)

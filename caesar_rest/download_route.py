@@ -25,6 +25,8 @@ from flask import current_app, Blueprint, render_template, request, redirect, ur
 from flask import send_file, send_from_directory, safe_join, abort, make_response, jsonify
 from werkzeug.utils import secure_filename
 
+from caesar_rest import oidc
+
 # Get logger
 logger = logging.getLogger(__name__)
 
@@ -40,6 +42,7 @@ download_id_bp = Blueprint('download_id', __name__,url_prefix='/caesar/api/v1.0'
 
 # - Download data by file name
 @download_path_bp.route('/download-path', methods=['GET', 'POST'])
+@oidc.require_login
 def download_path():
 	""" Download data by path (only for testing) """
 	if request.method == 'POST':
@@ -52,6 +55,7 @@ def download_path():
 
 
 @download_path_bp.route('/download-path/<string:filename>', methods=['GET', 'POST'])
+@oidc.require_login
 def download_by_name(filename):
 	""" Download data by path (only for testing) """
 	try:
@@ -66,6 +70,7 @@ def download_by_name(filename):
 
 # - Download data by uuid
 @download_id_bp.route('/download-id', methods=['GET', 'POST'])
+@oidc.require_login
 def download_id():
 	""" Download data by uuid """
 	if request.method == 'POST':
@@ -78,6 +83,7 @@ def download_id():
 
 #@download_id_bp.route('/download/<uuid:file_uuid>', methods=['GET', 'POST'])
 @download_id_bp.route('/download-id/<string:file_uuid>', methods=['GET', 'POST'])
+@oidc.require_login
 def download_by_uuid(file_uuid):
 	""" Download data by uuid """
 

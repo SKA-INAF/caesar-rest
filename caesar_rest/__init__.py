@@ -11,6 +11,7 @@ __copyright__ = 'Copyright 2020 by Simone Riggi - INAF'
 import logging
 import logging.config
 
+from flask_oidc import OpenIDConnect
 
 # Create the Logger
 logging.basicConfig(format="%(asctime)-15s %(levelname)s - %(message)s",datefmt='%Y-%m-%d %H:%M:%S')
@@ -25,3 +26,6 @@ celery= Celery(
 	__name__,
 	config_source='caesar_rest.celery_config'
 )
+
+# Create OIDC (without connecting to app)
+oidc = OpenIDConnect()

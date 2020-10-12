@@ -42,7 +42,8 @@ reqs.append('werkzeug>=1.0')
 reqs.append('flask>=1.0.0')
 reqs.append('uwsgi')
 #reqs.append('celery')
-reqs.append('pyyaml')
+reqs.append('rsa==4.5')
+reqs.append('Flask-OIDC')	
 
 #data_dir = 'data'
 
@@ -58,7 +59,7 @@ setup(
 	long_description=read('README.md'),
 	#packages=['caesar_rest'],
 	packages=find_packages(),
-	data_files=[("config",["config/nginx/nginx.conf", "config/uwsgi/uwsgi.ini"])],
+	data_files=[("config",["config/nginx.conf", "config/uwsgi.ini"])],
 	include_package_data=True,
 	zip_safe=False,
 	install_requires=reqs,

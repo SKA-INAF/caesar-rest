@@ -28,6 +28,8 @@ from flask import Flask
 from flask import flash, request, redirect, render_template, url_for
 from flask import send_file, send_from_directory, safe_join, abort
 from werkzeug.utils import secure_filename
+from flask_oidc_ex import OpenIDConnect
+from oauth2client.client import OAuth2Credentials
 
 # Import Celery
 #from celery import Celery
@@ -83,6 +85,15 @@ def create_app(cfg,dm,jc):
 	app.config['datamgr'] = dm
 	app.config['jobcfg'] = jc
 
+	# - Add Flask OIDC configuration
+	app.config.update({
+		'SECRET_KEY': 'SomethingNotEntirelySecret',
+		'OIDC_CLIENT_SECRETS': 'config/client_secrets.json',
+		'OIDC_OPENID_REALM': 'neanias-development',
+		'OIDC_SCOPES': ['openid', 'email', 'profile'],
+	})
+
+
 	# - Configure Celery app
 	configure_celery_app(app)
 
@@ -102,6 +113,8 @@ def create_app(cfg,dm,jc):
 	app.register_blueprint(job_cancel_bp)
 	app.register_blueprint(app_names_bp)
 	app.register_blueprint(app_describe_bp)
+
+	#oidc = OpenIDConnect(app)
     
 	return app
 
