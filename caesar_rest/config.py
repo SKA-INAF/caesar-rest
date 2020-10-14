@@ -31,3 +31,8 @@ class Config(object):
 	UPLOAD_ALLOWED_FILE_FORMATS= set(['png', 'jpg', 'jpeg', 'gif', 'fits'])
 	#APP_NAMES= set(['sfinder']) 
 	
+	# - AAI options
+	USE_AAI = False
+	OIDC_CLIENT_SECRETS = 'config/client_secrets.json'
+	OIDC_OPENID_REALM = 'neanias-development'
+	OIDC_SCOPES = ['openid', 'email', 'profile']
