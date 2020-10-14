@@ -11,7 +11,6 @@ __copyright__ = 'Copyright 2020 by Simone Riggi - INAF'
 import logging
 import logging.config
 
-from flask_oidc import OpenIDConnect
 
 # Create the Logger
 logging.basicConfig(format="%(asctime)-15s %(levelname)s - %(message)s",datefmt='%Y-%m-%d %H:%M:%S')
@@ -28,4 +27,10 @@ celery= Celery(
 )
 
 # Create OIDC (without connecting to app)
-oidc = OpenIDConnect()
+oidc= None
+try:
+	from flask_oidc import OpenIDConnect
+	oidc = OpenIDConnect()
+except:
+	logger.warn("flask_oidc module not found, can't create OpenIDConnect(), no AAI will be used (hint: install flask_oidc)")
+	
