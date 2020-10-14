@@ -27,7 +27,7 @@ def tarsum(input_filename, output_filename, hash_type='md5'):
 	try:
 		#tar= tarfile.open(mode="r|*", fileobj=input_file)
 		tar= tarfile.open(name=input_filename,mode='r|*')
- 	except Exception as e:
+	except Exception as e:
 		logger.error("Failed to open tar file %s (err=%s)!" % (input_file,e))
 		return -1		
 
