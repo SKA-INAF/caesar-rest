@@ -33,7 +33,8 @@ class JobConfigurator(object):
 		""" Return a job configurator class """
 
 		self.app_configurators= {
-			'sfinder': SFinderConfigurator
+			'sfinder': SFinderConfigurator,
+			'sfinder-nn': SFinderNNConfigurator
 		}
 
 		
@@ -60,6 +61,8 @@ class JobConfigurator(object):
 		# - Set app cmd & cmd args
 		cmd= configurator.cmd
 		cmd_args= configurator.cmd_args
+		if configurator.cmd_mode!="":
+			cmd_args.append(configurator.cmd_mode)
 		status_msg= configurator.validation_status
 		
 		return (cmd,cmd_args,status_msg)
@@ -77,7 +80,6 @@ class JobConfigurator(object):
 		configurator= self.app_configurators[app_name]()
 
 		# - Get description
-		#d= configurator.describe_json()
 		d= configurator.describe_dict()	
 
 		return d
@@ -148,6 +150,7 @@ class AppConfigurator(object):
 		self.job_inputs= ''
 		self.cmd= ''
 		self.cmd_args= []
+		self.cmd_mode= ''
 		self.validation_status= ''
 		self.valid_options= {}
 		self.options= []
@@ -498,4 +501,29 @@ class SFinderConfigurator(AppConfigurator):
 	
 			
 	
+##############################
+#   MASK-RCNN APP CONFIGURATOR
+##############################
+
+class SFinderNNConfigurator(AppConfigurator):
+	""" Class to configure sfinder-nn application """
+
+	def __init__(self):
+		""" Return sfinder-nn configurator class """
+		AppConfigurator.__init__(self)
+
+		# - Define cmd name
+		self.cmd= 'run.py'
+		self.cmd_args= []
+		self.cmd_mode= 'detect'
+
+		# - Define dictionary with allowed options
+		self.valid_options= {
+			'image' : ValueOption('image','',str,True),
+			#'weight' : ValueOption('weight','',str),
+			#'classdict' : ValueOption('classdict','',str),
+			'scoreThr' : ValueOption('scoreThr','',float),
+			'iouThr' : ValueOption('iouThr','',float),
+	
+		} # close dict
 	
