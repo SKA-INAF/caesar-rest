@@ -217,7 +217,7 @@ def get_job_status(task_id):
 		return make_response(jsonify(res),200)
 
 	except NameError as e:
-		res['status']= e
+		res['status']= str(e)
 		return make_response(jsonify(res),404)
 	
 
@@ -265,7 +265,7 @@ def get_job_output(task_id):
 		job_status= compute_job_status(task_id)
 		
 	except NameError as e:
-		res['status']= e
+		res['status']= str(e)
 		return make_response(jsonify(res),404)
 	
 	# - If job state is PENDING/STARTED/RUNNING/ABORTED return 
