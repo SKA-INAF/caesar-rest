@@ -59,7 +59,7 @@ setup(
 	long_description=read('README.md'),
 	#packages=['caesar_rest'],
 	packages=find_packages(),
-	data_files=[("config",["config/nginx.conf", "config/uwsgi.ini"])],
+	data_files=[("config",["config/nginx/nginx.conf", "config/uwsgi/uwsgi.ini"])],
 	include_package_data=True,
 	zip_safe=False,
 	install_requires=reqs,
