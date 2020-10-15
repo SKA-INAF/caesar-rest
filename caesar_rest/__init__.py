@@ -25,3 +25,12 @@ celery= Celery(
 	__name__,
 	config_source='caesar_rest.celery_config'
 )
+
+# Create OIDC (without connecting to app)
+oidc= None
+try:
+	from flask_oidc import OpenIDConnect
+	oidc = OpenIDConnect()
+except:
+	logger.warn("flask_oidc module not found, can't create OpenIDConnect(), no AAI will be used (hint: install flask_oidc)")
+
