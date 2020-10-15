@@ -22,8 +22,7 @@ from caesar_rest.config import Config
 from caesar_rest.data_manager import DataManager
 from caesar_rest.job_configurator import JobConfigurator
 from caesar_rest.app import create_app
-#from caesar_rest.app import app 
-
+from caesar_rest import oidc
 
 
 #### GET SCRIPT ARGS ####
@@ -47,7 +46,12 @@ def get_args():
 	parser.add_argument('-jobdir','--jobdir', dest='jobdir', default='/opt/caesar-rest/jobs', required=False, type=str, help='Directory where to store jobs') 
 	parser.add_argument('--debug', dest='debug', action='store_true')	
 	parser.set_defaults(debug=True)	
-
+	parser.add_argument('--aai', dest='aai', action='store_true')	
+	parser.set_defaults(aai=False)	
+	parser.add_argument('-secretfile','--secretfile', dest='secretfile', default='config/client_secrets.json', required=False, type=str, help='File (.json) with client credentials for AAI')
+	parser.add_argument('-openid_realm','--openid_realm', dest='openid_realm', default='neanias-development', required=False, type=str, help='OpenID realm used in AAI (defaul=neanias-development)') 
+	parser.add_argument('--ssl', dest='ssl', action='store_true')	
+	parser.set_defaults(ssl=False)	
 
 	args = parser.parse_args()	
 
@@ -68,6 +72,10 @@ except Exception as ex:
 datadir= args.datadir
 jobdir= args.jobdir
 debug= args.debug
+use_aai= args.aai
+secret_file= args.secretfile
+openid_realm= args.openid_realm
+ssl= args.ssl
 
 #===========================
 #==   PARSE ARGS
@@ -92,6 +100,12 @@ logger.info("Creating app configuration ...")
 config= Config()
 config.UPLOAD_FOLDER= datadir
 config.JOB_DIR= jobdir
+config.USE_AAI= False
+if use_aai and oidc is not None:
+	config.USE_AAI= True
+	config.SECRET_KEY= 'SomethingNotEntirelySecret'
+	config.OIDC_CLIENT_SECRETS= secret_file
+	config.OIDC_OPENID_REALM= openid_realm
 
 # - Create data manager	
 logger.info("Creating data manager ...")
@@ -107,6 +121,15 @@ jobcfg= JobConfigurator()
 logger.info("Creating and configuring app ...")
 app= create_app(config,datamgr,jobcfg)
 
+#===============================
+#==   INIT OIDC TO APP
+#===============================
+# - Add Flask OIDC configuration
+if use_aai and oidc is not None:
+	logger.info("Initializing OIDC to app ...")
+	oidc.init_app(app)
+else:
+	logger.info("Starting app without AAI ...")
 
 
 ###################
@@ -117,7 +140,11 @@ if __name__ == "__main__":
 	#===============================
 	#==   RUN APP
 	#===============================
-	logger.info("Running app ...")
-	app.run(debug=debug)
+	if ssl:
+		logger.info("Running app on SSL ...")
+		app.run(debug=debug, ssl_context='adhoc')
+	else:
+		logger.info("Running app ...")
+		app.run(debug=debug)
 
 	sys.exit(0)
