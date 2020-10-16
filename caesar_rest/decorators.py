@@ -25,7 +25,8 @@ def custom_require_login(func):
 				#return oidc.require_login(func)
 				#return oidc.redirect_to_auth_server(func, request.values)
 				return oidc.redirect_to_auth_server(request.url)
-			
+			else:
+				return func(*args, **kwargs)
 		else:		
 			return func(*args, **kwargs)
 
