@@ -25,6 +25,8 @@ except ImportError:
 from flask import current_app, Blueprint, render_template, request, redirect, url_for
 from flask import send_file, send_from_directory, safe_join, abort, make_response, jsonify
 from werkzeug.utils import secure_filename
+from caesar_rest import oidc
+from caesar_rest.decorators import custom_require_login
 
 
 # Get logger
@@ -39,6 +41,7 @@ app_describe_bp = Blueprint('app_describe', __name__,url_prefix='/caesar/api/v1.
 
 
 @app_names_bp.route('/apps',methods=['GET'])
+@custom_require_login
 def get_app_names():
 	""" Get supported apps """
 
@@ -47,6 +50,7 @@ def get_app_names():
 
 
 @app_describe_bp.route('/app/<app_name>/describe',methods=['GET'])
+@custom_require_login
 def get_app_description(app_name):
 	""" Get description of given app """
 
