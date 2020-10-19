@@ -36,3 +36,6 @@ class Config(object):
 	OIDC_CLIENT_SECRETS = 'config/client_secrets.json'
 	OIDC_OPENID_REALM = 'neanias-development'
 	OIDC_SCOPES = ['openid', 'email', 'profile']
+
+	# - App options
+	SFINDERNN_WEIGHTS= '/opt/caesar-rest/share/mrcnn_weights.h5'

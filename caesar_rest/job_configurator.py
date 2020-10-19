@@ -513,9 +513,10 @@ class SFinderNNConfigurator(AppConfigurator):
 		AppConfigurator.__init__(self)
 
 		# - Define cmd name
-		self.cmd= 'run.py'
+		self.weights= current_app.config['SFINDERNN_WEIGHTS'] 
+		self.cmd= 'run_mrcnn.sh --runmode=detect --weights=' + self.weights + ' '
 		self.cmd_args= []
-		self.cmd_mode= 'detect'
+		#self.cmd_mode= ''
 
 		# - Define dictionary with allowed options
 		self.valid_options= {
