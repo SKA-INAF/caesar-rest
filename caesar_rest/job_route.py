@@ -161,6 +161,7 @@ def compute_job_status(task_id):
 	""" Compute job status """
 
 	# - Init reply
+	logger.info("Computing job status for task id=%s ..." % task_id)
 	res= {}
 	res['job_id']= task_id
 	res['pid']= ''
