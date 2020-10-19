@@ -170,13 +170,18 @@ def compute_job_status(task_id):
 	res['elapsed_time']= ''
 
 	# - Get task
-	task = background_task.AsyncResult(task_id)
+	task= None
+	try:
+		task = background_task.AsyncResult(task_id)
+	except:
+		errmsg= 'Failed to create instance of AsyncResult for task ' + task_id + '!'
+		raise NameError(errmsg)	
+
 	if not task or task is None:
 		errmsg= 'No task found with id ' + task_id + '!'
 		raise NameError(errmsg)
 			
 	# - Check if task ID not existing 
-	logger.info("task state=%s" % task.state)
 	#   NB: Celery does not throw exceptions in case task id is not known, it just set task state to PENDING, so try to handle this...wtf!
 	if task.state=='PENDING' and (task.result==None or task.info==None): 
 		errmsg= 'No task found with id ' + task_id + '!'
