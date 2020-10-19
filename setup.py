@@ -35,7 +35,7 @@ if PY_MAJOR_VERSION<=2:
 	reqs.append('more_itertools==5.0.0')
 else:
 	print("PYTHON 3 detected")
-	reqs.append('MarkupSafe==1.1') # There is syntax error in pre-release version 2.0.0a for python3
+	reqs.append('MarkupSafe==1.1.1') # There is syntax error in pre-release version 2.0.0a for python3
 	
 reqs.append('jinja2==2.10.1')
 reqs.append('werkzeug>=1.0')
