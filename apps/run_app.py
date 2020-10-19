@@ -49,7 +49,9 @@ def get_args():
 	parser.add_argument('-secretfile','--secretfile', dest='secretfile', default='config/client_secrets.json', required=False, type=str, help='File (.json) with client credentials for AAI')
 	parser.add_argument('-openid_realm','--openid_realm', dest='openid_realm', default='neanias-development', required=False, type=str, help='OpenID realm used in AAI (defaul=neanias-development)') 
 	parser.add_argument('--ssl', dest='ssl', action='store_true')	
-	parser.set_defaults(ssl=False)	
+	parser.set_defaults(ssl=False)
+	
+	parser.add_argument('-sfindernn_weights','--sfindernn_weights', dest='sfindernn_weights', default='/opt/caesar-rest/share/mrcnn_weights.h5', required=False, type=str, help='File (.h5) with network weights used in sfindernn app')
 
 	args = parser.parse_args()	
 
@@ -74,6 +76,7 @@ use_aai= args.aai
 secret_file= args.secretfile
 openid_realm= args.openid_realm
 ssl= args.ssl
+sfindernn_weights= args.sfindernn_weights
 
 #===========================
 #==   PARSE ARGS
@@ -104,6 +107,8 @@ if use_aai and oidc is not None:
 	config.SECRET_KEY= 'SomethingNotEntirelySecret'
 	config.OIDC_CLIENT_SECRETS= secret_file
 	config.OIDC_OPENID_REALM= openid_realm
+
+config.SFINDERNN_WEIGHTS = sfindernn_weights
 
 # - Create data manager	
 logger.info("Creating data manager ...")
