@@ -32,6 +32,7 @@ from celery.task.control import revoke
 
 # Import Celery app
 from caesar_rest.app import celery as celery_app
+from caesar_rest import workers
 from caesar_rest.workers import background_task
 from caesar_rest import oidc
 from caesar_rest.decorators import custom_require_login
@@ -136,7 +137,7 @@ def cancel_job(task_id):
 	
 	# - Get task
 	task = background_task.AsyncResult(task_id)
-	if not task:
+	if not task or task is None:
 		errmsg= 'No task found with id ' + task_id + '!'
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
