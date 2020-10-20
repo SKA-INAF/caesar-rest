@@ -522,11 +522,11 @@ class SFinderNNConfigurator(AppConfigurator):
 
 		# - Define dictionary with allowed options
 		self.valid_options= {
-			'image' : ValueOption('image','',str,True),
-			#'weight' : ValueOption('weight','',str),
-			#'classdict' : ValueOption('classdict','',str),
-			'scoreThr' : ValueOption('scoreThr','',float),
-			'iouThr' : ValueOption('iouThr','',float),
-	
+			'image' : ValueOption('image','',str,True, description='Path to input image (.fits) to be given to classifier (default=empty)'),
+			#'weight' : ValueOption('weight','',str, description=''),
+			#'classdict' : ValueOption('classdict','',str, description=''),
+			'scoreThr' : ValueOption('scoreThr','',float, description='Detected object score threshold to select as final object (default=0.7)'),
+			'iouThr' : ValueOption('iouThr','',float, description='IOU threshold between detected and ground truth bboxes to consider the object as detected (default=0.6)'),
+		
 		} # close dict
 	
