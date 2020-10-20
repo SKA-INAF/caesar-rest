@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 
 # - Celery options (do not change variable names)
 #broker_url= 'amqp://rabbitmq:rabbitmq@rabbit:5672/'
