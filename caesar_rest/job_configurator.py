@@ -101,7 +101,7 @@ class JobConfigurator(object):
 ##############################
 class Option(object):
 
-	def __init__(self,name,mandatory=False):
+	def __init__(self,name,mandatory=False,description=''):
 		self.name= name
 		self.mandatory= mandatory
 		self.value_required= False
@@ -109,6 +109,7 @@ class Option(object):
 		#self.value_type= bool
 		self.value= None
 		self.value_type= type(None)
+		self.description= description
 
 	def to_argopt(self):
 		""" Convert option to cmdline format """
@@ -124,18 +125,18 @@ class Option(object):
 		""" Convert option to dictionary """
 		
 		if self.value_required:
-			d= {self.name: {"mandatory":self.mandatory,"type":self.value_type.__name__}}
+			d= {self.name: {"mandatory":self.mandatory,"type":self.value_type.__name__,"description":self.description}}
 		else:
-			d= {self.name: {"mandatory":self.mandatory,"type":"none"}}			
+			d= {self.name: {"mandatory":self.mandatory,"type":"none","description":self.description}}			
 			
 		return d
 	
 
 class ValueOption(Option):
 
-	def __init__(self,name,value,value_type,mandatory=False):
+	def __init__(self,name,value,value_type,mandatory=False,description=''):
 		""" Return value option """
-		Option.__init__(self,name,mandatory)
+		Option.__init__(self,name,mandatory,description)
 		self.value= value
 		self.value_required= True
 		self.value_type= value_type
@@ -290,7 +291,7 @@ class SFinderConfigurator(AppConfigurator):
 			#'filelist' : ValueOption('filelist','',True),
 		
 			# == OUTPUT OPTIONS ==		
-			'save-inputmap' : Option('save-inputmap'),
+			'save-inputmap' : Option('save-inputmap',description='Save input map in output ROOT file (default=no)'),
 			'save-bkgmap' : Option('save-bkgmap'),
 			'save-rmsmap' : Option('save-rmsmap'),
 			'save-significancemap' : Option('save-significancemap'),
