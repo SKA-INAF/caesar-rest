@@ -90,7 +90,9 @@ def background_task(self,cmd,cmd_args,job_top_dir):
 	
 	exec_cmd= ' '.join([cmd,cmd_args])
 	
-	p= subprocess.Popen(exec_cmd, shell=True, cwd=job_dir,preexec_fn=os.setsid)
+	env= os.environ.copy()
+
+	p= subprocess.Popen(exec_cmd, shell=True, cwd=job_dir, preexec_fn=os.setsid, env=env, executable='/bin/bash')
 	pid= p.pid
 	
 	logger.info("Bkg task started with pid=%s ..." % str(pid))
