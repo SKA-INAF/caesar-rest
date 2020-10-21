@@ -257,7 +257,7 @@ A file uuid (or file path) are returned and can be used to download the file or 
 
 ### **Data download**
 
-* URL:```http://server-address:port/caesar/api/v1.0/download-id/[file_id]```   
+* URL:```http://server-address:port/caesar/api/v1.0/download/[file_id]```   
 * Request methods: GET, POST   
 * Request header: None  
 
@@ -275,6 +275,25 @@ The above request will fail if file is not found, otherwise the downloaded file 
 {
   "status": "File with uuid 67a49bf7555b41739095681bf52a1f99 not found on the system!"
 }
+```
+
+### **Get uploaded data ids**
+
+* URL:```http://server-address:port/caesar/api/v1.0/fileids```   
+* Request methods: GET   
+* Request header: None  
+
+A sample curl request would be:   
+
+```
+curl  -X GET \
+  --url 'http://localhost:8080/caesar/api/v1.0/fileids'
+```
+
+with response:    
+
+```
+{"file_ids":["a668c353ba4d4c7395ad94b4e8647d92","c54db5ef95734c62a499db38587c48a5","26bc9a545c8f4f05a2c719ec5c3917e0"]}
 ```
 
 ### **App description**
