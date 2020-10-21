@@ -58,7 +58,7 @@ def upload_file():
 		'format': '',
 		'size': '',
 		'uuid': '',
-		'path': '',
+		#'path': '',
 		'date': '',
 		'status': ''
 	}
@@ -121,7 +121,7 @@ def upload_file():
 	res['format']= file_ext
 	res['size']= file_size
 	res['uuid']= file_uuid
-	res['path']= filename_dest_fullpath
+	#res['path']= filename_dest_fullpath # removed for security reasons
 	res['date']= file_upload_date
 	res['status']= 'File uploaded with success'
 
