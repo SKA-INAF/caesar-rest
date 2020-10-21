@@ -36,17 +36,22 @@ class DataManager(object):
 		self.data_root= rootdir
 		self.data_dict= {}
 
-	def register_data(self):
+
+	def register_data(self, path):
 		""" Register data uuid of all files in app data directory """
 		
 		# - Recursively run through all files in app data dir 
 		#   and generate uuid for all of them
 		self.data_dict= {}
-		logger.info("Recursively traverse app data dir %d and generate data id dictionary ...")		
+		logger.info("Recursively traverse app data dir %s and generate data id dictionary ..." % path)		
 		
-		# ...
-		# ...
+		for filename in os.listdir(path):
+			filename_fullpath= os.path.join(path, filename)
+			if os.path.isfile(filename_fullpath):
+				file_uuid= os.path.splitext(filename)[0]
+				self.data_dict[file_uuid]= filename_fullpath
 
+		
 	def register_file(self,filename):
 		""" Add file to dictionary """
 
