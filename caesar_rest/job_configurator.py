@@ -528,6 +528,7 @@ class SFinderConfigurator(AppConfigurator):
 		if not file_path:
 			logger.warn("inputfile uuid %s not found in the system!" % file_uuid)
 			return ''
+		logger.info("inputfile uuid %s converted in %s ..." % (file_uuid,file_path))
 
 		return file_path
 		
