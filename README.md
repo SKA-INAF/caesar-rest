@@ -349,7 +349,7 @@ Server response is:
   "job_id": "69ca62d7-5098-4fe7-a675-63895a2d06b1",
   "job_inputs": {
     "envfile": "/home/riggi/Software/setvars.sh",
-    "inputfile": "/opt/caesar-rest/data/67a49bf7555b41739095681bf52a1f99.fits",
+    "inputfile": "67a49bf7555b41739095681bf52a1f99",
     "no-extendedsearch": true,
     "no-logredir": true,
     "no-mpi": true,
