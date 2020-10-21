@@ -78,4 +78,7 @@ class DataManager(object):
 
 		return self.data_dict[uuid]
 
+	def get_file_ids(self):
+		""" Return all registered file ids as a list """		
+		return list(self.data_dict.keys())
 		

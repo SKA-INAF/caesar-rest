@@ -35,11 +35,22 @@ logger = logging.getLogger(__name__)
 ##############################
 #   CREATE BLUEPRINTS
 ##############################
-#download_path_bp = Blueprint('download_path', __name__)
-#download_id_bp = Blueprint('download_id', __name__)
 download_path_bp = Blueprint('download_path', __name__,url_prefix='/caesar/api/v1.0')
 download_id_bp = Blueprint('download_id', __name__,url_prefix='/caesar/api/v1.0')
+fileids_bp = Blueprint('fileids', __name__, url_prefix='/caesar/api/v1.0')
 
+# - Returns all file ids registered in the system
+@fileids_bp.route('/fileids', methods=['GET'])
+@custom_require_login
+def get_registered_file_ids():
+	""" Returns all file ids registered in the system """
+	
+	file_ids= current_app.config['datamgr'].get_file_ids()
+	d= {}	
+	d.update({'file_ids':file_ids})
+
+	return make_response(jsonify(d),200)
+	
 
 # - Download data by file name
 @download_path_bp.route('/download-path', methods=['GET', 'POST'])

@@ -44,8 +44,6 @@ def allowed_file(filename):
 	return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['UPLOAD_ALLOWED_FILE_FORMATS']
 
 upload_bp = Blueprint('upload', __name__, url_prefix='/caesar/api/v1.0')
-#upload_bp = Blueprint('upload', __name__)
-
 
 @upload_bp.route('/upload', methods=['POST'])
 @custom_require_login
