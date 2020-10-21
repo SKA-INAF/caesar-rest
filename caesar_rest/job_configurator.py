@@ -36,7 +36,7 @@ class JobConfigurator(object):
 			'sfinder': SFinderConfigurator,
 			'sfinder-nn': SFinderNNConfigurator
 		}
-
+		
 		
 	def validate(self,app_name,job_inputs):
 		""" Validate job inputs """
@@ -50,8 +50,7 @@ class JobConfigurator(object):
 
 		# - Create an instance of app configurator
 		configurator= self.app_configurators[app_name]()
-
-		#status= self.app_configurators[app_name].validate(job_inputs)
+		
 		status= configurator.validate(job_inputs)
 		if status<0:
 			status_msg= configurator.validation_status
@@ -105,8 +104,6 @@ class Option(object):
 		self.name= name
 		self.mandatory= mandatory
 		self.value_required= False
-		#self.value= ''
-		#self.value_type= bool
 		self.value= None
 		self.value_type= type(None)
 		self.description= description
@@ -155,6 +152,7 @@ class AppConfigurator(object):
 		self.validation_status= ''
 		self.valid_options= {}
 		self.options= []
+		self.option_value_transformer= {}
 
 	def describe_dict(self):
 		""" Return a dictionary describing valid options """
@@ -179,6 +177,16 @@ class AppConfigurator(object):
 		return json.loads(json_str)
 
 
+	def get_transformed_option_value(self,opt_name,opt_value):
+		""" Returns same option value or transformed option value (if a transformed function is defined in the dictionary) """
+
+		if not self.option_value_transformer:
+			return opt_value
+		if not opt_name in self.option_value_transformer:
+			return opt_value
+		return self.option_value_transformer[opt_name](opt_value)
+
+	
 	def validate(self,job_inputs):
 		""" Validate job input """
 
@@ -250,8 +258,12 @@ class AppConfigurator(object):
 					logger.warn(self.validation_status)
 					return False
 
+				# - Return option value transformed (if transform function is defined in derived classes) or the same option value
+				opt_value_str= str(parsed_value)
+				transf_opt_value_str= self.get_transformed_option_value(opt_name,opt_value_str)
+
 				# - Add option
-				value_option= ValueOption(opt_name,str(parsed_value),expected_val_type,mandatory)
+				value_option= ValueOption(opt_name,transf_opt_value_str,expected_val_type,mandatory)
 				self.options.append(value_option)
 
 				# - Convert to cmd arg format
@@ -500,9 +512,27 @@ class SFinderConfigurator(AppConfigurator):
 			'jobusergroup' : ValueOption('jobusergroup','',str, description='Name of job user group batch system (default=empty)'),
 
 		} # close dict
+
+		# - Define option value transformers
+		self.option_value_transformer= {
+			'inputfile': self.transform_inputfile
+		}
 	
-			
+
+	def transform_inputfile(self,file_uuid):
+		""" Transform input file from uuid to actual path """		
 	
+		# - Inspect inputfile (expect it is a uuid, so convert to filename)
+		logger.info("Finding inputfile uuid %s ..." % file_uuid)
+		file_path= current_app.config['datamgr'].get_filepath(file_uuid)
+		if not file_path:
+			logger.warn("inputfile uuid %s not found in the system!" % file_uuid)
+			return ''
+
+		return file_path
+		
+
+
 ##############################
 #   MASK-RCNN APP CONFIGURATOR
 ##############################
@@ -530,3 +560,20 @@ class SFinderNNConfigurator(AppConfigurator):
 		
 		} # close dict
 	
+		# - Define option value transformers
+		self.option_value_transformer= {
+			'image': self.transform_imgname
+		}
+
+	def transform_imgname(self,file_uuid):
+		""" Transform input file from uuid to actual path """		
+	
+		# - Inspect inputfile (expect it is a uuid, so convert to filename)
+		logger.info("Finding imgname uuid %s ..." % file_uuid)
+		file_path= current_app.config['datamgr'].get_filepath(file_uuid)
+		if not file_path:
+			logger.warn("imgname uuid %s not found in the system!" % file_uuid)
+			return ''
+
+		return file_path
+
