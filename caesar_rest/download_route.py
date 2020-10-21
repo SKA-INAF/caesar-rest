@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 ##############################
 #   CREATE BLUEPRINTS
 ##############################
-download_path_bp = Blueprint('download_path', __name__,url_prefix='/caesar/api/v1.0')
+#download_path_bp = Blueprint('download_path', __name__,url_prefix='/caesar/api/v1.0')
 download_id_bp = Blueprint('download_id', __name__,url_prefix='/caesar/api/v1.0')
 fileids_bp = Blueprint('fileids', __name__, url_prefix='/caesar/api/v1.0')
 
@@ -53,35 +53,35 @@ def get_registered_file_ids():
 	
 
 # - Download data by file name
-@download_path_bp.route('/download-path', methods=['GET', 'POST'])
-@custom_require_login
-def download_path():
-	""" Download data by path (only for testing) """
-	if request.method == 'POST':
-		filename = request.form['filename']
-	else:
-		filename = request.args.get('filename')
+#@download_path_bp.route('/download-path', methods=['GET', 'POST'])
+#@custom_require_login
+#def download_path():
+#	""" Download data by path (only for testing) """
+#	if request.method == 'POST':
+#		filename = request.form['filename']
+#	else:
+#		filename = request.args.get('filename')
+#
+#	return redirect(url_for('download_path.download_by_name',filename=str(filename)))
 
-	#logger.info("download filename: %s" % filename)
-	return redirect(url_for('download_path.download_by_name',filename=str(filename)))
 
-
-@download_path_bp.route('/download-path/<string:filename>', methods=['GET', 'POST'])
-@custom_require_login
-def download_by_name(filename):
-	""" Download data by path (only for testing) """
-	try:
-		return send_from_directory(
-			directory=current_app.config['UPLOAD_FOLDER'], 
-			filename=filename, 
-			as_attachment=True
-		)
-	except FileNotFoundError:
-		abort(404)
+#@download_path_bp.route('/download-path/<string:filename>', methods=['GET', 'POST'])
+#@custom_require_login
+#def download_by_name(filename):
+#	""" Download data by path (only for testing) """
+#	try:
+#		return send_from_directory(
+#			directory=current_app.config['UPLOAD_FOLDER'], 
+#			filename=filename, 
+#			as_attachment=True
+#		)
+#	except FileNotFoundError:
+#		abort(404)
 
 
 # - Download data by uuid
-@download_id_bp.route('/download-id', methods=['GET', 'POST'])
+#@download_id_bp.route('/download-id', methods=['GET', 'POST'])
+@download_id_bp.route('/download', methods=['GET', 'POST'])
 @custom_require_login
 def download_id():
 	""" Download data by uuid """
@@ -93,8 +93,9 @@ def download_id():
 	logger.info("uuid: %s" % uuid)
 	return redirect(url_for('download_id.download_by_uuid',file_uuid=uuid))
 
-#@download_id_bp.route('/download/<uuid:file_uuid>', methods=['GET', 'POST'])
-@download_id_bp.route('/download-id/<string:file_uuid>', methods=['GET', 'POST'])
+
+#@download_id_bp.route('/download-id/<string:file_uuid>', methods=['GET', 'POST'])
+@download_id_bp.route('/download/<string:file_uuid>', methods=['GET', 'POST'])
 @custom_require_login
 def download_by_uuid(file_uuid):
 	""" Download data by uuid """
@@ -126,3 +127,5 @@ def download_by_uuid(file_uuid):
 		logger.warn(errmsg)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
+
+
