@@ -79,10 +79,6 @@ def create_app(cfg,dm,jc):
 	# - Configure app from class 
 	app.config.from_object(cfg)
 	
-	# - Initialize data manager using app config
-	data_path= cfg['UPLOAD_FOLDER']
-	dm.register_data(data_path)
-
 	# - Add helper classes to app
 	app.config['datamgr'] = dm
 	app.config['jobcfg'] = jc

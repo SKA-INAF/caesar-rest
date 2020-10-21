@@ -113,6 +113,7 @@ config.SFINDERNN_WEIGHTS = sfindernn_weights
 # - Create data manager	
 logger.info("Creating data manager ...")
 datamgr= DataManager(rootdir=config.UPLOAD_FOLDER)
+datamgr.register_data()
 
 # - Create job configurator
 logger.info("Creating job configurator ...")
