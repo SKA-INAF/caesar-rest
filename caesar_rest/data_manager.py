@@ -13,6 +13,9 @@ import logging
 import numpy as np
 import uuid
 
+from threading import RLock
+lock = RLock()
+
 try:
 	FileNotFoundError  # python3
 except NameError:
@@ -68,9 +71,11 @@ class DataManager(object):
 		file_uuid= filename_base_noext
 
 		# - Add to dictionary
-		self.data_dict[file_uuid]= filename
-		logger.info("Added file %s to dictionary with uuid=%s ..." % (filename,file_uuid))
-		logger.info("curr data dict=%s" % str(self.data_dict))
+		with lock:
+			if file_uuid not in self.data_dict:
+				self.data_dict[file_uuid]= filename
+				logger.info("Added file %s to dictionary with uuid=%s ..." % (filename,file_uuid))
+				logger.info("curr data dict=%s" % str(self.data_dict))
 
 		return 0
 
