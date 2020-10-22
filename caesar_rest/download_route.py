@@ -94,7 +94,6 @@ def download_id():
 	return redirect(url_for('download_id.download_by_uuid',file_uuid=uuid))
 
 
-#@download_id_bp.route('/download-id/<string:file_uuid>', methods=['GET', 'POST'])
 @download_id_bp.route('/download/<string:file_uuid>', methods=['GET', 'POST'])
 @custom_require_login
 def download_by_uuid(file_uuid):
@@ -107,13 +106,12 @@ def download_by_uuid(file_uuid):
 
 	# Search file uuid
 	file_path= current_app.config['datamgr'].get_filepath(file_uuid)
-	if not file_path:
+	if not file_path or file_path=='':
 		errmsg= 'File with uuid ' + file_uuid + ' not found on the system!'
 		logger.warn(errmsg)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
-		#raise FileNotFoundError("File with given uuid not found on the system")
-
+		
 	# Return file to client	
 	logger.info("Returning file %s to client ..." % file_path)
 	try:
@@ -122,7 +120,6 @@ def download_by_uuid(file_uuid):
 			as_attachment=True
 		)
 	except FileNotFoundError:
-		#abort(404)
 		errmsg= 'File with uuid ' + file_uuid + ' not found on the system!'
 		logger.warn(errmsg)
 		res['status']= errmsg
