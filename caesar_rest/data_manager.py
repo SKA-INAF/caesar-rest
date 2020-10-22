@@ -33,6 +33,7 @@ class DataManager(object):
 	def __init__(self,rootdir):
 		""" Return a data manager class """
 	
+		logger.info("Initializing DataManager class (resetting dict)...")
 		self.data_root= rootdir
 		self.data_dict= {}
 
