@@ -69,7 +69,7 @@ class DataManager(object):
 		# - Add to dictionary
 		self.data_dict[file_uuid]= filename
 		logger.info("Added file %s to dictionary with uuid=%s ..." % (filename,file_uuid))
-		print(self.data_dict)
+		logger.info("curr data dict=%s" % str(self.data_dict))
 
 		return 0
 
