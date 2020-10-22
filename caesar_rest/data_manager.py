@@ -58,7 +58,7 @@ class DataManager(object):
 
 		# - Check if file exist
 		if not os.path.isfile(filename):
-			logger.error('Will not register a file that is not existing on filesystem!')
+			logger.error('Will not register a file (%s) that is not existing on filesystem!' % filename)
 			return -1
 			
 		# - Extract basefilename and uuid

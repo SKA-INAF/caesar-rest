@@ -127,14 +127,20 @@ def upload_file():
 
 	# - Register file in DB
 	try:
-		current_app.config['datamgr'].register_file(filename_dest_fullpath)
-		flash('File registered with success')
-		logger.info("File registered with success")
+		retcode= current_app.config['datamgr'].register_file(filename_dest_fullpath)
+		if retcode==0:
+			flash('File registered with success')
+			logger.info("File %s registered with success" % filename_dest_fullpath)
+		else:
+			flash('File uploaded but failed to be registered!')
+			logger.warn("File %s uploaded but failed to be registered!" % filename_dest_fullpath)
+			res['status']= 'File uploaded but failed to be registered'
+			return make_response(jsonify(res),500)
+
 	except:
 		flash('File uploaded but failed to be registered!')
+		logger.warn("File %s uploaded but failed to be registered!" % filename_dest_fullpath)
 		res['status']= 'File uploaded but failed to be registered'
 		return make_response(jsonify(res),500)
-		#return redirect(request.url)
-	
-	#return redirect('/')
+		
 	return make_response(jsonify(res),200)	
