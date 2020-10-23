@@ -28,7 +28,9 @@ from flask import send_file, send_from_directory, safe_join, abort, make_respons
 from werkzeug.utils import secure_filename
 from caesar_rest import oidc
 from caesar_rest.decorators import custom_require_login
-
+#from caesar_rest import db
+#from caesar_rest.data_model import DataFile #, DataCollection 
+from caesar_rest import mongo
 
 # Get logger
 logger = logging.getLogger(__name__)
@@ -51,7 +53,19 @@ def upload_file():
 	""" Upload image """
 
 	logger.info("request.url=%s" % request.url)
-	
+
+	# - Get aai info
+	aai_enabled= current_app.config['USE_AAI']
+	has_oidc= (oidc is not None)
+	username= 'anonymous'
+	if aai_enabled and has_oidc:
+		username= oidc.user_getfield('preferred_username')	
+
+	# - Get mongo info
+	mongo_enabled= current_app.config['USE_MONGO']
+	has_mongo= (mongo is not None)
+	use_mongo= (mongo_enabled and has_mongo)
+
 	# - Init response
 	res= {
 		'filename_orig': '',
@@ -125,7 +139,7 @@ def upload_file():
 	res['date']= file_upload_date
 	res['status']= 'File uploaded with success'
 
-	# - Register file in DB
+	# - Register file in dictionary
 	try:
 		retcode= current_app.config['datamgr'].register_file(filename_dest_fullpath)
 		if retcode==0:
@@ -143,4 +157,33 @@ def upload_file():
 		res['status']= 'File uploaded but failed to be registered'
 		return make_response(jsonify(res),500)
 		
+	# - Register file in MongoDB
+	if use_mongo:
+
+		logger.info("Creating data file object ...")
+		data_fileobj= {
+			"filepath": filename_dest_fullpath,
+			"fileext": file_ext,	
+			"filesize": file_size,
+			"filedate": file_upload_date, 
+			"metadata": '', # FIX ME
+			"tag": ''	# FIX ME
+		}
+
+		try:
+			logger.info("Creating or retrieving data collection for user %s ..." % username)
+			data_collection= mongo.db[username]
+
+			logger.info("Adding data file obj to collection ...")
+			item_id= data_collection.insert(data_fileobj)
+			res['uuid']= str(item_id)
+		
+		except:
+			logger.warn("Failed to create and register data file in DB!")
+			flash('File uploaded but failed to be registered in DB!')
+			logger.warn("File %s uploaded but failed to be registered in DB!" % filename_dest_fullpath)
+			res['status']= 'File uploaded but failed to be registered in DB'
+			return make_response(jsonify(res),500)
+
+
 	return make_response(jsonify(res),200)	
