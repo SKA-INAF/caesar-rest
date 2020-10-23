@@ -21,6 +21,8 @@ from caesar_rest.data_manager import DataManager
 from caesar_rest.job_configurator import JobConfigurator
 from caesar_rest.app import create_app
 from caesar_rest import oidc
+#from caesar_rest import db
+from caesar_rest import mongo
 
 
 #### GET SCRIPT ARGS ####
@@ -53,6 +55,11 @@ def get_args():
 	
 	parser.add_argument('-sfindernn_weights','--sfindernn_weights', dest='sfindernn_weights', default='/opt/caesar-rest/share/mrcnn_weights.h5', required=False, type=str, help='File (.h5) with network weights used in sfindernn app')
 
+	parser.add_argument('--db', dest='db', action='store_true')	
+	parser.set_defaults(db=False)
+	parser.add_argument('-dbhost','--dbhost', dest='dbhost', default='localhost', required=False, type=str, help='Host of MongoDB database (default=localhost)')
+	parser.add_argument('-dbname','--dbname', dest='dbname', default='caesardb', required=False, type=str, help='Name of MongoDB database (default=caesardb)')
+
 	args = parser.parse_args()	
 
 	return args
@@ -77,6 +84,8 @@ secret_file= args.secretfile
 openid_realm= args.openid_realm
 ssl= args.ssl
 sfindernn_weights= args.sfindernn_weights
+use_db= args.db
+dbhost= 'mongodb://' + args.dbhost + '/' + args.dbname
 
 #===========================
 #==   PARSE ARGS
@@ -108,6 +117,18 @@ if use_aai and oidc is not None:
 	config.OIDC_CLIENT_SECRETS= secret_file
 	config.OIDC_OPENID_REALM= openid_realm
 
+#if use_db and db is not None:
+if use_db and mongo is not None:
+	config.MONGO_URI= dbhost
+	config.USE_MONGO= True
+
+	#config.MONGODB_SETTINGS= {
+	#	'db': args.dbname,
+  #  'host': args.dbhost,
+  #  'port': 27017
+	#}
+
+
 config.SFINDERNN_WEIGHTS = sfindernn_weights
 
 # - Create data manager	
@@ -131,10 +152,26 @@ app= create_app(config,datamgr,jobcfg)
 # - Add Flask OIDC configuration
 if use_aai and oidc is not None:
 	logger.info("Initializing OIDC to app ...")
-	oidc.init_app(app)
+	try:
+		oidc.init_app(app)
+	except:
+		logger.error("Failed to initialize OIDC to app!")
 else:
 	logger.info("Starting app without AAI ...")
 
+#===============================
+#==   INIT MONGO TO APP
+#===============================
+#if db is not None:
+if mongo is not None:
+	logger.info("Initializing MongoDB engine to app ...")
+	try:
+		#db.init_app(app)
+		mongo.init_app(app)
+	except:
+		logger.error("Failed to initialize MongoDB to app!")
+else:
+	logger.info("Starting app without mongo backend ...")
 
 ###################
 ##   MAIN EXEC   ##

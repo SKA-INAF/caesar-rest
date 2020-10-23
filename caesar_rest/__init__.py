@@ -34,3 +34,15 @@ try:
 except:
 	logger.warn("flask_oidc module not found, can't create OpenIDConnect(), no AAI will be used (hint: install flask_oidc)")
 
+# Create MongoDB engine
+#db= None
+mongo= None
+try:
+	#from flask_mongoengine import MongoEngine
+	#db = MongoEngine()
+	from flask_pymongo import PyMongo
+	mongo= PyMongo()
+except:
+	logger.warn("flask mongo module not found or failed to create instance!")
+
+
