@@ -26,7 +26,8 @@ from flask import send_file, send_from_directory, safe_join, abort, make_respons
 from werkzeug.utils import secure_filename
 from caesar_rest import oidc
 from caesar_rest.decorators import custom_require_login
-
+from caesar_rest import mongo
+from bson.objectid import ObjectId
 
 # Get logger
 logger = logging.getLogger(__name__)
@@ -35,7 +36,6 @@ logger = logging.getLogger(__name__)
 ##############################
 #   CREATE BLUEPRINTS
 ##############################
-#download_path_bp = Blueprint('download_path', __name__,url_prefix='/caesar/api/v1.0')
 download_id_bp = Blueprint('download_id', __name__,url_prefix='/caesar/api/v1.0')
 fileids_bp = Blueprint('fileids', __name__, url_prefix='/caesar/api/v1.0')
 
@@ -45,42 +45,35 @@ fileids_bp = Blueprint('fileids', __name__, url_prefix='/caesar/api/v1.0')
 def get_registered_file_ids():
 	""" Returns all file ids registered in the system """
 	
-	file_ids= current_app.config['datamgr'].get_file_ids()
+	# - Get aai info
+	aai_enabled= current_app.config['USE_AAI']
+	has_oidc= (oidc is not None)
+	username= 'anonymous'
+	if aai_enabled and has_oidc:
+		username= oidc.user_getfield('preferred_username')
+
+	# - Get mongo info
+	mongo_enabled= current_app.config['USE_MONGO']
+	has_mongo= (mongo is not None)
+	use_mongo= (mongo_enabled and has_mongo)
+
+	# - Get all file uuids
 	d= {}	
-	d.update({'file_ids':file_ids})
+	if use_mongo:
+		data_collection= mongo.db[username]
+		file_ids= data_collection.find().distinct('_id')		
+		file_id_list= [str(fileid) for fileid in file_ids]
+		d.update({'file_ids':file_id_list})
+
+	else:
+		file_ids= current_app.config['datamgr'].get_file_ids()		
+		d.update({'file_ids':file_ids})
 
 	return make_response(jsonify(d),200)
 	
 
-# - Download data by file name
-#@download_path_bp.route('/download-path', methods=['GET', 'POST'])
-#@custom_require_login
-#def download_path():
-#	""" Download data by path (only for testing) """
-#	if request.method == 'POST':
-#		filename = request.form['filename']
-#	else:
-#		filename = request.args.get('filename')
-#
-#	return redirect(url_for('download_path.download_by_name',filename=str(filename)))
-
-
-#@download_path_bp.route('/download-path/<string:filename>', methods=['GET', 'POST'])
-#@custom_require_login
-#def download_by_name(filename):
-#	""" Download data by path (only for testing) """
-#	try:
-#		return send_from_directory(
-#			directory=current_app.config['UPLOAD_FOLDER'], 
-#			filename=filename, 
-#			as_attachment=True
-#		)
-#	except FileNotFoundError:
-#		abort(404)
-
 
 # - Download data by uuid
-#@download_id_bp.route('/download-id', methods=['GET', 'POST'])
 @download_id_bp.route('/download', methods=['GET', 'POST'])
 @custom_require_login
 def download_id():
@@ -104,8 +97,31 @@ def download_by_uuid(file_uuid):
 		'status': ''
 	}
 
+	# - Get aai info
+	aai_enabled= current_app.config['USE_AAI']
+	has_oidc= (oidc is not None)
+	username= 'anonymous'
+	if aai_enabled and has_oidc:
+		username= oidc.user_getfield('preferred_username')
+
+	# - Get mongo info
+	mongo_enabled= current_app.config['USE_MONGO']
+	has_mongo= (mongo is not None)
+	use_mongo= (mongo_enabled and has_mongo)
+
 	# Search file uuid
-	file_path= current_app.config['datamgr'].get_filepath(file_uuid)
+	if use_mongo:
+		data_collection= mongo.db[username]
+		item= data_collection.find_one({'_id': ObjectId(file_uuid)})
+		if item:
+			file_path= item['filepath']
+			logger.info("File with uuid=%s found at path=%s ..." % (file_uuid, file_path))
+		else:
+			logger.warn("File with uuid=%s not found in DB!" % file_uuid)
+			file_path= ''
+	else:	
+		file_path= current_app.config['datamgr'].get_filepath(file_uuid)
+
 	if not file_path or file_path=='':
 		errmsg= 'File with uuid ' + file_uuid + ' not found on the system!'
 		logger.warn(errmsg)
