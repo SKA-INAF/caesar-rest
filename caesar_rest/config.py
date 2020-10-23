@@ -37,5 +37,8 @@ class Config(object):
 	OIDC_OPENID_REALM = 'neanias-development'
 	OIDC_SCOPES = ['openid', 'email', 'profile']
 
+	# - MONG DB options
+	USE_MONGO = False
+
 	# - App options
 	SFINDERNN_WEIGHTS= '/opt/caesar-rest/share/mrcnn_weights.h5'
