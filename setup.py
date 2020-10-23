@@ -44,6 +44,9 @@ reqs.append('uwsgi')
 #reqs.append('celery')
 reqs.append('pyyaml')
 
+#reqs.append('flask-mongoengine')
+reqs.append('flask-pymongo')
+
 #data_dir = 'data'
 
 setup(
