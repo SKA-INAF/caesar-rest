@@ -64,6 +64,13 @@ def submit_job():
 	res['job_id']= ''
 	res['submit_date']= ''
 
+	# - Get aai info
+	aai_enabled= current_app.config['USE_AAI']
+	has_oidc= (oidc is not None)
+	username= 'anonymous'
+	if aai_enabled and has_oidc:
+		username= oidc.user_getfield('preferred_username')
+
 	# - Get request data
 	req_data = request.get_json(silent=True)
 	if not req_data:
@@ -108,9 +115,9 @@ def submit_job():
 	logger.info("Submitting job %s async (cmd=%s, args=%s) ..." % (app_name,cmd,cmd_args))
 	now = datetime.datetime.now()
 	submit_date= now.isoformat()
-	job_top_dir= current_app.config['JOB_DIR']
+	#job_top_dir= current_app.config['JOB_DIR']
+	job_top_dir= current_app.config['JOB_DIR'] + '/' + username
 
-	#task = background_task.apply_async([app_name,job_inputs])
 	task = background_task.apply_async([cmd,cmd_args,job_top_dir])
 	job_id= task.id
 	logger.info("Submitted job with id=%s ..." % job_id)
@@ -276,6 +283,13 @@ def get_job_output(task_id):
 	res['state']= ''
 	res['status']= ''
 
+	# - Get aai info
+	aai_enabled= current_app.config['USE_AAI']
+	has_oidc= (oidc is not None)
+	username= 'anonymous'
+	if aai_enabled and has_oidc:
+		username= oidc.user_getfield('preferred_username')
+
 	# - Check job status
 	try:
 		job_status= compute_job_status(task_id)
@@ -299,7 +313,8 @@ def get_job_output(task_id):
 		return make_response(jsonify(res),202)
 
 	# - Send file
-	job_top_dir= current_app.config['JOB_DIR']
+	#job_top_dir= current_app.config['JOB_DIR']
+	job_top_dir= current_app.config['JOB_DIR'] + '/' + username
 	job_dir_name= 'job_' + task_id
 	job_dir= os.path.join(job_top_dir,job_dir_name)
 	tar_filename= 'job_' + task_id + '.tar.gz'
