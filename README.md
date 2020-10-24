@@ -1,5 +1,5 @@
 # caesar-rest
-caesar-rest provides a rest interface for caesar [https://github.com/SKA-INAF/caesar] source finder and related applications based on Flask python framework [https://palletsprojects.com/p/flask/]. Celery task queue is used to execute caesar application jobs asynchronously. In this application Celery is configured by default to use a RabbitMQ broker for message exchange and Redis as task result store. In a production environment caesar rest service can be run behind nginx+uwsgi http server. 
+caesar-rest provides a rest interface for caesar [https://github.com/SKA-INAF/caesar] source finding applications, based on Flask python web framework. Celery task queue is used to execute caesar application jobs asynchronously. In this application Celery is configured by default to use a RabbitMQ broker for message exchange and Redis as task result store. In a production environment caesar rest service can be run behind nginx+uwsgi http server. 
 
 ## **Status**
 This software is under development. Tested originally with python 2.7 but switched to python 3.6 later on (some apps are only available for python 3). 
@@ -12,6 +12,7 @@ This software is distributed with GPLv3 license. If you use caesar-rest for your
 ### **Install dependencies**
 To run caesar rest service you need to install the following tools:  
 
+* Flask [https://palletsprojects.com/p/flask/]     
 * rabbitmq [https://www.rabbitmq.com/]    
 * redis [https://redis.io/]  
 * celery [http://www.celeryproject.org/] 
