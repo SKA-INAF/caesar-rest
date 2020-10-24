@@ -162,11 +162,9 @@ else:
 #===============================
 #==   INIT MONGO TO APP
 #===============================
-#if db is not None:
-if mongo is not None:
-	logger.info("Initializing MongoDB engine to app ...")
+if use_db and mongo is not None:
+	logger.info("Initializing MongoDB to app ...")
 	try:
-		#db.init_app(app)
 		mongo.init_app(app)
 	except:
 		logger.error("Failed to initialize MongoDB to app!")
