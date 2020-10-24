@@ -115,6 +115,16 @@ def upload_file():
 	#filename_dest_fullpath= os.path.join(current_app.config['UPLOAD_FOLDER'], filename_dest)
 	filename_dest_fullpath= os.path.join(filename_dest_dir, filename_dest)	
 
+	# - Create username directory if not existing before
+	try: 
+		os.makedirs(filename_dest_dir)
+	except OSError:
+		if not os.path.isdir(path):
+			flash('Failed to create file destination dir for user!')
+			logger.warn("Failed to create file destination dir for user %s!" % username)
+			res['status']= 'Failed to create file destination dir for user!'
+			return make_response(jsonify(res),500)
+	
 	# - Save file
 	logger.info("Saving file %s ..." % filename_dest_fullpath)
 	f.save(filename_dest_fullpath)
