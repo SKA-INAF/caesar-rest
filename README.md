@@ -21,11 +21,11 @@ To run caesar rest service you need to install the following tools:
 To enable registration of uploaded files in a DB (MongoDB in this case) you need to install:   
 
 * mongodb [https://www.mongodb.com/]   
-* flask-pymongo python module   
+* Flask-PyMongo python module [https://flask-pymongo.readthedocs.io/en/latest/]   
 
 To enable OpenID Connect based authentication you need to install:    
 
-* Flask-OIDC python module    
+* Flask-OIDC python module [https://flask-oidc.readthedocs.io/en/latest/]    
 
 ### **Package installation**
 To build and install the package:    
