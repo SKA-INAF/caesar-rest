@@ -57,6 +57,7 @@ job_cancel_bp = Blueprint('job_cancel', __name__,url_prefix='/caesar/api/v1.0')
 def submit_job():
 	""" Submit a job asyncronously """
 	
+	# - Init response
 	res= {}
 	res['status']= ''
 	res['app']= ''

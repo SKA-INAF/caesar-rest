@@ -17,6 +17,11 @@ import yaml
 # Import flask modules
 from flask import current_app
 
+# Import caesare rest momdules
+from caesar_rest import oidc
+from caesar_rest import mongo
+
+
 # Get logger
 logger = logging.getLogger(__name__)
 
@@ -38,7 +43,7 @@ class JobConfigurator(object):
 		}
 		
 		
-	def validate(self,app_name,job_inputs):
+	def validate(self,app_name, job_inputs):
 		""" Validate job inputs """
 
 		# - Validate if job inputs are valid for app
@@ -177,7 +182,7 @@ class AppConfigurator(object):
 		return json.loads(json_str)
 
 
-	def get_transformed_option_value(self,opt_name,opt_value):
+	def get_transformed_option_value(self, opt_name, opt_value):
 		""" Returns same option value or transformed option value (if a transformed function is defined in the dictionary) """
 
 		if not self.option_value_transformer:
@@ -187,7 +192,7 @@ class AppConfigurator(object):
 		return self.option_value_transformer[opt_name](opt_value)
 
 	
-	def validate(self,job_inputs):
+	def validate(self, job_inputs):
 		""" Validate job input """
 
 		logger.info("Validating given inputs ...")
@@ -522,9 +527,31 @@ class SFinderConfigurator(AppConfigurator):
 	def transform_inputfile(self,file_uuid):
 		""" Transform input file from uuid to actual path """		
 	
+		# - Get mongo info
+		mongo_enabled= current_app.config['USE_MONGO']
+		has_mongo= (mongo is not None)
+		use_mongo= (mongo_enabled and has_mongo)
+
+		# - Get aai info
+		aai_enabled= current_app.config['USE_AAI']
+		has_oidc= (oidc is not None)
+		username= 'anonymous'
+		if aai_enabled and has_oidc:
+			username= oidc.user_getfield('preferred_username')
+
 		# - Inspect inputfile (expect it is a uuid, so convert to filename)
 		logger.info("Finding inputfile uuid %s ..." % file_uuid)
-		file_path= current_app.config['datamgr'].get_filepath(file_uuid)
+		if use_mongo:
+			data_collection= mongo.db[username]
+			item= data_collection.find_one({'fileid': str(file_uuid)})
+			if item:
+				file_path= item['filepath']
+			else:
+				logger.warn("File with uuid=%s not found in DB!" % file_uuid)
+				file_path= ''
+		else:
+			file_path= current_app.config['datamgr'].get_filepath(file_uuid)
+
 		if not file_path:
 			logger.warn("inputfile uuid %s not found in the system!" % file_uuid)
 			return ''
@@ -566,12 +593,34 @@ class SFinderNNConfigurator(AppConfigurator):
 			'image': self.transform_imgname
 		}
 
-	def transform_imgname(self,file_uuid):
+	def transform_imgname(self, file_uuid):
 		""" Transform input file from uuid to actual path """		
 	
+		# - Get mongo info
+		mongo_enabled= current_app.config['USE_MONGO']
+		has_mongo= (mongo is not None)
+		use_mongo= (mongo_enabled and has_mongo)
+
+		# - Get aai info
+		aai_enabled= current_app.config['USE_AAI']
+		has_oidc= (oidc is not None)
+		username= 'anonymous'
+		if aai_enabled and has_oidc:
+			username= oidc.user_getfield('preferred_username')
+
 		# - Inspect inputfile (expect it is a uuid, so convert to filename)
-		logger.info("Finding imgname uuid %s ..." % file_uuid)
-		file_path= current_app.config['datamgr'].get_filepath(file_uuid)
+		logger.info("Finding inputfile uuid %s ..." % file_uuid)
+		if use_mongo:
+			data_collection= mongo.db[username]
+			item= data_collection.find_one({'fileid': str(file_uuid)})
+			if item:
+				file_path= item['filepath']
+			else:
+				logger.warn("File with uuid=%s not found in DB!" % file_uuid)
+				file_path= ''
+		else:
+			file_path= current_app.config['datamgr'].get_filepath(file_uuid)
+
 		if not file_path:
 			logger.warn("imgname uuid %s not found in the system!" % file_uuid)
 			return ''
