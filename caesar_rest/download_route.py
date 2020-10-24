@@ -61,7 +61,8 @@ def get_registered_file_ids():
 	d= {}	
 	if use_mongo:
 		data_collection= mongo.db[username]
-		file_ids= data_collection.find().distinct('_id')		
+		#file_ids= data_collection.find().distinct('_id')
+		file_ids= data_collection.find().distinct('fileid')
 		file_id_list= [str(fileid) for fileid in file_ids]
 		d.update({'file_ids':file_id_list})
 
@@ -112,7 +113,8 @@ def download_by_uuid(file_uuid):
 	# Search file uuid
 	if use_mongo:
 		data_collection= mongo.db[username]
-		item= data_collection.find_one({'_id': ObjectId(file_uuid)})
+		##item= data_collection.find_one({'_id': ObjectId(file_uuid)})
+		item= data_collection.find_one({'fileid': str(file_uuid)})
 		if item:
 			file_path= item['filepath']
 			logger.info("File with uuid=%s found at path=%s ..." % (file_uuid, file_path))

@@ -77,14 +77,6 @@ def upload_file():
 		'status': ''
 	}
 	
-	# - Check this is a POST request
-	#if not request.method == 'POST':
-	#	flash('This request is not POST as required')
-	#	logger.error("This request is not POST as required")
-	#	#return redirect(request.url)
-	#	res['status']= 'This request is not POST as required'
-	#	return make_response(jsonify(res),400)
-
 	# - Check for file
 	if 'file' not in request.files:
 		flash('No file part')
@@ -119,8 +111,10 @@ def upload_file():
 	file_ext= os.path.splitext(filename)[1].split('.')[1]
 	file_uuid= uuid.uuid4().hex
 	filename_dest= '.'.join([file_uuid,file_ext])
-	filename_dest_fullpath= os.path.join(current_app.config['UPLOAD_FOLDER'], filename_dest)
-	
+	filename_dest_dir= current_app.config['UPLOAD_FOLDER'] + '/' + str(username)
+	#filename_dest_fullpath= os.path.join(current_app.config['UPLOAD_FOLDER'], filename_dest)
+	filename_dest_fullpath= os.path.join(filename_dest_dir, filename_dest)	
+
 	# - Save file
 	logger.info("Saving file %s ..." % filename_dest_fullpath)
 	f.save(filename_dest_fullpath)
@@ -163,6 +157,7 @@ def upload_file():
 		logger.info("Creating data file object ...")
 		data_fileobj= {
 			"filepath": filename_dest_fullpath,
+			"fileid": file_uuid,
 			"fileext": file_ext,	
 			"filesize": file_size,
 			"filedate": file_upload_date, 
@@ -176,7 +171,7 @@ def upload_file():
 
 			logger.info("Adding data file obj to collection ...")
 			item_id= data_collection.insert(data_fileobj)
-			res['uuid']= str(item_id)
+			#res['uuid']= str(item_id)
 		
 		except:
 			logger.warn("Failed to create and register data file in DB!")
