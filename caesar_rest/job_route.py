@@ -22,7 +22,7 @@ except ImportError:
 	from urllib2 import urlopen
 
 # Import flask modules
-from flask import current_app, Blueprint, render_template, request, redirect, url_for
+from flask import current_app, Blueprint, render_template, request, redirect, url_for, flash
 from flask import send_file, send_from_directory, safe_join, abort, make_response, jsonify
 from werkzeug.utils import secure_filename
 
