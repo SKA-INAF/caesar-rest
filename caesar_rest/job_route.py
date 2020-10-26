@@ -148,7 +148,7 @@ def submit_job():
 			job_collection= mongo.db[collection_name]
 
 			logger.info("Adding job obj to collection ...")
-			item_id= job_collection.insert(data_fileobj)
+			item_id= job_collection.insert(job_obj)
 		
 		except:
 			logger.warn("Failed to create and register job in DB!")
