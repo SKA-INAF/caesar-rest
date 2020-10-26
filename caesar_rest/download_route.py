@@ -59,8 +59,10 @@ def get_registered_file_ids():
 
 	# - Get all file uuids
 	d= {}	
+	collection_name= username + '.files'
 	if use_mongo:
-		data_collection= mongo.db[username]
+		#data_collection= mongo.db[username]
+		data_collection= mongo.db[collection_name]
 		#file_ids= data_collection.find().distinct('_id')
 		file_ids= data_collection.find().distinct('fileid')
 		file_id_list= [str(fileid) for fileid in file_ids]
@@ -111,8 +113,10 @@ def download_by_uuid(file_uuid):
 	use_mongo= (mongo_enabled and has_mongo)
 
 	# Search file uuid
+	collection_name= username + '.files'
 	if use_mongo:
-		data_collection= mongo.db[username]
+		#data_collection= mongo.db[username]
+		data_collection= mongo.db[collection_name]
 		##item= data_collection.find_one({'_id': ObjectId(file_uuid)})
 		item= data_collection.find_one({'fileid': str(file_uuid)})
 		if item:

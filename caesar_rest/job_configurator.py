@@ -541,8 +541,10 @@ class SFinderConfigurator(AppConfigurator):
 
 		# - Inspect inputfile (expect it is a uuid, so convert to filename)
 		logger.info("Finding inputfile uuid %s ..." % file_uuid)
+		collection_name= username + '.files'
 		if use_mongo:
-			data_collection= mongo.db[username]
+			#data_collection= mongo.db[username]
+			data_collection= mongo.db[collection_name]
 			item= data_collection.find_one({'fileid': str(file_uuid)})
 			if item:
 				file_path= item['filepath']
@@ -610,8 +612,11 @@ class SFinderNNConfigurator(AppConfigurator):
 
 		# - Inspect inputfile (expect it is a uuid, so convert to filename)
 		logger.info("Finding inputfile uuid %s ..." % file_uuid)
+		collection_name= username + '.files'
+
 		if use_mongo:
-			data_collection= mongo.db[username]
+			#data_collection= mongo.db[username]
+			data_collection= mongo.db[collection_name]
 			item= data_collection.find_one({'fileid': str(file_uuid)})
 			if item:
 				file_path= item['filepath']

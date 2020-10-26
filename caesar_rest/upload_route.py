@@ -175,9 +175,12 @@ def upload_file():
 			"tag": ''	# FIX ME
 		}
 
+		collection_name= username + '.files'
+
 		try:
 			logger.info("Creating or retrieving data collection for user %s ..." % username)
-			data_collection= mongo.db[username]
+			#data_collection= mongo.db[username]
+			data_collection= mongo.db[collection_name]
 
 			logger.info("Adding data file obj to collection ...")
 			item_id= data_collection.insert(data_fileobj)
