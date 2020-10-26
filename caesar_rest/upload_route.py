@@ -119,7 +119,7 @@ def upload_file():
 	try: 
 		os.makedirs(filename_dest_dir)
 	except OSError:
-		if not os.path.isdir(path):
+		if not os.path.isdir(filename_dest_dir):
 			flash('Failed to create file destination dir for user!')
 			logger.warn("Failed to create file destination dir for user %s!" % username)
 			res['status']= 'Failed to create file destination dir for user!'
