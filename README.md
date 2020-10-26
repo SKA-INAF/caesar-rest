@@ -1,8 +1,8 @@
 # caesar-rest
-caesar-rest provides a rest interface for caesar [https://github.com/SKA-INAF/caesar] source finder and related applications based on Flask python framework [https://palletsprojects.com/p/flask/]. Celery task queue is used to execute caesar application jobs asynchronously. In this application Celery is configured by default to use a RabbitMQ broker for message exchange and Redis as task result store. In a production environment caesar rest service can be run behind nginx+uwsgi http server. 
+caesar-rest provides a rest interface for caesar [https://github.com/SKA-INAF/caesar] source finding applications, based on Flask python web framework. Celery task queue is used to execute caesar application jobs asynchronously. In this application Celery is configured by default to use a RabbitMQ broker for message exchange and Redis as task result store. In a production environment caesar rest service can be run behind nginx+uwsgi http server. 
 
 ## **Status**
-This software is under development. Not already tested with python 3.
+This software is under development. Tested originally with python 2.7 but switched to python 3.6 later on (some apps are only available for python 3). 
 
 ## **Credit**
 This software is distributed with GPLv3 license. If you use caesar-rest for your research, please add repository link or acknowledge authors in your papers.   
@@ -12,22 +12,32 @@ This software is distributed with GPLv3 license. If you use caesar-rest for your
 ### **Install dependencies**
 To run caesar rest service you need to install the following tools:  
 
+* Flask [https://palletsprojects.com/p/flask/]     
 * rabbitmq [https://www.rabbitmq.com/]    
 * redis [https://redis.io/]  
 * celery [http://www.celeryproject.org/] 
 * uwsgi [https://uwsgi-docs.readthedocs.io/en/latest/index.html]   
-* nginx [https://nginx.org/]      
+* nginx [https://nginx.org/]   
+
+To enable registration of uploaded files in a DB (MongoDB in this case) you need to install:   
+
+* mongodb [https://www.mongodb.com/]   
+* Flask-PyMongo python module [https://flask-pymongo.readthedocs.io/en/latest/]   
+
+To enable OpenID Connect based authentication you need to install:    
+
+* Flask-OIDC python module [https://flask-oidc.readthedocs.io/en/latest/]    
 
 ### **Package installation**
 To build and install the package:    
 
 * Create a local install directory, e.g. ```$INSTALL_DIR```
 * Add installation path to your ```PYTHONPATH``` environment variable:   
-  ``` export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python2.7/site-packages ```
+  ``` export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python3.6/site-packages ```
 * Build and install package:   
-  ``` python setup.py sdist bdist_wheel```    
-  ``` python setup build```   
-  ``` python setup install --prefix=$INSTALL_DIR```   
+  ``` python3.6 setup.py sdist bdist_wheel```    
+  ``` python3.6 setup build```   
+  ``` python3.6 setup install --prefix=$INSTALL_DIR```   
 
 All dependencies will be automatically downloaded and installed in ```$INSTALL_DIR```.   
      
@@ -127,7 +137,15 @@ where supported `ARGS` are:
    * `datadir=[DATADIR]`: Directory where to store uploaded data (default: /opt/caesar-rest/data)   
    * `jobdir=[JOBDIR]`: Top directory where to store job data (default: /opt/caesar-rest/data)
    * `debug`: Run Flask application in debug mode if given   
-   
+   * `aai`: Enable service authentication    
+   * `secretfile=[SECRETFILE]`: File (.json) with OpenID Connect client auth credentials    
+   * `openid_realm=[OPENID_REALM]`: OpenID realm used (default=neanias-development)    
+   * `ssl`: To enable run of Flask application over HTTPS     
+   * `db`: To enable registration of uploaded files in MongoDB. If disabled, files are registered in a python dict (NB: dict works only for apps with 1 process) (default=disabled)     
+   * `dbhost=[DBHOST]`: Host of MongoDB database (default=localhost)    
+   * `dbname=[DBNAME]`: Name of MongoDB database (default=caesardb)   
+   * `sfindernn_weights=[PATH]`: File (.h5) with network weights used in sfindernn app     
+  
 Flask default options are defined in the `config.py`. Celery options are defined in the `celery_config.py`. Other options may be defined in the future to override default Flask and Celery options.   
 
 ### **Run the application in production**   
