@@ -46,7 +46,7 @@ reqs.append('pyyaml')
 
 #reqs.append('flask-mongoengine')
 reqs.append('flask-pymongo')
-
+reqs.append('flask_oidc_ex')
 #data_dir = 'data'
 
 setup(

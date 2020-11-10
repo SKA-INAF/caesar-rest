@@ -36,6 +36,8 @@ class Config(object):
 	OIDC_CLIENT_SECRETS = 'config/client_secrets.json'
 	OIDC_OPENID_REALM = 'neanias-development'
 	OIDC_SCOPES = ['openid', 'email', 'profile']
+#	OIDC_TOKEN_TYPE_HINT = 'access_token'
+#	OIDC_INTROSPECTION_AUTH_METHOD = 'client_secret_post'
 
 	# - MONG DB options
 	USE_MONGO = False

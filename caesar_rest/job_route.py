@@ -22,7 +22,7 @@ except ImportError:
 	from urllib2 import urlopen
 
 # Import flask modules
-from flask import current_app, Blueprint, render_template, request, redirect, url_for, flash
+from flask import current_app, Blueprint, render_template, request, redirect, url_for, flash, g
 from flask import send_file, send_from_directory, safe_join, abort, make_response, jsonify
 from werkzeug.utils import secure_filename
 
@@ -67,11 +67,10 @@ def submit_job():
 	res['submit_date']= ''
 
 	# - Get aai info
-	aai_enabled= current_app.config['USE_AAI']
-	has_oidc= (oidc is not None)
 	username= 'anonymous'
-	if aai_enabled and has_oidc:
-		username= oidc.user_getfield('preferred_username')
+	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
+		username=g.oidc_token_info['email']
+	logger.warn(username) 
 
 	# - Get mongo info
 	mongo_enabled= current_app.config['USE_MONGO']
@@ -177,11 +176,10 @@ def get_job_ids():
 	""" Retrieve all job ids per user """
 
 	# - Get aai info
-	aai_enabled= current_app.config['USE_AAI']
-	has_oidc= (oidc is not None)
 	username= 'anonymous'
-	if aai_enabled and has_oidc:
-		username= oidc.user_getfield('preferred_username')
+	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
+		username=g.oidc_token_info['email']
+	logger.warn(username) 
 
 	# - Get mongo info
 	mongo_enabled= current_app.config['USE_MONGO']
@@ -315,11 +313,10 @@ def get_job_status(task_id):
 	res['elapsed_time']= ''
 
 	# - Get aai info
-	aai_enabled= current_app.config['USE_AAI']
-	has_oidc= (oidc is not None)
 	username= 'anonymous'
-	if aai_enabled and has_oidc:
-		username= oidc.user_getfield('preferred_username')
+	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
+		username=g.oidc_token_info['email']
+	logger.warn(username)
 
 	# - Get mongo info
 	mongo_enabled= current_app.config['USE_MONGO']
@@ -362,11 +359,10 @@ def get_job_output(task_id):
 	res['status']= ''
 
 	# - Get aai info
-	aai_enabled= current_app.config['USE_AAI']
-	has_oidc= (oidc is not None)
 	username= 'anonymous'
-	if aai_enabled and has_oidc:
-		username= oidc.user_getfield('preferred_username')
+	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
+		username=g.oidc_token_info['email']
+	logger.warn(username)
 
 	# - Check job status
 	try:

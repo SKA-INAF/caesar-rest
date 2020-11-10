@@ -15,7 +15,7 @@ import ast
 import yaml
 
 # Import flask modules
-from flask import current_app
+from flask import current_app, g
 
 # Import caesare rest momdules
 from caesar_rest import oidc
@@ -533,11 +533,10 @@ class SFinderConfigurator(AppConfigurator):
 		use_mongo= (mongo_enabled and has_mongo)
 
 		# - Get aai info
-		aai_enabled= current_app.config['USE_AAI']
-		has_oidc= (oidc is not None)
 		username= 'anonymous'
-		if aai_enabled and has_oidc:
-			username= oidc.user_getfield('preferred_username')
+		if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
+			username=g.oidc_token_info['email']
+		logger.warn(username)
 
 		# - Inspect inputfile (expect it is a uuid, so convert to filename)
 		logger.info("Finding inputfile uuid %s ..." % file_uuid)
@@ -604,11 +603,10 @@ class SFinderNNConfigurator(AppConfigurator):
 		use_mongo= (mongo_enabled and has_mongo)
 
 		# - Get aai info
-		aai_enabled= current_app.config['USE_AAI']
-		has_oidc= (oidc is not None)
 		username= 'anonymous'
-		if aai_enabled and has_oidc:
-			username= oidc.user_getfield('preferred_username')
+		if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
+			username=g.oidc_token_info['email']
+		logger.warn(username)
 
 		# - Inspect inputfile (expect it is a uuid, so convert to filename)
 		logger.info("Finding inputfile uuid %s ..." % file_uuid)

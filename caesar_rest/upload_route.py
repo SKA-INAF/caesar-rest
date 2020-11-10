@@ -22,7 +22,7 @@ except ImportError:
 	from urllib2 import urlopen
 
 # import Flask modules
-from flask import current_app, Blueprint, flash, request, redirect, render_template, url_for
+from flask import current_app, Blueprint, flash, request, redirect, render_template, url_for, g
 from flask import send_file, send_from_directory, safe_join, abort, make_response, jsonify
 #from flask_api import status
 from werkzeug.utils import secure_filename
@@ -55,12 +55,10 @@ def upload_file():
 	logger.info("request.url=%s" % request.url)
 
 	# - Get aai info
-	aai_enabled= current_app.config['USE_AAI']
-	has_oidc= (oidc is not None)
 	username= 'anonymous'
-	if aai_enabled and has_oidc:
-		username= oidc.user_getfield('preferred_username')	
-
+	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
+		username=g.oidc_token_info['email']
+	logger.warn(username) 
 	# - Get mongo info
 	mongo_enabled= current_app.config['USE_MONGO']
 	has_mongo= (mongo is not None)

@@ -27,8 +27,6 @@ from flask import send_file, send_from_directory, safe_join, abort, make_respons
 from werkzeug.utils import secure_filename
 from caesar_rest import oidc
 from caesar_rest.decorators import custom_require_login
-
-
 # Get logger
 logger = logging.getLogger(__name__)
 
@@ -41,7 +39,7 @@ app_describe_bp = Blueprint('app_describe', __name__,url_prefix='/caesar/api/v1.
 
 
 @app_names_bp.route('/apps',methods=['GET'])
-@custom_require_login
+@oidc.accept_token(require_token=True)
 def get_app_names():
 	""" Get supported apps """
 
