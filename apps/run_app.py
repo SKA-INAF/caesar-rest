@@ -116,6 +116,7 @@ if use_aai and oidc is not None:
 	config.SECRET_KEY= 'SomethingNotEntirelySecret'
 	config.OIDC_CLIENT_SECRETS= secret_file
 	config.OIDC_OPENID_REALM= openid_realm
+	config.OIDC_TOKEN_TYPE_HINT = 'access_token'
 
 #if use_db and db is not None:
 if use_db and mongo is not None:

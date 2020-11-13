@@ -21,12 +21,14 @@ except ImportError:
 	from urllib2 import urlopen
 
 # Import flask modules
-from flask import current_app, Blueprint, render_template, request, redirect, url_for
+from flask import current_app, Blueprint, render_template, request, redirect, url_for, g
 from flask import send_file, send_from_directory, safe_join, abort, make_response, jsonify
 from werkzeug.utils import secure_filename
 from caesar_rest import oidc
 from caesar_rest.decorators import custom_require_login
 from caesar_rest import mongo
+from caesar_rest import logger
+from caesar_rest.config import Config
 from bson.objectid import ObjectId
 
 # Get logger
@@ -44,13 +46,11 @@ fileids_bp = Blueprint('fileids', __name__, url_prefix='/caesar/api/v1.0')
 @custom_require_login
 def get_registered_file_ids():
 	""" Returns all file ids registered in the system """
-	
 	# - Get aai info
-	aai_enabled= current_app.config['USE_AAI']
-	has_oidc= (oidc is not None)
 	username= 'anonymous'
-	if aai_enabled and has_oidc:
-		username= oidc.user_getfield('preferred_username')
+	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info): 
+		username=g.oidc_token_info['email']
+	logger.warn(username) 
 
 	# - Get mongo info
 	mongo_enabled= current_app.config['USE_MONGO']
@@ -101,11 +101,10 @@ def download_by_uuid(file_uuid):
 	}
 
 	# - Get aai info
-	aai_enabled= current_app.config['USE_AAI']
-	has_oidc= (oidc is not None)
 	username= 'anonymous'
-	if aai_enabled and has_oidc:
-		username= oidc.user_getfield('preferred_username')
+	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
+		username=g.oidc_token_info['email']
+	logger.info(username) 
 
 	# - Get mongo info
 	mongo_enabled= current_app.config['USE_MONGO']
@@ -146,5 +145,3 @@ def download_by_uuid(file_uuid):
 		logger.warn(errmsg)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
-
-
