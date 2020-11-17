@@ -66,6 +66,7 @@ def upload_file():
 	# - Init response
 	res= {
 		'filename_orig': '',
+		'tag': '',
 		'format': '',
 		'size': '',
 		'uuid': '',
@@ -110,7 +111,9 @@ def upload_file():
 	filename_dest= '.'.join([file_uuid,file_ext])
 	filename_dest_dir= current_app.config['UPLOAD_FOLDER'] + '/' + str(username)
 	#filename_dest_fullpath= os.path.join(current_app.config['UPLOAD_FOLDER'], filename_dest)
-	filename_dest_fullpath= os.path.join(filename_dest_dir, filename_dest)	
+	filename_dest_fullpath= os.path.join(filename_dest_dir, filename_dest)
+	
+	file_tag = request.form['tag']
 
 	# - Create username directory if not existing before
 	try: 
@@ -133,6 +136,7 @@ def upload_file():
 	file_size= os.path.getsize(filename_dest_fullpath)/(1024.*1024.) # in MB
 
 	res['filename_orig']= filename
+	res['tag'] = file_tag
 	res['format']= file_ext
 	res['size']= file_size
 	res['uuid']= file_uuid
@@ -165,11 +169,12 @@ def upload_file():
 		data_fileobj= {
 			"filepath": filename_dest_fullpath,
 			"fileid": file_uuid,
+			"filename_orig": filename,
 			"fileext": file_ext,	
 			"filesize": file_size,
 			"filedate": file_upload_date, 
 			"metadata": '', # FIX ME
-			"tag": ''	# FIX ME
+			"tag": file_tag
 		}
 
 		collection_name= username + '.files'

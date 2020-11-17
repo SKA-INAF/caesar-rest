@@ -190,10 +190,8 @@ def get_job_ids():
 	collection_name= username + '.jobs'
 	if use_mongo:
 		job_collection= mongo.db[collection_name]
-		job_ids= job_collection.find().distinct('job_id')
-		job_id_list= [str(jobid) for jobid in job_ids]
-		d.update({'job_ids':job_id_list})
-
+		job_cursor= job_collection.find({},projection={"_id":0})
+		d = list(job_cursor)
 	else:
 		d['status']= 'Server is running without MongoDB backend, so this functionality is not supported'
 		d['job_ids']= []
