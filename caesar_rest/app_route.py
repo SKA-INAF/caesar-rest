@@ -39,7 +39,7 @@ app_describe_bp = Blueprint('app_describe', __name__,url_prefix='/caesar/api/v1.
 
 
 @app_names_bp.route('/apps',methods=['GET'])
-@oidc.accept_token(require_token=True)
+@custom_require_login
 def get_app_names():
 	""" Get supported apps """
 

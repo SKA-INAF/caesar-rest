@@ -58,7 +58,6 @@ def upload_file():
 	username= 'anonymous'
 	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
 		username=g.oidc_token_info['email']
-	logger.warn(username) 
 	# - Get mongo info
 	mongo_enabled= current_app.config['USE_MONGO']
 	has_mongo= (mongo is not None)
