@@ -57,16 +57,12 @@ def get_registered_file_ids():
 	use_mongo= (mongo_enabled and has_mongo)
 
 	# - Get all file uuids
-	d= {}	
+	d= {}
 	collection_name= username + '.files'
 	if use_mongo:
-		#data_collection= mongo.db[username]
 		data_collection= mongo.db[collection_name]
-		#file_ids= data_collection.find().distinct('_id')
-		file_ids= data_collection.find().distinct('fileid')
-		file_id_list= [str(fileid) for fileid in file_ids]
-		d.update({'file_ids':file_id_list})
-
+		file_cursor= data_collection.find({},projection={"_id":0, "filepath":0})
+		d = list(file_cursor)
 	else:
 		file_ids= current_app.config['datamgr'].get_file_ids()		
 		d.update({'file_ids':file_ids})
