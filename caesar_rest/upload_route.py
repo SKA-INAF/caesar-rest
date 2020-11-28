@@ -76,6 +76,7 @@ def upload_file():
 	}
 	
 	# - Check for file
+	logger.info("Checking for file key in request ...")
 	if 'file' not in request.files:
 		flash('No file part')
 		logger.error("This request has no file part!")
@@ -113,9 +114,17 @@ def upload_file():
 	#filename_dest_fullpath= os.path.join(current_app.config['UPLOAD_FOLDER'], filename_dest)
 	filename_dest_fullpath= os.path.join(filename_dest_dir, filename_dest)
 	
-	file_tag = request.form['tag']
+	file_tag = ''
+	if request.form:
+		if 'tag' in request.form:
+			file_tag= request.form['tag']
+		else:
+			logger.info("No tag information given in request, set empty...")
+	else:
+		logger.warn("form not present in request...")
 
 	# - Create username directory if not existing before
+	logger.info("Creating username directory if not existing before ...")
 	try: 
 		os.makedirs(filename_dest_dir)
 	except OSError:
