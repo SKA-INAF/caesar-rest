@@ -108,6 +108,7 @@ sfindernn_weights= args.sfindernn_weights
 # - DB & celery result backend options
 use_db= args.db
 dbhost= 'mongodb://' + args.dbhost + ':' + str(args.dbport) + '/' + args.dbname
+logger.info("Using dbhost: %s" % dbhost)
 
 result_backend_host= args.result_backend_host
 result_backend_port= args.result_backend_port
@@ -124,6 +125,7 @@ elif result_backend_proto=='mongodb':
 else:
 	logger.error("Unsupported result backend (hint: supported are {redis,mongodb})!")
 	sys.exit(1)
+logger.info("Using result_backend: %s" % result_backend)
 
 
 # - Celery broker options
@@ -133,6 +135,7 @@ broker_proto= args.broker_proto
 broker_user= args.broker_user
 broker_pass= args.broker_pass 
 broker_url= broker_proto + '://' + broker_user + ':' + broker_pass + '@' + broker_host + ':' + str(broker_port) + '/'
+logger.info("Using broker_url: %s" % broker_url)
 
 
 
@@ -152,17 +155,10 @@ if use_aai and oidc is not None:
 	config.OIDC_OPENID_REALM= openid_realm
 	config.OIDC_TOKEN_TYPE_HINT = 'access_token'
 
-#if use_db and db is not None:
+
 if use_db and mongo is not None:
 	config.MONGO_URI= dbhost
 	config.USE_MONGO= True
-
-	#config.MONGODB_SETTINGS= {
-	#	'db': args.dbname,
-  #  'host': args.dbhost,
-  #  'port': 27017
-	#}
-
 
 config.SFINDERNN_WEIGHTS = sfindernn_weights
 

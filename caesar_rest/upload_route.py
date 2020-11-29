@@ -197,10 +197,10 @@ def upload_file():
 			item_id= data_collection.insert(data_fileobj)
 			#res['uuid']= str(item_id)
 		
-		except:
-			logger.warn("Failed to create and register data file in DB!")
+		except Exception as e:
+			logger.warn("Failed to create and register data file in DB (err=%s)!" % str(e))
 			flash('File uploaded but failed to be registered in DB!')
-			logger.warn("File %s uploaded but failed to be registered in DB!" % filename_dest_fullpath)
+			logger.warn("File %s uploaded but failed to be registered in DB (err=%s)!" % (filename_dest_fullpath,str(e)))
 			res['status']= 'File uploaded but failed to be registered in DB'
 			return make_response(jsonify(res),500)
 
