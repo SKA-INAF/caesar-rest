@@ -30,7 +30,6 @@ from flask import send_file, send_from_directory, safe_join, abort
 from werkzeug.utils import secure_filename
 
 # Import Celery
-#from celery import Celery
 from caesar_rest import celery
 
 # Import config class
@@ -44,11 +43,6 @@ logger = logging.getLogger(__name__)
 ##############################
 #   CELERY APP CREATION
 ##############################
-# - Create celery class
-#celery= Celery(
-#	__name__
-#)
-
 # - When called configure celery 
 def configure_celery_app(app):
 	""" Create a Celery app """
@@ -107,7 +101,5 @@ def create_app(cfg,dm,jc):
 	app.register_blueprint(app_describe_bp)
     
 	return app
-
-
 
 

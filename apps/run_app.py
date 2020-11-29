@@ -23,6 +23,7 @@ from caesar_rest.app import create_app
 from caesar_rest import oidc
 #from caesar_rest import db
 from caesar_rest import mongo
+from caesar_rest import celery
 
 
 #### GET SCRIPT ARGS ####
@@ -59,6 +60,21 @@ def get_args():
 	parser.set_defaults(db=False)
 	parser.add_argument('-dbhost','--dbhost', dest='dbhost', default='localhost', required=False, type=str, help='Host of MongoDB database (default=localhost)')
 	parser.add_argument('-dbname','--dbname', dest='dbname', default='caesardb', required=False, type=str, help='Name of MongoDB database (default=caesardb)')
+	parser.add_argument('-dbport','--dbport', dest='dbport', default=27017, required=False, type=int, help='Port of MongoDB database (default=27017)')
+
+	parser.add_argument('-result_backend_host','--result_backend_host', dest='result_backend_host', default='localhost', required=False, type=str, help='Host of Celery result backend (default=localhost)')
+	parser.add_argument('-result_backend_port','--result_backend_port', dest='result_backend_port', default=6379, required=False, type=int, help='Port of Celery result backend (default=6379)')
+	parser.add_argument('-result_backend_proto','--result_backend_proto', dest='result_backend_proto', default='redis', required=False, type=str, help='Celery result backend type (default=redis)')
+	parser.add_argument('-result_backend_user','--result_backend_user', dest='result_backend_user', default='', required=False, type=str, help='Celery result backend username (default=empty)')
+	parser.add_argument('-result_backend_pass','--result_backend_pass', dest='result_backend_pass', default='', required=False, type=str, help='Celery result backend password (default=empty)')
+	parser.add_argument('-result_backend_dbname','--result_backend_dbname', dest='result_backend_dbname', default='0', required=False, type=str, help='Celery result backend database name (default=empty)')
+
+	parser.add_argument('-broker_host','--broker_host', dest='broker_host', default='localhost', required=False, type=str, help='Host of Celery broker (default=localhost)')
+	parser.add_argument('-broker_port','--broker_port', dest='broker_port', default=5672, required=False, type=int, help='Port of Celery broker (default=5672)')
+	parser.add_argument('-broker_proto','--broker_proto', dest='broker_proto', default='amqp', required=False, type=str, help='Protocol of Celery broker (default=amqp)')
+	parser.add_argument('-broker_user','--broker_user', dest='broker_user', default='guest', required=False, type=str, help='Username used in Celery broker (default=guest)')
+	parser.add_argument('-broker_pass','--broker_pass', dest='broker_pass', default='guest', required=False, type=str, help='Password used in Celery broker (default=guest)')
+
 
 	args = parser.parse_args()	
 
@@ -75,32 +91,50 @@ except Exception as ex:
 	logger.error("Failed to get and parse options (err=%s)",str(ex))
 	sys.exit(1)
 
-# - Input filelist
+# - Dir options
 datadir= args.datadir
 jobdir= args.jobdir
 debug= args.debug
+
+# - AAI options
 use_aai= args.aai
 secret_file= args.secretfile
 openid_realm= args.openid_realm
 ssl= args.ssl
-sfindernn_weights= args.sfindernn_weights
-use_db= args.db
-dbhost= 'mongodb://' + args.dbhost + '/' + args.dbname
 
-#===========================
-#==   PARSE ARGS
-#===========================
-logger.info("Parsing cmd line arguments ...")
-try:
-	args= get_args()
-except Exception as ex:
-	logger.error("Failed to get and parse options (err=%s)",str(ex))
+# - App options
+sfindernn_weights= args.sfindernn_weights
+
+# - DB & celery result backend options
+use_db= args.db
+dbhost= 'mongodb://' + args.dbhost + ':' + str(args.dbport) + '/' + args.dbname
+
+result_backend_host= args.result_backend_host
+result_backend_port= args.result_backend_port
+result_backend_proto= args.result_backend_proto
+result_backend_user= args.result_backend_user
+result_backend_pass= args.result_backend_pass
+result_backend_dbname= args.result_backend_dbname
+
+result_backend= ''
+if result_backend_proto=='redis':	
+	result_backend= result_backend_proto + '://' + result_backend_host + ':' + str(result_backend_port) + '/' + result_backend_dbname
+elif result_backend_proto=='mongodb':
+	result_backend= result_backend_proto + '://' + result_backend_host + ':' + str(result_backend_port) + '/' + result_backend_dbname
+else:
+	logger.error("Unsupported result backend (hint: supported are {redis,mongodb})!")
 	sys.exit(1)
 
-# - Input filelist
-datadir= args.datadir
-jobdir= args.jobdir
-debug= args.debug
+
+# - Celery broker options
+broker_host= args.broker_host
+broker_port= args.broker_port
+broker_proto= args.broker_proto
+broker_user= args.broker_user
+broker_pass= args.broker_pass 
+broker_url= broker_proto + '://' + broker_user + ':' + broker_pass + '@' + broker_host + ':' + str(broker_port) + '/'
+
+
 
 #===============================
 #==   INIT
@@ -140,6 +174,11 @@ datamgr.register_data()
 # - Create job configurator
 logger.info("Creating job configurator ...")
 jobcfg= JobConfigurator()
+
+# - Update celery configs
+logger.info("Updating celery configuration (broker_url=%s, result_backend=%s) ..." % (broker_url, result_backend))
+celery.broker_url= broker_url
+celery.result_backend= result_backend
 
 #===============================
 #==   CREATE APP
