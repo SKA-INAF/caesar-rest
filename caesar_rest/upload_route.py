@@ -189,7 +189,7 @@ def upload_file():
 		collection_name= username + '.files'
 
 		try:
-			logger.info("Creating or retrieving data collection for user %s ..." % username)
+			logger.info("Creating or retrieving data collection %s for user %s ..." % (collection_name, username))
 			#data_collection= mongo.db[username]
 			data_collection= mongo.db[collection_name]
 
