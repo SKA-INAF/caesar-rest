@@ -1,14 +1,15 @@
 
 # - Celery options (do not change variable names)
-#broker_url= 'amqp://rabbitmq:rabbitmq@rabbit:5672/'
-broker_url= 'amqp://guest:guest@localhost:5672/'
+####broker_url= 'amqp://rabbitmq:rabbitmq@rabbit:5672/'
+broker_url= 'amqp://guest:guest@localhost:5672/' # correct one
 
-###broker_url= 'redis://localhost:6379'
+####broker_url= 'redis://localhost:6379'
 broker_heartbeat=0
 	
-#result_backend= 'rpc://'
-###result_backend= 'redis://localhost:6379'
-result_backend = 'redis://localhost:6379/0'
+##result_backend= 'rpc://'
+####result_backend= 'redis://localhost:6379'
+result_backend = 'redis://localhost:6379/0' # correct one
+##result_backend = 'mongodb://localhost:27017/caesardb'
 
 imports = ('caesar_rest.workers',)
 

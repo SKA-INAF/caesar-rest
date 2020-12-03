@@ -50,6 +50,11 @@ def configure_celery_app(app):
 	# - Configure app from Flask config
 	#celery.conf.update(app.config)
 
+	#logger.info("celery backend=%s" % celery.backend)
+	#logger.info("celery task.backend=%s" % celery.Task.backend)
+	#print("celery task.backend")
+	#print(celery.Task.backend)
+
 	# - Subclass task
 	TaskBase = celery.Task
 	class ContextTask(TaskBase):
@@ -59,6 +64,10 @@ def configure_celery_app(app):
 				return TaskBase.__call__(self, *args, **kwargs)
     
 	celery.Task = ContextTask
+
+	#logger.info("celery task.backend=%s (after context)" % celery.Task.backend)
+	#print("celery task.backend")
+	#print(celery.Task.backend)
 
 	
 ##############################
