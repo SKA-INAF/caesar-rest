@@ -24,6 +24,7 @@ from caesar_rest import oidc
 #from caesar_rest import db
 from caesar_rest import mongo
 from caesar_rest import celery
+###from caesar_rest import celery_app
 
 
 #### GET SCRIPT ARGS ####
@@ -173,8 +174,10 @@ jobcfg= JobConfigurator()
 
 # - Update celery configs
 logger.info("Updating celery configuration (broker_url=%s, result_backend=%s) ..." % (broker_url, result_backend))
-celery.broker_url= broker_url
-celery.result_backend= result_backend
+#celery.broker_url= broker_url
+#celery.result_backend= result_backend
+celery.broker= broker_url
+celery.backend= result_backend
 
 #===============================
 #==   CREATE APP
