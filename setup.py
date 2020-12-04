@@ -30,7 +30,6 @@ reqs.append('numpy>=1.10')
 if PY_MAJOR_VERSION<=2:
 	print("PYTHON 2 detected")
 	reqs.append('future')
-	#reqs.append('zipp==0.6.0')
 	reqs.append('zipp==1.2.0')
 	reqs.append('more_itertools==5.0.0')
 else:
@@ -44,14 +43,12 @@ reqs.append('uwsgi')
 #reqs.append('celery')
 reqs.append('pyyaml')
 
-#reqs.append('flask-mongoengine')
+reqs.append('pymongo')
 reqs.append('flask-pymongo')
 reqs.append('flask_oidc_ex')
-#data_dir = 'data'
 
 setup(
 	name="caesar_rest",
-	#package="caesar_rest",
 	version=get_version(),
 	author="Simone Riggi",
 	author_email="simone.riggi@gmail.com",
@@ -59,7 +56,6 @@ setup(
 	license = "GPL3",
 	url="https://github.com/SKA-INAF/caesar-rest",
 	long_description=read('README.md'),
-	#packages=['caesar_rest'],
 	packages=find_packages(),
 	data_files=[("config",["config/nginx/nginx.conf", "config/uwsgi/uwsgi.ini"])],
 	include_package_data=True,
