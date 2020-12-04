@@ -29,6 +29,7 @@ oidc= None
 try:
 	from flask_oidc_ex import OpenIDConnect
 	oidc = OpenIDConnect()
+
 except:
 	logger.warn("flask_oidc module not found, can't create OpenIDConnect(), no AAI will be used (hint: install flask_oidc)")
 
@@ -37,7 +38,9 @@ mongo= None
 try:
 	from flask_pymongo import PyMongo
 	mongo= PyMongo()
-except:
-	logger.warn("flask mongo module not found or failed to create instance!")
 
+except Exception as e:
+	errmsg= 'flask_pymongo module not found or failed to create mongo instance (err=' + str(e) + ')'
+	logger.error(errmsg)
+	raise ImportError(errmsg)
 

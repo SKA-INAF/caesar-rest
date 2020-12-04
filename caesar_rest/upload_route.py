@@ -58,10 +58,6 @@ def upload_file():
 	username= 'anonymous'
 	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
 		username=g.oidc_token_info['email']
-	# - Get mongo info
-	mongo_enabled= current_app.config['USE_MONGO']
-	has_mongo= (mongo is not None)
-	use_mongo= (mongo_enabled and has_mongo)
 
 	# - Init response
 	res= {
@@ -153,56 +149,35 @@ def upload_file():
 	res['date']= file_upload_date
 	res['status']= 'File uploaded with success'
 
-	# - Register file in dictionary
-	try:
-		retcode= current_app.config['datamgr'].register_file(filename_dest_fullpath)
-		if retcode==0:
-			flash('File registered with success')
-			logger.info("File %s registered with success" % filename_dest_fullpath)
-		else:
-			flash('File uploaded but failed to be registered!')
-			logger.warn("File %s uploaded but failed to be registered!" % filename_dest_fullpath)
-			res['status']= 'File uploaded but failed to be registered'
-			return make_response(jsonify(res),500)
-
-	except:
-		flash('File uploaded but failed to be registered!')
-		logger.warn("File %s uploaded but failed to be registered!" % filename_dest_fullpath)
-		res['status']= 'File uploaded but failed to be registered'
-		return make_response(jsonify(res),500)
-		
 	# - Register file in MongoDB
-	if use_mongo:
+	logger.info("Creating data file object ...")
+	data_fileobj= {
+		"filepath": filename_dest_fullpath,
+		"fileid": file_uuid,
+		"filename_orig": filename,
+		"fileext": file_ext,	
+		"filesize": file_size,
+		"filedate": file_upload_date, 
+		"metadata": '', # FIX ME
+		"tag": file_tag
+	}
 
-		logger.info("Creating data file object ...")
-		data_fileobj= {
-			"filepath": filename_dest_fullpath,
-			"fileid": file_uuid,
-			"filename_orig": filename,
-			"fileext": file_ext,	
-			"filesize": file_size,
-			"filedate": file_upload_date, 
-			"metadata": '', # FIX ME
-			"tag": file_tag
-		}
-
-		collection_name= username + '.files'
-
-		try:
-			logger.info("Creating or retrieving data collection %s for user %s ..." % (collection_name, username))
-			#data_collection= mongo.db[username]
-			data_collection= mongo.db[collection_name]
-
-			logger.info("Adding data file obj to collection ...")
-			item_id= data_collection.insert(data_fileobj)
-			#res['uuid']= str(item_id)
+	collection_name= username + '.files'
 		
-		except Exception as e:
-			logger.warn("Failed to create and register data file in DB (err=%s)!" % str(e))
-			flash('File uploaded but failed to be registered in DB!')
-			logger.warn("File %s uploaded but failed to be registered in DB (err=%s)!" % (filename_dest_fullpath,str(e)))
-			res['status']= 'File uploaded but failed to be registered in DB'
-			return make_response(jsonify(res),500)
+	try:			
+		logger.info("Creating or retrieving data collection %s for user %s ..." % (collection_name, username))
+		data_collection= mongo.db[collection_name]
 
+		logger.info("Adding data file obj to collection ...")
+		item_id= data_collection.insert(data_fileobj)
+		#res['uuid']= str(item_id)
+		
+	except Exception as e:
+		logger.warn("Failed to create and register data file in DB (err=%s)!" % str(e))
+		flash('File uploaded but failed to be registered in DB!')
+		logger.warn("File %s uploaded but failed to be registered in DB (err=%s)!" % (filename_dest_fullpath,str(e)))
+		res['status']= 'File uploaded but failed to be registered in DB'
+		return make_response(jsonify(res),500)
 
-	return make_response(jsonify(res),200)	
+	return make_response(jsonify(res),200)
+

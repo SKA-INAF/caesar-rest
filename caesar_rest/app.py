@@ -48,7 +48,7 @@ def configure_celery_app(app):
 	""" Create a Celery app """
     
 	# - Configure app from Flask config
-	#celery.conf.update(app.config)
+	celery.conf.update(app.config)
 
 	#logger.info("celery backend=%s" % celery.backend)
 	#logger.info("celery task.backend=%s" % celery.Task.backend)
@@ -73,7 +73,8 @@ def configure_celery_app(app):
 ##############################
 #   FLASK APP CREATION 
 ##############################
-def create_app(cfg,dm,jc):
+##def create_app(cfg,dm,jc):
+def create_app(cfg,jc):
 	""" Create app """
 
 	# - Create app
@@ -83,7 +84,7 @@ def create_app(cfg,dm,jc):
 	app.config.from_object(cfg)
 	
 	# - Add helper classes to app
-	app.config['datamgr'] = dm
+	### app.config['datamgr'] = dm ## DEPRECATED
 	app.config['jobcfg'] = jc
 
 	# - Configure Celery app

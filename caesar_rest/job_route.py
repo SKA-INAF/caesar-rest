@@ -62,6 +62,7 @@ def submit_job():
 	# - Init response
 	res= {}
 	res['status']= ''
+	res['state']= ''
 	res['app']= ''
 	res['job_id']= ''
 	res['submit_date']= ''
@@ -72,14 +73,15 @@ def submit_job():
 		username=g.oidc_token_info['email']
 
 	# - Get mongo info
-	mongo_enabled= current_app.config['USE_MONGO']
-	has_mongo= (mongo is not None)
-	use_mongo= (mongo_enabled and has_mongo)
-
+	mongo_dbhost= current_app.config['MONGO_HOST']
+	mongo_dbport= current_app.config['MONGO_PORT']
+	mongo_dbname= current_app.config['MONGO_DBNAME']
+	
 	# - Get request data
 	req_data = request.get_json(silent=True)
 	if not req_data:
 		logger.error("Invalid request data!")
+		res['state']= 'ABORTED'
 		res['status']= 'Invalid request data!'
 		return make_response(jsonify(res),400)
 	logger.info("Received job data %s " % str(req_data))
@@ -88,13 +90,15 @@ def submit_job():
 	job_inputs = req_data['job_inputs']
 	if not app_name:
 		logger.error("No app name given!")
+		res['state']= 'ABORTED'
 		res['status']= 'No app name found in request!'
 		return make_response(jsonify(res),400)
 
 	res['app']= app_name
 
 	if not job_inputs:
-		logger.error("No job inputs given!")		
+		logger.error("No job inputs given!")	
+		res['state']= 'ABORTED'	
 		res['status']= 'No job inputs name found in request!'
 		return make_response(jsonify(res),400)
 
@@ -107,8 +111,9 @@ def submit_job():
 
 	# - Validate job inputs
 	(cmd,cmd_arg_list,val_status)= current_app.config['jobcfg'].validate(app_name,job_inputs)
-	if not cmd or not cmd_arg_list: 
+	if cmd is None or cmd_arg_list is None: 
 		logger.warn("Job input validation failed!")
+		res['state']= 'ABORTED'	
 		res['status']= val_status
 		return make_response(jsonify(res),400)
 
@@ -120,40 +125,47 @@ def submit_job():
 	logger.info("Submitting job %s async (cmd=%s, args=%s) ..." % (app_name,cmd,cmd_args))
 	now = datetime.datetime.now()
 	submit_date= now.isoformat()
-	#job_top_dir= current_app.config['JOB_DIR']
 	job_top_dir= current_app.config['JOB_DIR'] + '/' + username
+	job_monitoring_period= current_app.config['JOB_MONITORING_PERIOD']
 
-	task = background_task.apply_async([cmd,cmd_args,job_top_dir])
+	task = background_task.apply_async(
+		[cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname, job_monitoring_period]
+	)
 	job_id= task.id
 	logger.info("Submitted job with id=%s ..." % job_id)
 
 	# - Register task id in mongo
-	if use_mongo:
-		logger.info("Creating job object for task %s ..." % job_id)
-		job_obj= {
-			"job_id": job_id,
-			"submit_date": submit_date,
-			"app": app_name,	
-			"job_inputs": job_inputs,
-			"metadata": '', # FIX ME
-			"tag": ''	# FIX ME
-		}
+	logger.info("Creating job object for task %s ..." % job_id)
+	job_obj= {
+		"job_id": job_id,
+		"submit_date": submit_date,
+		"app": app_name,	
+		"job_inputs": job_inputs,
+		"metadata": '', # FIX ME
+		"tag": '', # FIX ME
+		"state": 'PENDING',
+		"status": 'Job submitted',
+		"pid": '',
+		"elapsed_time": '0',
+		"exit_code": ''
+	}
 
-		collection_name= username + '.jobs'
+	collection_name= username + '.jobs'
 
-		try:
-			logger.info("Creating or retrieving job collection for user %s ..." % username)
-			job_collection= mongo.db[collection_name]
+	try:
+		logger.info("Creating or retrieving job collection for user %s ..." % username)
+		job_collection= mongo.db[collection_name]
 
-			logger.info("Adding job obj to collection ...")
-			item_id= job_collection.insert(job_obj)
+		logger.info("Adding job obj to collection ...")
+		item_id= job_collection.insert(job_obj)
 		
-		except:
-			logger.warn("Failed to create and register job in DB!")
-			flash('Job submitted but failed to be registered in DB!')
-			logger.warn("Job %s submitted but failed to be registered in DB!" % job_id)
-			res['status']= 'Job submitted but failed to be registered in DB'
-			return make_response(jsonify(res),500)
+	except Exception as e:
+		logger.warn("Failed to create and register job in DB (err=%s)!" % str(e))
+		flash('Job submitted but failed to be registered in DB!')
+		logger.warn("Job %s submitted but failed to be registered in DB!" % job_id)
+		res['state']= 'PENDING'
+		res['status']= 'WARN: Job submitted but failed to be registered in DB!'
+		return make_response(jsonify(res),500)
 
 
 	# - Fill response
@@ -161,7 +173,8 @@ def submit_job():
 	res['submit_date']= submit_date
 	res['app']= app_name
 	res['job_inputs']= job_inputs
-	res['status']= 'Job submitted with success'
+	res['state']= 'PENDING'
+	res['status']= 'Job submitted and registered with success'
 	
 	return make_response(jsonify(res),202)
 
@@ -179,25 +192,20 @@ def get_job_ids():
 	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
 		username=g.oidc_token_info['email']
 
-	# - Get mongo info
-	mongo_enabled= current_app.config['USE_MONGO']
-	has_mongo= (mongo is not None)
-	use_mongo= (mongo_enabled and has_mongo)
-
-	# - Get all job ids.
-	#   NB: Only supported with Mongo backend
-	d= {}	
+	# - Get all job ids from DB
+	res= {}	
 	collection_name= username + '.jobs'
-	if use_mongo:
+	try:
 		job_collection= mongo.db[collection_name]
 		job_cursor= job_collection.find({},projection={"_id":0})
-		d = list(job_cursor)
-	else:
-		d['status']= 'Server is running without MongoDB backend, so this functionality is not supported'
-		d['job_ids']= []
-		return make_response(jsonify(d),404)
+		res = list(job_cursor)
+
+	except Exception as e:
+		errmsg= 'Failed to get file ids from DB (err=' + str(e) + ')'
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
 		
-	return make_response(jsonify(d),200)
+	return make_response(jsonify(res),200)
 	
 
 #=================================
@@ -313,21 +321,23 @@ def get_job_status(task_id):
 	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
 		username=g.oidc_token_info['email']
 
-	# - Get mongo info
-	mongo_enabled= current_app.config['USE_MONGO']
-	has_mongo= (mongo is not None)
-	use_mongo= (mongo_enabled and has_mongo)
-
 	# - Search job id in user collection
 	collection_name= username + '.jobs'
-	if use_mongo:
+	job= None
+	try:
 		job_collection= mongo.db[collection_name]
 		job= job_collection.find_one({'job_id': str(task_id)})
-		if not job or job is None:
-			errmsg= 'Job ' + task_id + ' not found for user ' + username + '!'
-			logger.warn(errmsg)
-			res['status']= errmsg
-			return make_response(jsonify(res),404)
+	except Exception as e:
+		errmsg= 'Exception catched when searching job id in DB (err=' + str(e) + ')!'
+		logger.error(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
+
+	if not job or job is None:
+		errmsg= 'Job ' + task_id + ' not found for user ' + username + '!'
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
 
 	# - Retrieve job status
 	try:

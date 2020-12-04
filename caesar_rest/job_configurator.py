@@ -21,11 +21,8 @@ from flask import current_app, g
 from caesar_rest import oidc
 from caesar_rest import mongo
 
-
 # Get logger
 logger = logging.getLogger(__name__)
-
-
 
 
 ##############################
@@ -527,11 +524,6 @@ class SFinderConfigurator(AppConfigurator):
 	def transform_inputfile(self,file_uuid):
 		""" Transform input file from uuid to actual path """		
 	
-		# - Get mongo info
-		mongo_enabled= current_app.config['USE_MONGO']
-		has_mongo= (mongo is not None)
-		use_mongo= (mongo_enabled and has_mongo)
-
 		# - Get aai info
 		username= 'anonymous'
 		if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
@@ -541,21 +533,24 @@ class SFinderConfigurator(AppConfigurator):
 		# - Inspect inputfile (expect it is a uuid, so convert to filename)
 		logger.info("Finding inputfile uuid %s ..." % file_uuid)
 		collection_name= username + '.files'
-		if use_mongo:
-			#data_collection= mongo.db[username]
+
+		file_path= ''
+		try:
 			data_collection= mongo.db[collection_name]
 			item= data_collection.find_one({'fileid': str(file_uuid)})
-			if item:
+			if item and item is not None:
 				file_path= item['filepath']
 			else:
 				logger.warn("File with uuid=%s not found in DB!" % file_uuid)
 				file_path= ''
-		else:
-			file_path= current_app.config['datamgr'].get_filepath(file_uuid)
-
-		if not file_path:
-			logger.warn("inputfile uuid %s not found in the system!" % file_uuid)
+		except Exception as e:
+			logger.error("Exception (err=%s) catch when searching file in DB!" % str(e))
 			return ''
+		
+		if not file_path or file_path=='':
+			logger.warn("inputfile uuid %s is empty or not found in the system!" % file_uuid)
+			return ''
+
 		logger.info("inputfile uuid %s converted in %s ..." % (file_uuid,file_path))
 
 		return file_path
@@ -597,11 +592,6 @@ class SFinderNNConfigurator(AppConfigurator):
 	def transform_imgname(self, file_uuid):
 		""" Transform input file from uuid to actual path """		
 	
-		# - Get mongo info
-		mongo_enabled= current_app.config['USE_MONGO']
-		has_mongo= (mongo is not None)
-		use_mongo= (mongo_enabled and has_mongo)
-
 		# - Get aai info
 		username= 'anonymous'
 		if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
@@ -612,20 +602,21 @@ class SFinderNNConfigurator(AppConfigurator):
 		logger.info("Finding inputfile uuid %s ..." % file_uuid)
 		collection_name= username + '.files'
 
-		if use_mongo:
-			#data_collection= mongo.db[username]
+		file_path= ''
+		try:
 			data_collection= mongo.db[collection_name]
 			item= data_collection.find_one({'fileid': str(file_uuid)})
-			if item:
+			if item and item is not None:
 				file_path= item['filepath']
 			else:
 				logger.warn("File with uuid=%s not found in DB!" % file_uuid)
 				file_path= ''
-		else:
-			file_path= current_app.config['datamgr'].get_filepath(file_uuid)
-
-		if not file_path:
-			logger.warn("imgname uuid %s not found in the system!" % file_uuid)
+		except Exception as e:
+			logger.error("Exception (err=%s) catch when searching file in DB!" % str(e))
+			return ''
+		
+		if not file_path or file_path=='':
+			logger.warn("imgname uuid %s is empty or not found in the system!" % file_uuid)
 			return ''
 
 		return file_path
