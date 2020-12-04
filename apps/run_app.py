@@ -17,15 +17,12 @@ import caesar_rest
 from caesar_rest import __version__, __date__
 from caesar_rest import logger
 from caesar_rest.config import Config
-from caesar_rest.data_manager import DataManager
+## from caesar_rest.data_manager import DataManager  ### DEPRECATED
 from caesar_rest.job_configurator import JobConfigurator
 from caesar_rest.app import create_app
 from caesar_rest import oidc
-#from caesar_rest import db
 from caesar_rest import mongo
 from caesar_rest import celery
-###from caesar_rest import celery_app
-from celery.backends.mongodb import MongoBackend
 
 
 #### GET SCRIPT ARGS ####
@@ -47,6 +44,7 @@ def get_args():
 	# - Specify cmd options
 	parser.add_argument('-datadir','--datadir', dest='datadir', default='/opt/caesar-rest/data', required=False, type=str, help='Directory where to store uploaded data') 
 	parser.add_argument('-jobdir','--jobdir', dest='jobdir', default='/opt/caesar-rest/jobs', required=False, type=str, help='Directory where to store jobs') 
+	parser.add_argument('-job_monitoring_period','--job_monitoring_period', dest='job_monitoring_period', default=5, required=False, type=int, help='Job monitoring poll period in seconds') 
 	parser.add_argument('--debug', dest='debug', action='store_true')	
 	parser.set_defaults(debug=True)	
 	parser.add_argument('--aai', dest='aai', action='store_true')	
@@ -105,6 +103,7 @@ openid_realm= args.openid_realm
 ssl= args.ssl
 
 # - App options
+job_monitoring_period= args.job_monitoring_period
 sfindernn_weights= args.sfindernn_weights
 
 # - DB & celery result backend options
@@ -150,6 +149,8 @@ config= Config()
 config.UPLOAD_FOLDER= datadir
 config.JOB_DIR= jobdir
 config.USE_AAI= False
+config.JOB_MONITORING_PERIOD= job_monitoring_period
+
 if use_aai and oidc is not None:
 	config.USE_AAI= True
 	config.SECRET_KEY= 'SomethingNotEntirelySecret'
@@ -159,15 +160,18 @@ if use_aai and oidc is not None:
 
 
 if use_db and mongo is not None:
+	config.MONGO_HOST= args.dbhost
+	config.MONGO_PORT= args.dbport
+	config.MONGO_DBNAME= args.dbname
 	config.MONGO_URI= dbhost
 	config.USE_MONGO= True
 
 config.SFINDERNN_WEIGHTS = sfindernn_weights
 
-# - Create data manager	
-logger.info("Creating data manager ...")
-datamgr= DataManager(rootdir=config.UPLOAD_FOLDER)
-datamgr.register_data()
+# - Create data manager (DEPRECATED BY MONGO)
+##logger.info("Creating data manager ...")
+##datamgr= DataManager(rootdir=config.UPLOAD_FOLDER)
+##datamgr.register_data()
 
 # - Create job configurator
 logger.info("Creating job configurator ...")
@@ -182,7 +186,9 @@ celery.conf.broker_url= broker_url
 #==   CREATE APP
 #===============================
 logger.info("Creating and configuring app ...")
-app= create_app(config,datamgr,jobcfg)
+##app= create_app(config,datamgr,jobcfg)
+app= create_app(config,jobcfg)
+app.app_context().push()
 
 #===============================
 #==   INIT OIDC TO APP
