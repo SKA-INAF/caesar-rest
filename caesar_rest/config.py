@@ -9,7 +9,7 @@ import sys
 import uuid
 
 # Import module files
-from caesar_rest.data_manager import DataManager
+##from caesar_rest.data_manager import DataManager ## DEPRECATED
 from caesar_rest.job_configurator import JobConfigurator
 
 ##############################
@@ -30,6 +30,7 @@ class Config(object):
 	JOB_DIR= '/opt/caesar-rest/jobs'
 	UPLOAD_ALLOWED_FILE_FORMATS= set(['png', 'jpg', 'jpeg', 'gif', 'fits'])
 	#APP_NAMES= set(['sfinder']) 
+	JOB_MONITORING_PERIOD= 5 # in seconds
 	
 	# - AAI options
 	USE_AAI = False
@@ -39,6 +40,10 @@ class Config(object):
 
 	# - MONG DB options
 	USE_MONGO = False
+	MONGO_HOST= 'localhost'
+	MONGO_PORT= 27017
+	MONGO_DBNAME= 'caesardb' 
+	MONGO_URI= 'mongodb://localhost:27017/caesardb'
 
 	# - App options
 	SFINDERNN_WEIGHTS= '/opt/caesar-rest/share/mrcnn_weights.h5'
