@@ -35,6 +35,8 @@ from caesar_rest import celery
 # Import config class
 from caesar_rest.config import Config
 
+from pymongo import MongoClient
+
 
 ## Get logger
 logger = logging.getLogger(__name__)
@@ -42,33 +44,24 @@ logger = logging.getLogger(__name__)
 
 ##############################
 #   CELERY APP CREATION
-##############################
-# - When called configure celery 
+############################## 
 def configure_celery_app(app):
 	""" Create a Celery app """
     
 	# - Configure app from Flask config
 	celery.conf.update(app.config)
 
-	#logger.info("celery backend=%s" % celery.backend)
-	#logger.info("celery task.backend=%s" % celery.Task.backend)
-	#print("celery task.backend")
-	#print(celery.Task.backend)
-
 	# - Subclass task
 	TaskBase = celery.Task
 	class ContextTask(TaskBase):
 		abstract = True
+	 
 		def __call__(self, *args, **kwargs):
 			with app.app_context():
 				return TaskBase.__call__(self, *args, **kwargs)
     
 	celery.Task = ContextTask
-
-	#logger.info("celery task.backend=%s (after context)" % celery.Task.backend)
-	#print("celery task.backend")
-	#print(celery.Task.backend)
-
+	
 	
 ##############################
 #   FLASK APP CREATION 
@@ -84,7 +77,6 @@ def create_app(cfg,jc):
 	app.config.from_object(cfg)
 	
 	# - Add helper classes to app
-	### app.config['datamgr'] = dm ## DEPRECATED
 	app.config['jobcfg'] = jc
 
 	# - Configure Celery app
@@ -93,14 +85,12 @@ def create_app(cfg,jc):
 	# - Register routes as blueprints
 	from caesar_rest.index_route import index_bp
 	from caesar_rest.upload_route import upload_bp
-	#from caesar_rest.download_route import download_path_bp, download_id_bp
 	from caesar_rest.download_route import download_id_bp
 	from caesar_rest.download_route import fileids_bp
 	from caesar_rest.job_route import job_bp, job_status_bp, job_output_bp, job_cancel_bp
 	from caesar_rest.app_route import app_names_bp, app_describe_bp
 	app.register_blueprint(index_bp)
 	app.register_blueprint(upload_bp)
-	#app.register_blueprint(download_path_bp)
 	app.register_blueprint(download_id_bp)
 	app.register_blueprint(fileids_bp)
 	app.register_blueprint(job_bp)

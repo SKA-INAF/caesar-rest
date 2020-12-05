@@ -34,9 +34,13 @@ from celery.exceptions import Ignore, SoftTimeLimitExceeded
 # Import Celery app
 from caesar_rest.app import celery as celery_app
 from caesar_rest import utils
+#from caesar_rest.app import CustomTask
 
 # Import mongo
 from pymongo import MongoClient
+
+#from flask import current_app
+
 
 # Get logger
 logger = logging.getLogger(__name__)
@@ -58,8 +62,8 @@ def background_task(self,cmd,cmd_args,job_top_dir,username='anonymous',db_host='
 		'cmd_args': cmd_args,
 		'state': 'PENDING',
 		'status': 'Task pending to be executed',
-		'elapsed_time': '0', 
-		'exit_code': ''
+		'elapsed_time': -1, 
+		'exit_code': -1
 	}
 
 	res= {
@@ -67,10 +71,10 @@ def background_task(self,cmd,cmd_args,job_top_dir,username='anonymous',db_host='
 		'pid': '',
 		'cmd': cmd,
 		'cmd_args': cmd_args,
-		'exit_code': '',
+		'exit_code': -1,
 		'state': 'PENDING',
 		'status': 'Task pending to be executed',
-		'elapsed_time': '0'
+		'elapsed_time': -1
 	}
 
 	# - Connect to mongoDB	
@@ -78,6 +82,7 @@ def background_task(self,cmd,cmd_args,job_top_dir,username='anonymous',db_host='
 	client= None
 	try:
 		client= MongoClient(db_host, db_port)
+		#client= self.db
 	except Exception as e:
 		errmsg= 'Exception caught when connecting to DB server (err=' + str(e) + ')!' 
 		logger.error(errmsg)
@@ -170,7 +175,7 @@ def background_task(self,cmd,cmd_args,job_top_dir,username='anonymous',db_host='
 
 					task_info['state']= 'RUNNING'
 					task_info['status']= 'Task running in background'
-					task_info['elapsed_time']= str(elapsed)
+					task_info['elapsed_time']= elapsed
 					self.update_state(state='RUNNING', meta=task_info)
 
 					# - Update state & status in DB
@@ -198,11 +203,11 @@ def background_task(self,cmd,cmd_args,job_top_dir,username='anonymous',db_host='
 			elapsed = time.time() - start
 			task_info['state']= 'TIMED-OUT'
 			task_info['status']= status_msg
-			task_info['elapsed_time']= str(elapsed)
+			task_info['elapsed_time']= elapsed
 			self.update_state(state='TIMED-OUT', meta=task_info)
 			res['exit_code']= 124 # equivalent sigterm
 			res['status']= status_msg
-			res['elapsed_time']= str(elapsed)
+			res['elapsed_time']= elapsed
 
 			logger.info("Updating task state (TIMED-OUT) in DB ...")
 			if update_job_status_in_db(client, db_name, task_id, task_info, username)<0:
@@ -245,7 +250,7 @@ def background_task(self,cmd,cmd_args,job_top_dir,username='anonymous',db_host='
 
 	task_info['state']= task_state
 	task_info['status']= status_msg
-	task_info['elapsed_time']= str(elapsed)
+	task_info['elapsed_time']= elapsed
 	task_info['exit_code']= p.returncode
 	self.update_state(state=task_state, meta=task_info)
 
@@ -261,7 +266,7 @@ def background_task(self,cmd,cmd_args,job_top_dir,username='anonymous',db_host='
 		'exit_code': p.returncode, 
 		'state': task_state, 
 		'status': status_msg, 
-		'elapsed_time': str(elapsed)
+		'elapsed_time': elapsed
 	}
 
 	return res
