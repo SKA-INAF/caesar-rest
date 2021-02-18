@@ -27,6 +27,7 @@ from flask import send_file, send_from_directory, safe_join, abort, make_respons
 #from flask_api import status
 from werkzeug.utils import secure_filename
 from caesar_rest import oidc
+from caesar_rest import utils
 from caesar_rest.decorators import custom_require_login
 #from caesar_rest import db
 #from caesar_rest.data_model import DataFile #, DataCollection 
@@ -57,7 +58,9 @@ def upload_file():
 	# - Get aai info
 	username= 'anonymous'
 	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
-		username=g.oidc_token_info['email']
+		email= g.oidc_token_info['email']
+		username= utils.sanitize_username(email)
+		
 
 	# - Init response
 	res= {

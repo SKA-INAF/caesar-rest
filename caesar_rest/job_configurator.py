@@ -20,6 +20,7 @@ from flask import current_app, g
 # Import caesare rest momdules
 from caesar_rest import oidc
 from caesar_rest import mongo
+from caesar_rest import utils
 
 # Get logger
 logger = logging.getLogger(__name__)
@@ -527,8 +528,8 @@ class SFinderConfigurator(AppConfigurator):
 		# - Get aai info
 		username= 'anonymous'
 		if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
-			username=g.oidc_token_info['email']
-		logger.warn(username)
+			email= g.oidc_token_info['email']
+			username= utils.sanitize_username(email)
 
 		# - Inspect inputfile (expect it is a uuid, so convert to filename)
 		logger.info("Finding inputfile uuid %s ..." % file_uuid)
@@ -595,8 +596,8 @@ class SFinderNNConfigurator(AppConfigurator):
 		# - Get aai info
 		username= 'anonymous'
 		if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
-			username=g.oidc_token_info['email']
-		logger.warn(username)
+			email= g.oidc_token_info['email']
+			username= utils.sanitize_username(email)
 
 		# - Inspect inputfile (expect it is a uuid, so convert to filename)
 		logger.info("Finding inputfile uuid %s ..." % file_uuid)

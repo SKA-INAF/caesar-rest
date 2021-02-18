@@ -58,4 +58,15 @@ def make_tar(output_filename, source_dir):
 	with tarfile.open(output_filename, "w:gz") as tar:
 		tar.add(source_dir, arcname=os.path.basename(source_dir))
 
+def sanitize_username(s):
+	""" Sanitize username removing @ and . and replacing with underscores """
+
+	username= s.replace('@', '_')
+	username= username.replace('.', '_')
+
+	return username
+
+
+
+
 

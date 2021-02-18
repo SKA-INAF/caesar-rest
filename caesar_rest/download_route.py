@@ -25,6 +25,7 @@ from flask import current_app, Blueprint, render_template, request, redirect, ur
 from flask import send_file, send_from_directory, safe_join, abort, make_response, jsonify
 from werkzeug.utils import secure_filename
 from caesar_rest import oidc
+from caesar_rest import utils
 from caesar_rest.decorators import custom_require_login
 from caesar_rest import mongo
 from caesar_rest import logger
@@ -50,7 +51,8 @@ def get_registered_file_ids():
 	# - Get aai info
 	username= 'anonymous'
 	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info): 
-		username=g.oidc_token_info['email']
+		email= g.oidc_token_info['email']
+		username= utils.sanitize_username(email)
 
 	# - Get all file uuids
 	res= {}
@@ -96,7 +98,8 @@ def download_by_uuid(file_uuid):
 	# - Get aai info
 	username= 'anonymous'
 	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
-		username=g.oidc_token_info['email']
+		email= g.oidc_token_info['email']
+		username= utils.sanitize_username(email)
 
 	# - Search file uuid
 	collection_name= username + '.files'

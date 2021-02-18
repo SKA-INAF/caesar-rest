@@ -35,6 +35,7 @@ from caesar_rest.app import celery as celery_app
 from caesar_rest import workers
 from caesar_rest.workers import background_task
 from caesar_rest import oidc
+from caesar_rest import utils
 from caesar_rest.decorators import custom_require_login
 from caesar_rest import mongo
 
@@ -70,7 +71,8 @@ def submit_job():
 	# - Get aai info
 	username= 'anonymous'
 	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
-		username=g.oidc_token_info['email']
+		email= g.oidc_token_info['email']
+		username= utils.sanitize_username(email)
 
 	# - Get mongo info
 	mongo_dbhost= current_app.config['MONGO_HOST']
@@ -190,7 +192,8 @@ def get_job_ids():
 	# - Get aai info
 	username= 'anonymous'
 	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
-		username=g.oidc_token_info['email']
+		email= g.oidc_token_info['email']
+		username= utils.sanitize_username(email)
 
 	# - Get all job ids from DB
 	res= {}	
@@ -319,7 +322,8 @@ def get_job_status(task_id):
 	# - Get aai info
 	username= 'anonymous'
 	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
-		username=g.oidc_token_info['email']
+		email= g.oidc_token_info['email']
+		username= utils.sanitize_username(email)
 
 	# - Search job id in user collection
 	collection_name= username + '.jobs'
@@ -378,7 +382,8 @@ def get_job_output(task_id):
 	# - Get aai info
 	username= 'anonymous'
 	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
-		username=g.oidc_token_info['email']
+		email= g.oidc_token_info['email']
+		username= utils.sanitize_username(email)
 
 	# - Check job status
 	try:
