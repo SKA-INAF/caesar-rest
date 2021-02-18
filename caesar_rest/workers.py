@@ -3,6 +3,7 @@
 ##############################
 # Import standard modules
 import os
+import glob
 import signal
 import sys
 import json
@@ -49,7 +50,7 @@ logger = logging.getLogger(__name__)
 #   WORKERS
 ##############################
 @celery_app.task(bind=True)
-def background_task(self,cmd,cmd_args,job_top_dir,username='anonymous',db_host='localhost', db_port='27017', db_name='caesardb',monitoring_period=5):
+def background_task(self,app_name,cmd,cmd_args,job_top_dir,username='anonymous',db_host='localhost', db_port='27017', db_name='caesardb',monitoring_period=5):
 	"""Background task """
 
 	# - Initialize task info
@@ -259,6 +260,13 @@ def background_task(self,cmd,cmd_args,job_top_dir,username='anonymous',db_host='
 	if update_job_status_in_db(client, db_name, task_id, task_info, username)<0:
 		logger.warn("Failed to update task state (%s) in DB!" % task_info['state'])
 	
+	# - Execute post actions (in case of SUCCESS)
+	if p.returncode==0:
+		logger.info("Executing post actions after task %s success..." % task_id)
+		if do_post_actions(job_dir, app_name, cmd, cmd_args)<0:
+			logger.warn("Post actions failed for task %s" % task_id)
+
+	# - Reply to client	
 	res= {
 		'job_id': task_id,
 		'pid': str(pid),
@@ -298,4 +306,54 @@ def update_job_status_in_db(client, db_name, task_id, task_info, username='anony
 		return -1
 
 	return 0
+
+
+
+def do_post_actions(job_dir,app_name,cmd,cmd_args):
+	""" Execute job post actions """
+
+	if app_name=='sfinder':
+		return do_sfinder_post_actions(job_dir,app_name,cmd,cmd_args)	
+	# ... Add others
+
+	return 0
+
+def do_sfinder_post_actions(job_dir,app_name,cmd,cmd_args):
+	""" Execute sfinder psot actions """
+	
+	# - Parse options and get input filename
+	matching= [s for s in cmd_args if "--inputfile=" in s]
+	if not matching:
+		logger.warn("Can't find --inputfile option in given cmd args, stop post action.")
+		return -1
+	inputimg= matching[0].replace('--inputfile=','')
+
+	# - Search for region files in job directory
+	regionfiles= []
+	os.chdir(job_dir)
+	for filename in glob.glob("*.reg"):
+		regionfiles.append(filename)
+	logger.info("#%d region files found in dir %s..." % (len(regionfiles),job_dir))
+
+	# - Draw and save image+regions
+	zmin= 0
+	zmax= 0
+	contrast= 0.3
+	cmap= "afmhot"
+	save= True
+	outfile="plot.png"
+
+	status= utils.plot_img_and_regions(
+		inputimg,
+		regionfiles,
+		zmin=zmin, zmax= zmax,
+		cmap= cmap,
+		contrast=contrast,
+		save=save,
+		outfile=outfile
+	)	
+
+	if status<0:
+		logger.warn("Failed to draw and save img+regions!")
+		return -1
 
