@@ -78,10 +78,11 @@ def background_task(self,cmd,cmd_args,job_top_dir,username='anonymous',db_host='
 	}
 
 	# - Connect to mongoDB	
-	logger.info("Connecting to DB (dbhost=%s, dbname=%s) ..." % (db_host,db_name))
+	logger.info("Connecting to DB (dbhost=%s, dbname=%s, dbport=%s) ..." % (db_host,db_name,db_port))
 	client= None
+	db_port_int= int(db_port)
 	try:
-		client= MongoClient(db_host, db_port)
+		client= MongoClient(db_host, db_port_int)
 		#client= self.db
 	except Exception as e:
 		errmsg= 'Exception caught when connecting to DB server (err=' + str(e) + ')!' 

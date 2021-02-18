@@ -147,7 +147,7 @@ def submit_job():
 		"status": 'Job submitted',
 		"pid": '',
 		"elapsed_time": '0',
-		"exit_code": ''
+		"exit_code": -1
 	}
 
 	collection_name= username + '.jobs'
@@ -247,7 +247,7 @@ def cancel_job(task_id):
 #===      JOB STATUS HELPER
 #=================================
 def compute_job_status(task_id):
-	""" Compute job status """
+	""" Query job status from celery backend DB and adjust it """
 
 	# - Init reply
 	logger.info("Computing job status for task id=%s ..." % task_id)
@@ -256,7 +256,7 @@ def compute_job_status(task_id):
 	res['pid']= ''
 	res['state']= ''
 	res['status']= ''
-	res['exit_status']= ''
+	res['exit_code']= ''
 	res['elapsed_time']= ''
 
 	# - Get task
@@ -293,7 +293,7 @@ def compute_job_status(task_id):
 	res['pid']= task_pid
 	res['state']= task_state
 	res['status']= task_status
-	res['exit_status']= task_exit
+	res['exit_code']= task_exit
 	res['elapsed_time']= task_elapsed
 
 	return res
@@ -313,7 +313,7 @@ def get_job_status(task_id):
 	res['pid']= ''
 	res['state']= ''
 	res['status']= ''
-	res['exit_status']= ''
+	res['exit_code']= ''
 	res['elapsed_time']= ''
 
 	# - Get aai info
@@ -339,15 +339,27 @@ def get_job_status(task_id):
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 
-	# - Retrieve job status
-	try:
-		res= compute_job_status(task_id)
-		return make_response(jsonify(res),200)
+	# - Retrieve job status from Mongo DB
+	res['pid']= job['pid']
+	res['state']= job['state']
+	res['status']= job['status']
+	res['exit_code']= job['exit_code']
+	res['elapsed_time']= job['elapsed_time']
 
-	except NameError as e:
-		res['status']= str(e)
-		return make_response(jsonify(res),404)
-	
+	##########################################################################
+	##     ORIGINAL METHOD (RETRIEVE STATUS FROM CELERY RESULT BACKEND)
+	#try:
+	#	res= compute_job_status(task_id)
+	#	return make_response(jsonify(res),200)
+
+	#except NameError as e:
+	#	res['status']= str(e)
+	#	return make_response(jsonify(res),404)
+	###########################################################################
+
+	return make_response(jsonify(res),200)
+
+
 
 #=================================
 #===      JOB OUTPUT 
@@ -391,7 +403,6 @@ def get_job_output(task_id):
 		return make_response(jsonify(res),202)
 
 	# - Send file
-	#job_top_dir= current_app.config['JOB_DIR']
 	job_top_dir= current_app.config['JOB_DIR'] + '/' + username
 	job_dir_name= 'job_' + task_id
 	job_dir= os.path.join(job_top_dir,job_dir_name)
