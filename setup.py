@@ -47,6 +47,10 @@ reqs.append('pymongo')
 reqs.append('flask-pymongo')
 reqs.append('flask_oidc_ex')
 
+reqs.append('astropy')
+reqs.append('regions')
+
+
 setup(
 	name="caesar_rest",
 	version=get_version(),
