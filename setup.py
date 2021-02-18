@@ -47,6 +47,7 @@ reqs.append('pymongo')
 reqs.append('flask-pymongo')
 reqs.append('flask_oidc_ex')
 
+reqs.append('extension-helpers')
 reqs.append('astropy')
 reqs.append('regions')
 
