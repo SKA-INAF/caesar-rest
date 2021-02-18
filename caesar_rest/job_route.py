@@ -131,7 +131,8 @@ def submit_job():
 	job_monitoring_period= current_app.config['JOB_MONITORING_PERIOD']
 
 	task = background_task.apply_async(
-		[app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname, job_monitoring_period]
+		[app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname, job_monitoring_period],
+		queue= app_name # set queue name to app name
 	)
 	job_id= task.id
 	logger.info("Submitted job with id=%s ..." % job_id)
