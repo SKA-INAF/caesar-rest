@@ -322,7 +322,8 @@ def do_sfinder_post_actions(job_dir,app_name,cmd,cmd_args):
 	""" Execute sfinder psot actions """
 	
 	# - Parse options and get input filename
-	matching= [s for s in cmd_args if "--inputfile=" in s]
+	cmd_args_list= cmd_args.split()
+	matching= [s for s in cmd_args_list if "--inputfile=" in s]
 	if not matching:
 		logger.warn("Can't find --inputfile option in given cmd args, stop post action.")
 		return -1
