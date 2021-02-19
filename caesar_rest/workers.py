@@ -362,3 +362,5 @@ def do_sfinder_post_actions(job_dir,app_name,cmd,cmd_args):
 		logger.warn("Failed to draw and save img+regions!")
 		return -1
 
+	return 0
+
