@@ -348,17 +348,17 @@ def do_sfinder_post_actions(job_dir,app_name,cmd,cmd_args):
 	save= True
 	outfile="plot.png"
 
-	status= utils.plot_img_and_regions(
-		inputimg,
-		regionfiles,
-		zmin=zmin, zmax= zmax,
-		cmap= cmap,
-		contrast=contrast,
-		save=save,
-		outfile=outfile
-	)	
-
-	if status<0:
+	try:
+		utils.plot_img_and_regions(
+			inputimg,
+			regionfiles,
+			zmin=zmin, zmax= zmax,
+			cmap= cmap,
+			contrast=contrast,
+			save=save,
+			outfile=outfile
+		)	
+	except:
 		logger.warn("Failed to draw and save img+regions!")
 		return -1
 
