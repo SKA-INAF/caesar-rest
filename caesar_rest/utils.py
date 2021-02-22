@@ -11,7 +11,7 @@ import logging
 import numpy as np
 import hashlib
 import tarfile
-
+import subprocess
 
 # Import astro modules
 from astropy.io import fits
@@ -82,6 +82,16 @@ def sanitize_username(s):
 	username= username.replace('.', '_')
 
 	return username
+
+def get_dir_size(dirname,unit='K'):
+	""" Return the directory size in specified units """
+		
+	cmd= 'du'
+	cmd_args= '-shB' + unit
+	dirsize_str= subprocess.check_output([cmd,cmd_args, dirname]).split()[0].decode('utf-8')
+	dirsize= float(dirsize_str.replace(unit,''))
+	return dirsize
+
 
 def plot_img_and_regions(imgfile, regionfiles=[], zmin=0, zmax=0, cmap="afmhot", contrast=0.3, save=False, outfile="plot.png"):
 	""" Plot input FITS and regions """
