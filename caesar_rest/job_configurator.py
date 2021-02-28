@@ -305,7 +305,8 @@ class SFinderConfigurator(AppConfigurator):
 			'inputfile' : ValueOption('inputfile','',str,True),
 			#'filelist' : ValueOption('filelist','',True),
 		
-			# == OUTPUT OPTIONS ==		
+			# == OUTPUT OPTIONS ==
+			'save-fits' : Option('save-fits', description='Save maps (if save enabled) in FITS format (default=ROOT format)'),
 			'save-inputmap' : Option('save-inputmap', description='Save input map in output ROOT file (default=no)'),
 			'save-bkgmap' : Option('save-bkgmap', description='Save bkg map in output ROOT file (default=no)'),
 			'save-rmsmap' : Option('save-rmsmap', description='Save rms map in output ROOT file (default=no)'),
@@ -335,6 +336,7 @@ class SFinderConfigurator(AppConfigurator):
 			'mappixsize' : ValueOption('mappixsize','',float, description='Map pixel size in arcsec (NB: used only when info is not available in input map) (default=1 arcsec)'),
 			'globalbkg' : Option('globalbkg', description='Use global bkg (default=use local bkg)'),
 			'bkgestimator' : ValueOption('bkgestimator','',int, description='Stat estimator used for bkg (1=Mean,2=Median,3=BiWeight,4=ClippedMedian) (default=2)'),
+			'bkgboxpix': Option('bkgboxpix', description='Consider box size option expressed in pixels and not as a multiple of beam size (default=no)'), 
 			'bkgbox' : ValueOption('bkgbox','',int, description='Box size (muliple of beam size) used to compute local bkg (default=20 x beam)'),
 			'bkggrid' : ValueOption('bkggrid','',float, description='Grid size (fraction of bkg box) used to compute local bkg (default=0.2 x box)'),
 			'no-bkg2ndpass' : Option('no-bkg2ndpass', description='Do not perform a 2nd pass in bkg estimation (default=true)'),
@@ -399,6 +401,7 @@ class SFinderConfigurator(AppConfigurator):
 			'dilatekernsize' : ValueOption('dilatekernsize','',int, description='Size of dilating kernel in pixels (default=9)'),
 			'res-removedsourcetype' : ValueOption('res-removedsourcetype','',int, description='Type of source dilated from the input image (-1=ALL,1=COMPACT,2=POINT-LIKE,3=EXTENDED) (default=2)'),
 			'res-pssubtractionmethod' : ValueOption('res-pssubtractionmethod','',int, description='Method used to subtract point-sources in residual map (1=DILATION, 2=FIT MODEL REMOVAL)'),
+			'res-bkgaroundsource': Option('res-bkgaroundsource', description='Usebkg computed around source rather than the one computed using the global/local bkg map (default=false)'),
 
 			# == SOURCE FITTING OPTIONS ==
 			'fitsources' : Option('fitsources', description='Fit compact point-like sources found (default=false)'),
