@@ -1,0 +1,108 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: caesar-rest
+  labels:
+    app: caesar-rest
+spec:
+#  type: NodePort
+  ports:
+  - port: 3031
+    protocol: TCP
+    targetPort: 3031
+#    nodePort: 30000
+  selector:
+    app: caesar-rest
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: caesar-rest
+  labels:
+    app: caesar-rest
+spec:
+  selector:
+    matchLabels:
+      app: caesar-rest
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: caesar-rest
+    spec:
+      securityContext:
+        fsGroup: 1000
+      volumes:
+      - name: caesar-storage
+        persistentVolumeClaim:
+          claimName: pv-claim
+      initContainers:
+        - name: take-data-dir-ownership
+          image: sriggi/caesar-rest:light
+          command:
+            - chown
+            - -R
+            - 1000:1000
+            - /mnt/storage
+          volumeMounts:
+            - name: caesar-storage
+              mountPath: /mnt/storage
+      containers:
+      - name: caesar-rest
+        image: sriggi/caesar-rest:light
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: caesar-storage
+            mountPath: /mnt/storage
+        securityContext:
+          allowPrivilegeEscalation: false
+        env:
+        - name: PORT
+          value: "3031"
+        - name: DATADIR
+          value: "/mnt/storage/data"
+        - name: JOBDIR
+          value: "/mnt/storage/jobs"
+        - name: NWORKERS
+          value: "1"
+        - name: NTHREADS
+          value: "1"
+        - name: DBHOST
+          value: "db"
+        - name: DBPORT
+          value: "27017"
+        - name: DBNAME
+          value: "caesardb"
+        - name: AAI
+          value: "0"
+        - name: UWSGI_HTTP
+          value: "1"
+        - name: BROKER_URL
+          value: amqp://guest:guest@broker:5672/
+        - name: BROKER_HOST
+          value: "broker"
+        - name: BROKER_PORT
+          value: "5672"
+        - name: BROKER_PROTO
+          value: "amqp"
+        - name: BROKER_USER
+          value: "guest"
+        - name: BROKER_PASS
+          value: "guest"
+        - name: RESULT_BACKEND_URL
+          value: mongodb://db:27017/caesardb
+        - name: RESULT_BACKEND_HOST
+          value: "db"
+        - name: RESULT_BACKEND_PORT
+          value: "27017"
+        - name: RESULT_BACKEND_PROTO
+          value: "mongodb"
+        - name: RESULT_BACKEND_DBNAME
+          value: "caesardb"
+        resources: 
+          requests:
+            cpu: 1
+            memory: "256Mi"
+        ports:
+        - containerPort: 3031
+      
