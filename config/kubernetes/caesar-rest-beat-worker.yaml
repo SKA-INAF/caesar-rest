@@ -1,34 +1,18 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: caesar-rest
-  labels:
-    app: caesar-rest
-spec:
-#  type: NodePort
-  ports:
-  - port: 3031
-    protocol: TCP
-    targetPort: 3031
-#    nodePort: 30000
-  selector:
-    app: caesar-rest
----
 apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
 metadata:
-  name: caesar-rest
+  name: beat-worker
   labels:
-    app: caesar-rest
+    app: beat-worker
 spec:
   selector:
     matchLabels:
-      app: caesar-rest
+      app: beat-worker
   replicas: 1
   template:
     metadata:
       labels:
-        app: caesar-rest
+        app: beat-worker
     spec:
       securityContext:
         fsGroup: 1000
@@ -37,20 +21,8 @@ spec:
         persistentVolumeClaim:
           claimName: pv-claim
       initContainers:
-        - name: create-data-dir
-          image: sriggi/caesar-rest:light
-          command: ['mkdir','-p','/mnt/storage/data']
-          volumeMounts:
-            - name: caesar-storage
-              mountPath: /mnt/storage
-        - name: create-job-dir
-          image: sriggi/caesar-rest:light
-          command: ['mkdir','-p','/mnt/storage/jobs']
-          volumeMounts:
-            - name: caesar-storage
-              mountPath: /mnt/storage
-        - name: set-storage-dir-permissions
-          image: sriggi/caesar-rest:light
+        - name: take-data-dir-ownership
+          image: sriggi/caesar-rest-beat-worker:light
           command:
             - chown
             - -R
@@ -60,8 +32,8 @@ spec:
             - name: caesar-storage
               mountPath: /mnt/storage
       containers:
-      - name: caesar-rest
-        image: sriggi/caesar-rest:light
+      - name: beat-worker
+        image: sriggi/caesar-rest-beat-worker:light
         imagePullPolicy: Always
         volumeMounts:
           - name: caesar-storage
@@ -69,26 +41,14 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         env:
-        - name: PORT
-          value: "3031"
+        - name: NPROC
+          value: "1"
+        - name: QUEUE
+          value: "celery"
         - name: DATADIR
           value: "/mnt/storage/data"
         - name: JOBDIR
           value: "/mnt/storage/jobs"
-        - name: NWORKERS
-          value: "1"
-        - name: NTHREADS
-          value: "1"
-        - name: DBHOST
-          value: "db"
-        - name: DBPORT
-          value: "27017"
-        - name: DBNAME
-          value: "caesardb"
-        - name: AAI
-          value: "0"
-        - name: UWSGI_HTTP
-          value: "1"
         - name: BROKER_URL
           value: amqp://caesar:caesar@broker:5672/
 #          value: amqp://guest:guest@broker:5672/
@@ -114,10 +74,18 @@ spec:
           value: "mongodb"
         - name: RESULT_BACKEND_DBNAME
           value: "caesardb"
+        - name: CAESAR_REST_DBNAME
+          value: "caesardb"
+        - name: CAESAR_REST_DBHOST
+          value: "db"
+        - name: CAESAR_REST_DBPORT
+          value: "27017"
+        - name: CAESAR_REST_JOBDIR
+          value: "/mnt/storage/jobs"
+        - name: CAESAR_REST_DATADIR
+          value: "/mnt/storage/data"  
         resources: 
           requests:
-            cpu: 1
+            cpu: "0.1"
             memory: "256Mi"
-        ports:
-        - containerPort: 3031
-      
+
