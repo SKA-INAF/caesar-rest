@@ -111,11 +111,14 @@ def accounter_task(self):
 		
 
 	# - Traverse data directory and get users info
-	users= [name for name in os.listdir(JOB_DIR) if os.path.isdir(os.path.join(JOB_DIR,name))]
-	print("users")
-	print(users)
-	print("JOB_DIR")
-	print(JOB_DIR)
+	users= []
+	try:
+		users= [name for name in os.listdir(JOB_DIR) if os.path.isdir(os.path.join(JOB_DIR,name))]
+	except:
+		errmsg= 'Cannot retrieve job directory ' + str(JOB_DIR) + " (please check if existing on storage)!"
+		logger.error(errmsg)
+		return
+
 	if users:
 		logger.info("Found these users under job dir %s " % JOB_DIR)
 		print(users)
@@ -134,7 +137,14 @@ def accounter_task(self):
 				
 	
 	# - Traverse job directory and get users info
-	users= [name for name in os.listdir(DATA_DIR) if os.path.isdir(os.path.join(DATA_DIR,name))]
+	users= []
+	try:
+		users= [name for name in os.listdir(DATA_DIR) if os.path.isdir(os.path.join(DATA_DIR,name))]
+	except:
+		errmsg= 'Cannot retrieve data directory ' + str(DATA_DIR) + " (please check if existing on storage)!"
+		logger.error(errmsg)
+		return
+
 	if users:
 		logger.info("Found these users under data dir %s " % DATA_DIR)
 		print(users)

@@ -69,7 +69,12 @@ def get_accounting_info():
 	try:
 		coll= mongo.db[collection_name]
 		cursor= coll.find_one({},projection={"_id":0})
-		res = dict(cursor)
+		if res is None:
+			errmsg= 'Accounting info retrieved from DB for user ' + username + ' is None!)'
+			res['status']= errmsg
+			return make_response(jsonify(res),404)
+		else:
+			res = dict(cursor)
 
 	except Exception as e:
 		errmsg= 'Failed to get accounting info for user ' + username + ' from DB (err=' + str(e) + ')'
