@@ -354,8 +354,8 @@ class SFinderConfigurator(AppConfigurator):
 			'npixmin' : ValueOption('npixmin','',int, description='Minimum number of pixel to form a compact source (default=5 pixels)'),
 			'seedthr' : ValueOption('seedthr','',float, description='Seed threshold (in nsigmas) used in flood-fill (default=5 sigmas)'),
 			'mergethr' : ValueOption('mergethr','',float, description='Merge threshold (in nsigmas) used in flood-fill (default=2.6 sigmas)'),
-			'compactsearchiters' : ValueOption('compactsearchiters','',int, description='Maximum number of compact source search iterations (default=5)'),
-			'seedthrstep' : ValueOption('seedthrstep','',float, description='Seed thr decrease step across iterations (default=1)'),
+			'compactsearchiters' : ValueOption('compactsearchiters','',int, description='Maximum number of compact source search iterations (default=1)'),
+			'seedthrstep' : ValueOption('seedthrstep','',float, description='Seed thr decrease step across iterations (default=0.5)'),
 	
 			# == COMPACT SOURCE SELECTION OPTIONS ==
 			'selectsources' : Option('selectsources', description='Apply selection to compact sources found (default=false)'),
