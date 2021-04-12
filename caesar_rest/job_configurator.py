@@ -55,7 +55,8 @@ class JobConfigurator(object):
 		configurator= self.app_configurators[app_name]()
 		
 		status= configurator.validate(job_inputs)
-		if status<0:
+		#if status<0: # BUG: method return a bool
+		if not status:
 			status_msg= configurator.validation_status
 			logger.warn("Given inputs for app %s failed to be validated!" % app_name)
 			return (None,None,status_msg)
@@ -202,9 +203,9 @@ class AppConfigurator(object):
 			return False
 
 		# - Convert json string to dictionary
-		print("type(job_inputs)")
-		print(type(job_inputs))
-		print(job_inputs)
+		#print("type(job_inputs)")
+		#print(type(job_inputs))
+		#print(job_inputs)
 
 		if not isinstance(job_inputs,dict):
 			self.validation_status= 'Given job inputs data is not a dictionary!'
@@ -219,9 +220,9 @@ class AppConfigurator(object):
 			logger.warn(self.validation_status)
 			return False
 
-		print("type(self.job_inputs)")
-		print(type(self.job_inputs))
-		print(self.job_inputs)
+		#print("type(self.job_inputs)")
+		#print(type(self.job_inputs))
+		#print(self.job_inputs)
 
 		# - Validate options 
 		valid= self.validate_options()
