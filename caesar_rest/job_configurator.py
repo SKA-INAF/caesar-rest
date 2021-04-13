@@ -55,7 +55,6 @@ class JobConfigurator(object):
 		configurator= self.app_configurators[app_name]()
 		
 		status= configurator.validate(job_inputs)
-		#if status<0: # BUG: method return a bool
 		if not status:
 			status_msg= configurator.validation_status
 			logger.warn("Given inputs for app %s failed to be validated!" % app_name)
