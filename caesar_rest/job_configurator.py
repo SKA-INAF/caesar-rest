@@ -98,6 +98,24 @@ class JobConfigurator(object):
 		#return json.loads(json.dumps(d))
 		return d
 
+
+	def has_batch_processing_support(self,app_name):
+		""" Check if given app supports batch processing """
+
+		# - Check app name if found
+		if app_name not in self.app_configurators:
+			msg= 'App ' + app_name + ' not known or supported'
+			logger.warn(msg)
+			return None
+
+		# - Create an instance of app configurator
+		configurator= self.app_configurators[app_name]()
+
+		# - Get flag
+		flag= configurator.batch_processing_support
+
+		return flag
+
 ##############################
 #   APP CONFIGURATOR
 ##############################
@@ -156,6 +174,7 @@ class AppConfigurator(object):
 		self.valid_options= {}
 		self.options= []
 		self.option_value_transformer= {}
+		self.batch_processing_support= False
 
 	def describe_dict(self):
 		""" Return a dictionary describing valid options """
@@ -227,6 +246,7 @@ class AppConfigurator(object):
 		valid= self.validate_options()
 		print("--> %s args" % self.cmd)
 		print(self.cmd_args)
+
 		
 		return valid
 
@@ -264,6 +284,9 @@ class AppConfigurator(object):
 				# - Return option value transformed (if transform function is defined in derived classes) or the same option value
 				opt_value_str= str(parsed_value)
 				transf_opt_value_str= self.get_transformed_option_value(opt_name,opt_value_str)
+				if transf_opt_value_str=='':
+					logger.warn("Transformed option value is empty string, failed validation, check logs!")
+					return False
 
 				# - Add option
 				value_option= ValueOption(opt_name,transf_opt_value_str,expected_val_type,mandatory)
@@ -298,6 +321,7 @@ class SFinderConfigurator(AppConfigurator):
 		# - Define cmd name
 		self.cmd= 'SFinderSubmitter.sh'
 		self.cmd_args= []
+		self.batch_processing_support= True
 
 		# - Define dictionary with allowed options
 		self.valid_options= {
@@ -523,6 +547,18 @@ class SFinderConfigurator(AppConfigurator):
 		self.option_value_transformer= {
 			'inputfile': self.transform_inputfile
 		}
+
+		# - Fill some default cmd args
+		use_slurm= current_app.config['USE_SLURM']
+		if use_slurm:
+			logger.info("Adding Slurm options by default ...")
+			queue_opt= '--queue=' + current_app.config['SLURM_QUEUE']
+			self.cmd_args.append("--batchsystem=SLURM")
+			self.cmd_args.append(queue_opt)
+		else:
+			logger.info("Adding --run option by default ...")
+			self.cmd_args.append("--run")
+
 	
 
 	def transform_inputfile(self,file_uuid):
@@ -577,6 +613,7 @@ class SFinderNNConfigurator(AppConfigurator):
 		self.cmd= 'run_mrcnn.sh --runmode=detect --weights=' + self.weights + ' '
 		self.cmd_args= []
 		#self.cmd_mode= ''
+		self.batch_processing_support= False
 
 		# - Define dictionary with allowed options
 		self.valid_options= {

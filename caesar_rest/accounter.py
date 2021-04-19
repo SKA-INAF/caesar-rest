@@ -100,17 +100,9 @@ def accounter_task(self):
 	# - Init DB data structure
 	logger.info("Creating data file object ...")
 	now= datetime.datetime.utcnow()
-	#account_data_list= []
-	#_data= {
-	#	"datasize": 0,
-	#	"jobsize": 0,
-	#}
 	account_data= {}
 
-	#collection_name= username + '.files'
-		
-
-	# - Traverse data directory and get users info
+	# - Traverse job directory and get users info
 	users= []
 	try:
 		users= [name for name in os.listdir(JOB_DIR) if os.path.isdir(os.path.join(JOB_DIR,name))]
@@ -134,9 +126,9 @@ def accounter_task(self):
 				account_data[user]= {}
 				account_data[user]["timestamp"]= now
 				account_data[user]["jobsize"]= dirsize
-				
+
 	
-	# - Traverse job directory and get users info
+	# - Traverse data directory and get users info
 	users= []
 	try:
 		users= [name for name in os.listdir(DATA_DIR) if os.path.isdir(os.path.join(DATA_DIR,name))]
@@ -187,17 +179,24 @@ def accounter_task(self):
 		n_jobs_running= 0
 		n_jobs_unknown= 0
 		job_runtime= 0
+		job_completed_runtime= 0
 
 		for job in job_list:
 			#print("job")
 			#print(job)
 			job_state= 'UNKNOWN'
 			job_elapsed_time= 0.
+			job_completed_elapsed_time= 0.
 			if "state" in job:
 				job_state= job["state"]
 			if "elapsed_time" in job:
 				job_elapsed_time= float(job["elapsed_time"])
+				if job_state=="SUCCESS":
+					job_completed_elapsed_time= float(job["elapsed_time"])
+			
 			job_runtime+= job_elapsed_time
+			job_completed_runtime+= job_completed_elapsed_time
+
 			if job_state=="SUCCESS":
 				n_jobs_completed+= 1
 			elif job_state=="FAILURE":
@@ -213,6 +212,7 @@ def accounter_task(self):
 
 		# - Update account data with job stats
 		account_data[username]["job_runtime"]= job_runtime
+		account_data[username]["job_completed_runtime"]= job_completed_runtime
 		account_data[username]["njobs"]= n_jobs
 		account_data[username]["njobs_completed"]= n_jobs_completed
 		account_data[username]["njobs_failed"]= n_jobs_failed
@@ -221,12 +221,63 @@ def accounter_task(self):
 		account_data[username]["njobs_running"]= n_jobs_running
 		account_data[username]["njobs_unknown"]= n_jobs_unknown
 		
-		
 	print("account_data")
 	print(account_data)
 
-	# - Dump info to DB
-	logger.info("Dumping into to DB ...")
+	# - Compute app cumulative info from single accounts
+	app_data= {}
+	app_data["timestamp"]= now
+	app_data["nusers"]= len(account_data)
+	app_data["datasize"]= 0
+	app_data["jobsize"]= 0
+	app_data["totsize"]= 0
+	app_data["njobs"]= 0
+	app_data["njobs_completed"]= 0
+	app_data["njobs_failed"]= 0
+	app_data["njobs_aborted"]= 0
+	app_data["njobs_pending"]= 0
+	app_data["njobs_running"]= 0
+	app_data["njobs_unknown"]= 0
+	app_data["job_runtime"]= 0
+	app_data["job_completed_runtime"]= 0
+	app_data["avg_completed_job_runtime"]= 0
+
+	for username in account_data:
+		data= account_data[username]
+		
+		if "datasize" in data:
+			app_data["datasize"]+= data["datasize"]
+			app_data["totsize"]+= data["datasize"]
+
+		if "jobsize" in data:
+			app_data["jobsize"]+= data["jobsize"]
+			app_data["totsize"]+= data["jobsize"]
+
+		if "njobs" in data:
+			app_data["njobs"]+= data["njobs"]
+		if "njobs_completed" in data:
+			app_data["njobs_completed"]+= data["njobs_completed"]
+		if "njobs_failed" in data:
+			app_data["njobs_failed"]+= data["njobs_failed"]
+		if "njobs_aborted" in data:
+			app_data["njobs_aborted"]+= data["njobs_aborted"]
+		if "njobs_pending" in data:
+			app_data["njobs_pending"]+= data["njobs_pending"]
+		if "njobs_running" in data:
+			app_data["njobs_running"]+= data["njobs_running"]
+		if "njobs_unknown" in data:
+			app_data["njobs_unknown"]+= data["njobs_unknown"]
+
+		if "job_runtime" in data:
+			app_data["job_runtime"]+= data["job_runtime"]
+		if "job_completed_runtime" in data:
+			app_data["job_completed_runtime"]+= data["job_completed_runtime"]
+
+	if app_data["njobs_completed"]>0:
+		app_data["avg_completed_job_runtime"]= app_data["job_completed_runtime"]/float(app_data["njobs_completed"])
+
+	# - Dump accounting info to DB
+	logger.info("Dumping accounting into to DB ...")
 	for username in account_data:
 		data= account_data[username]
 		collection_name= username + '.accounting'
@@ -242,4 +293,21 @@ def accounter_task(self):
 			errmsg= 'Exception caught when updating account data for user '+  username + ' in DB (err=' + str(e) + ')!'
 			logger.error(errmsg)
 			continue
+
+	# - Dump app stats info to DB
+	logger.info("Dumping app stats into to DB ...")
+	collection_name= 'appstats'
+	try:
+		coll= client[DB_NAME][collection_name]
+		item= coll.find_one()
+		if item is None:
+			coll.insert_one(app_data)
+		else:
+			coll.update_one({'_id':item['_id']},{'$set':app_data},upsert=False)
+	except Exception as e:
+		errmsg= 'Exception caught when updating app stats info data in DB (err=' + str(e) + ')!'
+		logger.error(errmsg)
+
+	
+
 

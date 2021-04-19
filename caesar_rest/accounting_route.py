@@ -82,5 +82,41 @@ def get_accounting_info():
 		return make_response(jsonify(res),404)
 		
 	return make_response(jsonify(res),200)
+
+
+
+#=================================
+#===      APP STATS INFO 
+#=================================
+@accounting_bp.route('/appstats', methods=['GET'])
+@custom_require_login
+def get_appstats_info():
+	""" Retrieve app basic stats info cumulated over all users """
+
+	# - Get aai info
+	username= 'anonymous'
+	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
+		email= g.oidc_token_info['email']
+		username= utils.sanitize_username(email)
+
+	# - Get app stats info from DB
+	res= {}	
+	collection_name= 'appstats'
+	try:
+		coll= mongo.db[collection_name]
+		cursor= coll.find_one({},projection={"_id":0})
+		if res is None:
+			errmsg= 'App stats info retrieved from DB is None!)'
+			res['status']= errmsg
+			return make_response(jsonify(res),404)
+		else:
+			res = dict(cursor)
+
+	except Exception as e:
+		errmsg= 'Failed to get app stats info from DB (err=' + str(e) + ')'
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
+		
+	return make_response(jsonify(res),200)
 	
 
