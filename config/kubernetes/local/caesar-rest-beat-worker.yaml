@@ -1,0 +1,91 @@
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: beat-worker
+  labels:
+    app: beat-worker
+spec:
+  selector:
+    matchLabels:
+      app: beat-worker
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: beat-worker
+    spec:
+      securityContext:
+        fsGroup: 1000
+      volumes:
+      - name: caesar-storage
+        persistentVolumeClaim:
+          claimName: pv-claim
+      initContainers:
+        - name: take-data-dir-ownership
+          image: sriggi/caesar-rest-beat-worker:light
+          command:
+            - chown
+            - -R
+            - 1000:1000
+            - /mnt/storage
+          volumeMounts:
+            - name: caesar-storage
+              mountPath: /mnt/storage
+      containers:
+      - name: beat-worker
+        image: sriggi/caesar-rest-beat-worker:light
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: caesar-storage
+            mountPath: /mnt/storage
+        securityContext:
+          allowPrivilegeEscalation: false
+        env:
+        - name: NPROC
+          value: "1"
+        - name: QUEUE
+          value: "celery"
+        - name: DATADIR
+          value: "/mnt/storage/data"
+        - name: JOBDIR
+          value: "/mnt/storage/jobs"
+        - name: BROKER_URL
+          value: amqp://caesar:caesar@broker:5672/
+#          value: amqp://guest:guest@broker:5672/
+        - name: BROKER_HOST
+          value: "broker"
+        - name: BROKER_PORT
+          value: "5672"
+        - name: BROKER_PROTO
+          value: "amqp"
+        - name: BROKER_USER
+          value: "caesar"
+#          value: "guest"
+        - name: BROKER_PASS
+          value: "caesar"
+#          value: "guest"
+        - name: RESULT_BACKEND_URL
+          value: mongodb://db:27017/caesardb
+        - name: RESULT_BACKEND_HOST
+          value: "db"
+        - name: RESULT_BACKEND_PORT
+          value: "27017"
+        - name: RESULT_BACKEND_PROTO
+          value: "mongodb"
+        - name: RESULT_BACKEND_DBNAME
+          value: "caesardb"
+        - name: CAESAR_REST_DBNAME
+          value: "caesardb"
+        - name: CAESAR_REST_DBHOST
+          value: "db"
+        - name: CAESAR_REST_DBPORT
+          value: "27017"
+        - name: CAESAR_REST_JOBDIR
+          value: "/mnt/storage/jobs"
+        - name: CAESAR_REST_DATADIR
+          value: "/mnt/storage/data"  
+        resources: 
+          requests:
+            cpu: "0.1"
+            memory: "256Mi"
+
