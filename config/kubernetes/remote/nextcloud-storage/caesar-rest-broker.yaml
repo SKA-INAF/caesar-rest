@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: broker
+  labels:
+    app: broker
+spec:
+  ports:
+  - port: 5672
+    protocol: TCP
+    targetPort: 5672
+  selector:
+    app: broker
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+#kind: Deployment
+kind: StatefulSet
+metadata:
+  name: broker
+  labels:
+    app: broker
+spec:
+  serviceName: "broker"
+  selector:
+    matchLabels:
+      app: broker
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: broker
+    spec:
+      hostname: broker
+#      initContainers:
+#        - name: add-user
+#          image: sriggi/caesar-rest-broker:latest
+#          command:
+#            - rabbitmqctl
+#            - add_user
+#            - caesar
+#            - caesar
+#        - name: set-user-permissions
+#          image: sriggi/caesar-rest-broker:latest
+#          command: ['rabbitmqctl','set_permissions','-p','/','caesar','".*"','".*"','".*"']     
+      containers:
+      - name: broker
+        image: sriggi/caesar-rest-broker:latest
+        imagePullPolicy: Always 
+        command: ["rabbitmq-server"]
+        resources: 
+          requests:
+            cpu: "0.1"
+            memory: "256Mi"
+        ports:
+        - containerPort: 5672
+#        env:
+#        - name: RABBITMQ_DEFAULT_USER
+#          value: "caesar"
+#        - name: RABBITMQ_DEFAULT_PASS
+#          value: "caesar"
+        volumeMounts:
+          - name: broker-storage
+            mountPath: "/var/lib/rabbitmq/mnesia"
+      volumes:
+      - name: broker-storage
+        persistentVolumeClaim:
+          claimName: pvc-broker

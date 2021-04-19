@@ -1,0 +1,17 @@
+#apiVersion: networking.k8s.io/v1
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: caesar-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-body-size: 100m
+spec:
+  rules:
+  - host: caesar.srv.it
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: caesar-rest
+          servicePort: 3031

@@ -1,0 +1,82 @@
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: worker
+  labels:
+    app: worker
+spec:
+  selector:
+    matchLabels:
+      app: worker
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      securityContext:
+        fsGroup: 1000
+      volumes:
+      - name: fuse
+        hostPath:
+          path: /dev/fuse
+      - name: rclone-secret
+        secret:
+          secretName: rclone-secret
+      hostname: worker
+      containers:
+      - name: worker
+        image: sriggi/caesar-rest-worker:light
+        imagePullPolicy: Always 
+        resources: 
+          requests:
+            cpu: "0.1"
+            memory: "256Mi"
+        volumeMounts:
+          - name: rclone-secret
+            mountPath: "/root/.config/rclone/"
+          - name: fuse
+            mountPath: "/dev/fuse"
+        securityContext:
+#          allowPrivilegeEscalation: false
+          privileged: true
+          capabilities:
+            add:
+              - SYS_ADMIN
+        env:
+        - name: NPROC
+          value: "2"
+        - name: QUEUE
+          value: "sfinder"
+        - name: BROKER_URL
+          value: amqp://caesar:caesar@broker:5672/
+        - name: BROKER_HOST
+          value: "broker"
+        - name: BROKER_PORT
+          value: "5672"
+        - name: BROKER_PROTO
+          value: "amqp"
+        - name: BROKER_USER
+          value: "caesar"
+        - name: BROKER_PASS
+          value: "caesar"
+        - name: RESULT_BACKEND_URL
+          value: "mongodb://db:27017/caesardb"
+        - name: RESULT_BACKEND_HOST
+          value: "db"
+        - name: RESULT_BACKEND_PORT
+          value: "27017"
+        - name: RESULT_BACKEND_PROTO
+          value: "mongodb"
+        - name: RESULT_BACKEND_DBNAME
+          value: "caesardb"
+        - name: MOUNT_RCLONE_VOLUME
+          value: "1"
+        - name: RCLONE_REMOTE_STORAGE
+          value: "neanias-nextcloud"
+        - name: RCLONE_REMOTE_STORAGE_PATH
+          value: "appdata/"
+        - name: MOUNT_VOLUME_PATH
+          value: "/mnt/storage"
+        - name: RCLONE_MOUNT_WAIT_TIME
+          value: "10" 

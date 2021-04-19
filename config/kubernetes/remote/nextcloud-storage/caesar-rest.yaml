@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: caesar-rest
+  labels:
+    app: caesar-rest
+spec:
+  ports:
+  - port: 3031
+    protocol: TCP
+    targetPort: 3031
+  selector:
+    app: caesar-rest
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: caesar-rest
+  labels:
+    app: caesar-rest
+spec:
+  selector:
+    matchLabels:
+      app: caesar-rest
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: caesar-rest
+    spec:
+      securityContext:
+        fsGroup: 1000
+      volumes:
+      - name: fuse
+        hostPath:
+          path: /dev/fuse
+      - name: rclone-secret
+        secret:
+          secretName: rclone-secret
+      containers:
+      - name: caesar-rest
+        image: sriggi/caesar-rest:light
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: rclone-secret
+            mountPath: "/root/.config/rclone/"
+          - name: fuse
+            mountPath: "/dev/fuse"
+        securityContext:
+#          allowPrivilegeEscalation: false
+          privileged: true
+          capabilities:
+            add:
+              - SYS_ADMIN
+        env:
+        - name: PORT
+          value: "3031"
+        - name: DATADIR
+          value: "/mnt/storage/data"
+        - name: JOBDIR
+          value: "/mnt/storage/jobs"
+        - name: NWORKERS
+          value: "1"
+        - name: NTHREADS
+          value: "1"
+        - name: DBHOST
+          value: "db"
+        - name: DBPORT
+          value: "27017"
+        - name: DBNAME
+          value: "caesardb"
+        - name: AAI
+          value: "0"
+        - name: UWSGI_HTTP
+          value: "1"
+        - name: BROKER_URL
+          value: amqp://caesar:caesar@broker:5672/
+        - name: BROKER_HOST
+          value: "broker"
+        - name: BROKER_PORT
+          value: "5672"
+        - name: BROKER_PROTO
+          value: "amqp"
+        - name: BROKER_USER
+          value: "caesar"
+        - name: BROKER_PASS
+          value: "caesar"
+        - name: RESULT_BACKEND_URL
+          value: mongodb://db:27017/caesardb
+        - name: RESULT_BACKEND_HOST
+          value: "db"
+        - name: RESULT_BACKEND_PORT
+          value: "27017"
+        - name: RESULT_BACKEND_PROTO
+          value: "mongodb"
+        - name: RESULT_BACKEND_DBNAME
+          value: "caesardb"
+        - name: MOUNT_RCLONE_VOLUME
+          value: "1"
+        - name: RCLONE_REMOTE_STORAGE
+          value: "neanias-nextcloud"
+        - name: RCLONE_REMOTE_STORAGE_PATH
+          value: "appdata/"
+        - name: MOUNT_VOLUME_PATH
+          value: "/mnt/storage"
+        - name: RCLONE_MOUNT_WAIT_TIME
+          value: "10"
+        resources: 
+          requests:
+            cpu: "1"
+            memory: "512Mi"
+        ports:
+        - containerPort: 3031
