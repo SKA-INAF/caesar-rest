@@ -89,7 +89,7 @@ def create_app(cfg,jc):
 	from caesar_rest.download_route import fileids_bp
 	from caesar_rest.job_route import job_bp, job_status_bp, job_output_bp, job_cancel_bp
 	from caesar_rest.app_route import app_names_bp, app_describe_bp
-	from caesar_rest.accounting_route import accounting_bp
+	from caesar_rest.accounting_route import accounting_bp, appstats_bp
 	app.register_blueprint(index_bp)
 	app.register_blueprint(upload_bp)
 	app.register_blueprint(download_id_bp)
@@ -101,6 +101,7 @@ def create_app(cfg,jc):
 	app.register_blueprint(app_names_bp)
 	app.register_blueprint(app_describe_bp)
 	app.register_blueprint(accounting_bp)
+	app.register_blueprint(appstats_bp)
 
 	return app
 

@@ -47,6 +47,7 @@ logger = logging.getLogger(__name__)
 #   CREATE BLUEPRINTS
 ##############################
 accounting_bp = Blueprint('accounting', __name__,url_prefix='/caesar/api/v1.0')
+appstats_bp = Blueprint('appstats', __name__,url_prefix='/caesar/api/v1.0')
 
 
 #=================================
@@ -88,7 +89,7 @@ def get_accounting_info():
 #=================================
 #===      APP STATS INFO 
 #=================================
-@accounting_bp.route('/appstats', methods=['GET'])
+@appstats_bp.route('/appstats', methods=['GET'])
 @custom_require_login
 def get_appstats_info():
 	""" Retrieve app basic stats info cumulated over all users """
