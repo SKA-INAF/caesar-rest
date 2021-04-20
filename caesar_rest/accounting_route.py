@@ -49,7 +49,6 @@ logger = logging.getLogger(__name__)
 accounting_bp = Blueprint('accounting', __name__,url_prefix='/caesar/api/v1.0')
 appstats_bp = Blueprint('appstats', __name__,url_prefix='/caesar/api/v1.0')
 
-
 #=================================
 #===      ACCOUNTING INFO 
 #=================================
