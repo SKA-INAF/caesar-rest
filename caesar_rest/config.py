@@ -31,6 +31,11 @@ class Config(object):
 	UPLOAD_ALLOWED_FILE_FORMATS= set(['png', 'jpg', 'jpeg', 'gif', 'fits'])
 	#APP_NAMES= set(['sfinder']) 
 	JOB_MONITORING_PERIOD= 5 # in seconds
+
+	# - SLURM options
+	USE_SLURM= False
+	SLURM_QUEUE= 'normal'
+	SLURM_USER= 'cirasa'	
 	
 	# - AAI options
 	USE_AAI = False
