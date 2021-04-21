@@ -78,6 +78,9 @@ def submit_job():
 	mongo_dbhost= current_app.config['MONGO_HOST']
 	mongo_dbport= current_app.config['MONGO_PORT']
 	mongo_dbname= current_app.config['MONGO_DBNAME']
+
+	# - Get other options
+	slurm_enabled= current_app.config['USE_SLURM']
 	
 	# - Get request data
 	req_data = request.get_json(silent=True)
@@ -119,6 +122,8 @@ def submit_job():
 		res['status']= val_status
 		return make_response(jsonify(res),400)
 
+	
+	# - Convert cmd arg list to string
 	cmd_args= ''
 	if cmd_arg_list:
 		cmd_args= ' '.join(cmd_arg_list)
@@ -233,17 +238,33 @@ def cancel_job(task_id):
 
 	# - Revoke task
 	logger.info("Revoking task %s ..." % task_id)
-	#task.revoke(task_id,terminate=True,signal='SIGKILL')
-	#task.revoke(task_id,terminate=True,signal='SIGUSR1')
-	revoke(task_id, terminate=True,signal='SIGTERM')
-	#revoke(task_id, terminate=True,signal='SIGUSR1') # force celery task to go to SOFT TIME OUT
+	try:
+		#task.revoke(task_id,terminate=True,signal='SIGKILL')
+		#task.revoke(task_id,terminate=True,signal='SIGUSR1')
+		#revoke(task_id, terminate=True,signal='SIGUSR1') # force celery task to go to SOFT TIME OUT
+		revoke(task_id, terminate=True,signal='SIGTERM')
+		
+	except Exception as e:
+		errmsg= 'Exception caught when attempting to rekove task ' + task_id + ' (err=' + str(e) + ')!' 
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),500)
 
 	# - Kill background process
+	#   NB: This is not working if running in multi nodes
 	pid= task.info.get('pid', '')
-	logger.info("Killing pid=%s ..." % pid)
-	os.killpg(os.getpgid(int(pid)), signal.SIGKILL)  # Send the signal to all the process groups
+	res['status']= 'Task revoked'
 
-	res['status']= 'Task canceled with success'
+	logger.info("Killing pid=%s ..." % pid)
+	try:
+		os.killpg(os.getpgid(int(pid)), signal.SIGKILL)  # Send the signal to all the process groups
+		res['status']= 'Task revoked and background process canceled with success'
+
+	except Exception as e:
+		errmsg= 'Exception caught when attempting to kill background task process with PID=' + pid + ' (err=' + str(e) + ')!' 
+		logger.warn(errmsg)
+		res['status']= 'Task revoked but failed to cancel background process (err=' + str(e) + ')'
+		
 	return make_response(jsonify(res),200)
 
 

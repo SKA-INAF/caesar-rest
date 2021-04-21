@@ -277,7 +277,7 @@ def accounter_task(self):
 		app_data["avg_completed_job_runtime"]= app_data["job_completed_runtime"]/float(app_data["njobs_completed"])
 
 	# - Dump accounting info to DB
-	logger.info("Dumping accounting into to DB ...")
+	logger.info("Dumping accounting info to DB ...")
 	for username in account_data:
 		data= account_data[username]
 		collection_name= username + '.accounting'
