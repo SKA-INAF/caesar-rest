@@ -414,8 +414,8 @@ def submit_batch_job(app_name, task_id, cmd, cmd_args, job_dir, client, db_name,
 
 	# - Initialize task info
 	res= {
-		'job_id': -1
-		'retcode': -1
+		'job_id': -1,
+		'retcode': -1,
 		'msg': ''
 	}
 
