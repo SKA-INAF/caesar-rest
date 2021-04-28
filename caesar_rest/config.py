@@ -32,6 +32,11 @@ class Config(object):
 	#APP_NAMES= set(['sfinder']) 
 	JOB_MONITORING_PERIOD= 5 # in seconds
 
+	JOB_SCHEDULER= 'celery' # Options are: {'celery','kubernetes','slurm'}
+
+	# - KUBERNETES options
+	# ...
+
 	# - SLURM options
 	USE_SLURM= False
 	SLURM_QUEUE= 'normal'
