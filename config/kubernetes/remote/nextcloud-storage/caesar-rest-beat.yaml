@@ -17,7 +17,7 @@ spec:
       hostname: beat
       containers:
       - name: beat
-        image: sriggi/caesar-rest-beat:light
+        image: sriggi/caesar-rest-beat:latest
         imagePullPolicy: Always 
         resources: 
           requests:

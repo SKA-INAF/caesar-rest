@@ -26,7 +26,7 @@ spec:
       hostname: worker
       containers:
       - name: worker
-        image: sriggi/caesar-rest-worker:light
+        image: sriggi/caesar-rest-worker:latest
         imagePullPolicy: Always 
         resources: 
           requests:

@@ -39,7 +39,7 @@ spec:
           secretName: rclone-secret
       containers:
       - name: caesar-rest
-        image: sriggi/caesar-rest:light
+        image: sriggi/caesar-rest:latest
         imagePullPolicy: Always
         volumeMounts:
           - name: rclone-secret
