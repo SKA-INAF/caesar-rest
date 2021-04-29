@@ -38,19 +38,19 @@ spec:
           claimName: pv-claim
       initContainers:
         - name: create-data-dir
-          image: sriggi/caesar-rest:light
+          image: sriggi/caesar-rest:latest
           command: ['mkdir','-p','/mnt/storage/data']
           volumeMounts:
             - name: caesar-storage
               mountPath: /mnt/storage
         - name: create-job-dir
-          image: sriggi/caesar-rest:light
+          image: sriggi/caesar-rest:latest
           command: ['mkdir','-p','/mnt/storage/jobs']
           volumeMounts:
             - name: caesar-storage
               mountPath: /mnt/storage
         - name: set-storage-dir-permissions
-          image: sriggi/caesar-rest:light
+          image: sriggi/caesar-rest:latest
           command:
             - chown
             - -R
@@ -61,7 +61,7 @@ spec:
               mountPath: /mnt/storage
       containers:
       - name: caesar-rest
-        image: sriggi/caesar-rest:light
+        image: sriggi/caesar-rest:latest
         imagePullPolicy: Always
         volumeMounts:
           - name: caesar-storage
