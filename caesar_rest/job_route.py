@@ -148,7 +148,7 @@ def submit_job():
 	#logger.info("Submitted job with id=%s ..." % job_id)
 
 	# - Submit task
-	submit_res= {}
+	submit_res= None
 	if job_scheduler=='celery':
 		submit_res= submit_job_celery(app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname)
 	
