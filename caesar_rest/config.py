@@ -33,9 +33,18 @@ class Config(object):
 	JOB_MONITORING_PERIOD= 5 # in seconds
 
 	JOB_SCHEDULER= 'celery' # Options are: {'celery','kubernetes','slurm'}
+	CAESAR_JOB_IMAGE= 'sriggi/caesar-job:latest'
+
+	# - VOLUME MOUNTS options
+	MOUNT_RCLONE_VOLUME= False
+	MOUNT_VOLUME_PATH= '/mnt/storage'
+	RCLONE_REMOTE_STORAGE= 'neanias-nextcloud'
+	RCLONE_REMOTE_STORAGE_PATH= '.'
+	RCLONE_SECRET_NAME= 'rclone-secret'
 
 	# - KUBERNETES options
-	# ...
+	KUBE_CONFIG_PATH= '' # searches by default in $HOME/.kube/config or in $KUBECONFIG
+	KUBE_INCLUSTER= True # if True assume client is running inside a pod deployed in same cluster, if False client is external to cluster
 
 	# - SLURM options
 	USE_SLURM= False

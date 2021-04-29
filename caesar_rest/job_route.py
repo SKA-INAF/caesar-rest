@@ -38,6 +38,7 @@ from caesar_rest import oidc
 from caesar_rest import utils
 from caesar_rest.decorators import custom_require_login
 from caesar_rest import mongo
+from caesar_rest import jobmgr_kube
 
 # Get logger
 logger = logging.getLogger(__name__)
@@ -80,8 +81,9 @@ def submit_job():
 	mongo_dbname= current_app.config['MONGO_DBNAME']
 
 	# - Get other options
-	slurm_enabled= current_app.config['USE_SLURM']
+	job_scheduler= current_app.config['JOB_SCHEDULER']
 	
+
 	# - Get request data
 	req_data = request.get_json(silent=True)
 	if not req_data:
@@ -128,19 +130,41 @@ def submit_job():
 	if cmd_arg_list:
 		cmd_args= ' '.join(cmd_arg_list)
 
-	# - Submit task async	
-	logger.info("Submitting job %s async (cmd=%s, args=%s) ..." % (app_name,cmd,cmd_args))
-	now = datetime.datetime.now()
-	submit_date= now.isoformat()
+	# - Set job top directory
 	job_top_dir= current_app.config['JOB_DIR'] + '/' + username
-	job_monitoring_period= current_app.config['JOB_MONITORING_PERIOD']
 
-	task = background_task.apply_async(
-		[app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname, job_monitoring_period],
-		queue= app_name # set queue name to app name
-	)
-	job_id= task.id
-	logger.info("Submitted job with id=%s ..." % job_id)
+	# - Submit task async	
+	#logger.info("Submitting job %s async (cmd=%s, args=%s) ..." % (app_name,cmd,cmd_args))
+	#now = datetime.datetime.now()
+	#submit_date= now.isoformat()
+	#job_top_dir= current_app.config['JOB_DIR'] + '/' + username
+	#job_monitoring_period= current_app.config['JOB_MONITORING_PERIOD']
+
+	#task = background_task.apply_async(
+	#	[app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname, job_monitoring_period],
+	#	queue= app_name # set queue name to app name
+	#)
+	#job_id= task.id
+	#logger.info("Submitted job with id=%s ..." % job_id)
+
+	# - Submit task
+	submit_res= {}
+	if job_scheduler=='celery':
+		submit_res= submit_job_celery(app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname)
+	
+	elif job_scheduler=='kubernetes':
+		submit_res= submit_job_kubernetes(app_name, cmd_args, job_top_dir)
+
+	elif job_scheduler=='slurm':
+		submit_res= submit_job_slurm()
+
+	if submit_res is None:
+		logger.warn("Failed to submit job to scheduler %s!" % job_scheduler)
+		res['state']= 'ABORTED'
+		res['status']= 'Job failed to be submitted!'
+		return make_response(jsonify(res),500)
+
+	submit_date= submit_res['submit_date']
 
 	# - Register task id in mongo
 	logger.info("Creating job object for task %s ..." % job_id)
@@ -186,6 +210,119 @@ def submit_job():
 	
 	return make_response(jsonify(res),202)
 
+
+#=================================
+#===    SUBMIT JOB CELERY
+#=================================
+def submit_job_celery(app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname):
+	""" Submit job to celery scheduler """
+
+	# - Set task options
+	now = datetime.datetime.now()
+	submit_date= now.isoformat()
+	job_monitoring_period= current_app.config['JOB_MONITORING_PERIOD']
+
+	# - Submit task to queue
+	logger.info("Submitting job %s async (cmd=%s, args=%s) ..." % (app_name,cmd,cmd_args))
+	task = background_task.apply_async(
+		[app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname, job_monitoring_period],
+		queue= app_name # set queue name to app name
+	)
+	job_id= task.id
+	logger.info("Submitted job with id=%s ..." % job_id)
+
+	res= {
+		"job_id": job_id,
+		"submit_date": submit_date,
+		"state": "PENDING",
+		"status": "Job submitted to queue"
+	}
+
+	return res
+
+#=================================
+#===    SUBMIT JOB KUBERNETES
+#=================================
+def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
+	""" Submit job to Kubernetes scheduler """
+
+	# - Init response
+	res= {}
+
+	# - Get app config options
+	image= current_app.config['CAESAR_JOB_IMAGE']
+	mount_rclone_vol= current_app.config['MOUNT_RCLONE_VOLUME']
+	mount_vol_path= current_app.config['MOUNT_VOLUME_PATH']
+	rclone_storage_name= current_app.config['RCLONE_REMOTE_STORAGE']
+	rclone_storage_path= current_app.config['RCLONE_REMOTE_STORAGE_PATH']
+	rclone_secret_name= current_app.config['RCLONE_SECRET_NAME']
+
+	# - Generate job id
+	job_id= utils.get_uuid()
+	
+	# - Create job object
+	if app_name=="sfinder":
+		if mount_rclone_vol:
+			job= jobmgr_kube.create_caesar_rclone_job(
+				job_args=cmd_args,
+				job_name=job_id, 
+				image=image, 
+				rclone_storage_name=rclone_storage_name, 
+				rclone_secret_name=rclone_secret_name, 
+				rclone_storage_path=rclone_storage_path, 
+				rclone_mount_path=mount_vol_path
+			)
+		else:
+			logger.warn("Unsupported job type required!")
+			return None
+	else:
+		logger.warn("Unknown/unsupported app %s!" % app_name)
+		return None
+
+	if job is None:
+		logger.warn("Failed to create Kube job object!")
+		return None
+
+	# - Create job top dir
+	job_dir_name= 'job_' + job_id
+	job_dir= os.path.join(job_top_dir,job_dir_name)
+
+	logger.info("Creating job dir %s (top dir=%s) ..." % (job_dir,job_top_dir))
+	try:
+		os.makedirs(job_dir)
+	except OSError as exc:
+		if exc.errno != errno.EEXIST:
+			errmsg= "Failed to create job directory " + job_dir + "!" 
+			logger.error(errmsg)
+			return None
+
+	# - Submit job
+	now = datetime.datetime.now()
+	submit_date= now.isoformat()
+	submit_job= jobmgr_kube.submit_job(job)
+	if submit_job is None:
+		logger.warn("Failed to submit job %d to Kubernetes cluster!" % job_id)
+		return None
+
+	logger.info("Submitted job with id=%s ..." % job_id)
+
+	res= {
+		"job_id": job_id,
+		"submit_date": submit_date,
+		"state": "PENDING",
+		"status": "Job submitted to Kubernetes scheduler"
+	}
+
+	return res
+
+#=================================
+#===    SUBMIT JOB SLURM
+#=================================
+def submit_job_slurm():
+	""" Submit job to Slurm scheduler """
+
+	# ...
+	# ...
 
 #=================================
 #===      JOB IDs 

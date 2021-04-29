@@ -14,10 +14,12 @@ import logging
 import numpy as np
 import pprint
 
-
 # - Import Kubernetes and related modules
 import yaml
-from kubernetes import client, config, utils
+#from kubernetes import client, config, utils
+from kubernetes import client
+from kubernetes import config as config_kube
+
 from kubernetes.client.rest import ApiException
 
 # - Import CAESAR-REST modules
@@ -32,11 +34,11 @@ logger = logging.getLogger(__name__)
 class KubeJobManager(object):
 	""" A wrapper class to manage Kubernetes jobs """    
 	
-	def __init__(self, configfile='', incluster=True):
+	def __init__(self):
 
 		# - Set default vars
-		self.configfile= configfile
-		self.incluster= incluster
+		self.configfile= ''
+		self.incluster= True
 		self.config_dict= {}
 		self.curr_context= ''
 		self.context_dict= {}
@@ -51,13 +53,13 @@ class KubeJobManager(object):
 		self.cafile= ''
 		self.verify_ssl = True
 		
-
 		# - Initialize
-		if self.initialize()<0:
-			logger.error("Failed to initialize Kube client from file %s!" % configfile)
-			# ...
-			# ...
-				
+		#if self.initialize()<0:
+		#	errmsg= 'Failed to initialize Kube client from file ' + configfile + '!'
+		#	logger.error(errmsg)
+		#	raise Exception(errmsg)
+		
+		
 	def parse_config(self):
 		""" Parse Kube config yaml file and set some variables """
 		
@@ -138,17 +140,19 @@ class KubeJobManager(object):
 
 		# - Load Kube configuration from file
 		if self.incluster:
+			logger.info("Loading Kube configuration incluster mode...")
 			try:
-				config.load_incluster_config(client_configuration=self.configuration)
+				config_kube.load_incluster_config(client_configuration=self.configuration)
 			except:
 				logger.warn("Failed to load kube config incluster mode!")
 				return -1
 		else:			
 			try:
 				if self.configfile=="":
-					config.load_kube_config(client_configuration=self.configuration)
+					logger.info("Loading Kube configuration from default config file ...")
+					config_kube.load_kube_config(client_configuration=self.configuration)
 				else:
-					config.load_kube_config(config_file=self.configfile,client_configuration=self.configuration)
+					config_kube.load_kube_config(config_file=self.configfile,client_configuration=self.configuration)
 			except:
 				logger.warn("Failed to load kube config!")
 				return -1
@@ -167,7 +171,7 @@ class KubeJobManager(object):
 		self.cluster_host= self.configuration.host
 		self.context_dict= {}
 		try:
-			self.context_dict= config.list_kube_config_contexts()[1]['context']
+			self.context_dict= config_kube.list_kube_config_contexts()[1]['context']
 		except:
 			logger.warn("Failed to get context dictionary from config!")
 			return -1
@@ -215,8 +219,12 @@ class KubeJobManager(object):
 		return 0
 
 
-	def initialize(self):
+	def initialize(self, configfile='', incluster=True):
 		""" Initialize configuration """
+
+		# - Set config options
+		self.configfile= configfile
+		self.incluster= incluster
 
 		# - Set configuration info
 		if self.set_config()<0:
@@ -246,34 +254,47 @@ class KubeJobManager(object):
 		res['elapsed_time']= ''
 
 		# - Get job with given name
-		job= None
+		submitted_job= None
 		try:
-			job = self.api_instance.read_namespaced_job(
+			submitted_job = self.api_instance.read_namespaced_job(
 				name=job_name, 
 				namespace=self.cluster_namespace, 
 				pretty=True
 			)
+			#pprint(submitted_job)
+
 		except ApiException as e:
 			logger.warn("Exception when calling BatchV1Api->read_namespaced_job_status: %s" % e) 
 			raise e
 
 		# - Compute job status
-		jobstatus_obj = job.status
+		jobstatus_obj = submitted_job.status
 		jobcond= jobstatus_obj.conditions
 		nactive= jobstatus_obj.active
 		nfailed= jobstatus_obj.failed
 		nsucceeded= jobstatus_obj.succeeded
-		
+		jobcond= jobstatus_obj.conditions
+
+		#print("jobstatus_obj")
+		#print(jobstatus_obj)
+
 		# - Map state
 		pending= (nactive==0 and nfailed==0 and nsucceeded==0) or (nactive==None and nfailed==None and nsucceeded==None)
 		failed= ( (nfailed is not None and nfailed>=1) and (nsucceeded==0 or nsucceeded==None))
 		success= ( (nsucceeded is not None and nsucceeded>=1) and (nfailed==0 or nfailed==None))
+		running= ( (nactive is not None and nactive>=1) and (nsucceeded==0 or nsucceeded==None) and (nfailed==0 or nfailed==None) )
 		if pending:
 			res['state']= 'PENDING'
 			res['status']= 'Job present in cluster but pod not yet running'
+		if running:
+			res['state']= 'RUNNING'
+			res['status']= 'Job pod is running'
 		if failed:
 			res['state']= 'FAILURE'
-			res['status']= 'Job failed during execution'
+			errmsg= ''
+			if jobcond is not None and len(jobcond)>0:
+				errmsg= jobcond[0].message
+			res['status']= 'Job failed (err=' + errmsg + ')'
 		if success:
 			res['state']= 'SUCCESS'
 			res['status']= 'Job completed with success'
@@ -305,6 +326,32 @@ class KubeJobManager(object):
 		except ApiException as e:
 			logger.warn("Exception when calling BatchV1Api->list_namespaced_job: %s" % e)
 			return
+
+	#============================
+	#==     DELETE JOB
+	#============================
+	def delete_job(self, job_name):
+		""" Delete job and relative pod (TBD) """
+		
+		logger.info("Cleaning up job %s ..." % job_name)
+		try: 
+			# - Setting Grace Period to 0 means delete ASAP.
+			#   Propagation policy makes the Garbage cleaning Async
+			res= self.api_instance.delete_namespaced_job(
+				name=job_name,
+				namespace=self.cluster_namespace,
+				pretty=True,
+				grace_period_seconds= 0, 
+				propagation_policy='Background'
+			)
+			print(res)
+            
+		except ApiException as e:
+			logger.warn("Exception when calling BatchV1Api->delete_namespaced_job: %s" % e)
+			return -1
+
+		return 0
+
 
 	#============================
 	#==     CREATE JOB
@@ -357,7 +404,7 @@ class KubeJobManager(object):
 		try:
 			spec = client.V1JobSpec(
 				template=template,
-				backoff_limit=1,
+				backoff_limit=0,
 				ttl_seconds_after_finished=ttl
 			)
 		except:
@@ -382,7 +429,7 @@ class KubeJobManager(object):
 	#===============================
 	#==     CREATE CAESAR JOB
 	#===============================
-	def create_caesar_nexcloud_job(self, job_args, image="sriggi/caesar-job:latest", rclone_storage_name="neanias-nextcloud", rclone_secret_name="rclone-secret", volumes=[], pod_security_context=None, label="job", image_pull_policy="Always", ttl=60):
+	def create_caesar_rclone_job(self, job_args, job_name="", image="sriggi/caesar-job:latest", rclone_storage_name="neanias-nextcloud", rclone_secret_name="rclone-secret", rclone_storage_path=".", rclone_mount_path="/mnt/storage"):
 		""" Create a CAESAR sfinder job object """
 
 		# - Check job options
@@ -398,8 +445,8 @@ class KubeJobManager(object):
 			"JOB_OPTIONS": job_args,
 			"MOUNT_RCLONE_VOLUME": "1",
 			"RCLONE_REMOTE_STORAGE": rclone_storage_name,
-			"RCLONE_REMOTE_STORAGE_PATH": "appdata/",
-			"MOUNT_VOLUME_PATH": "/mnt/storage",
+			"RCLONE_REMOTE_STORAGE_PATH": rclone_storage_path,
+			"MOUNT_VOLUME_PATH": rclone_mount_path,
 			"RCLONE_MOUNT_WAIT_TIME": "10"
 		}
 
@@ -461,5 +508,6 @@ class KubeJobManager(object):
 			return None
 	
 		return jobout
+
 
 
