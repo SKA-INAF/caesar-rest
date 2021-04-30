@@ -175,7 +175,7 @@ class KubeJobManager(object):
 		if self.incluster:
 			try:
 				self.cluster_namespace= open("/var/run/secrets/kubernetes.io/serviceaccount/namespace").read()
-			else:
+			except:
 				logger.warn("Failed to read namespace from kube secret file!")
 				return -1
 		else:
