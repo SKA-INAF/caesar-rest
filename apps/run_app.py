@@ -286,7 +286,7 @@ if job_scheduler=='kubernetes' and jobmgr_kube is not None:
 	logger.info("Initializing Kube job manager ...")
 	try:
 		if jobmgr_kube.initialize(configfile=config.KUBE_CONFIG_PATH, incluster=config.KUBE_INCLUSTER)<0:
-			logger.error("Failed to initialize Kube job manager, see logs!" % str(e))
+			logger.error("Failed to initialize Kube job manager, see logs!")
 			sys.exit(1)
 	except Exception as e:
 		logger.error("Failed to initialize Kube job manager (err=%s)!" % str(e))
