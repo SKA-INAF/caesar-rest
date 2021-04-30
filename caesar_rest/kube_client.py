@@ -179,14 +179,14 @@ class KubeJobManager(object):
 		if self.incluster:
 			try:
 				self.cluster_namespace= open("/var/run/secrets/kubernetes.io/serviceaccount/namespace").read()
-			except:
-				logger.warn("Failed to read namespace from kube secret file!")
+			except Exception as e:
+				logger.warn("Failed to read namespace from kube secret file (err=%s)!" % str(e) )
 				return -1
 		else:
 			try:
 				self.context_dict= config_kube.list_kube_config_contexts()[1]['context']
-			except:
-				logger.warn("Failed to get context dictionary from config!")
+			except Exception as e:
+				logger.warn("Failed to get context dictionary from config (err=%s)!" % str(s))
 				return -1
 		
 			if 'namespace' in self.context_dict:
