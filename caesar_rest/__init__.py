@@ -45,3 +45,17 @@ except Exception as e:
 	logger.error(errmsg)
 	raise ImportError(errmsg)
 
+
+# - Create Kubernetes job manager class (to be initialized later)
+jobmgr_kube= None
+try:
+	from caesar_rest.kube_client import KubeJobManager
+	jobmgr_kube= KubeJobManager()
+
+except Exception as e:
+	errmsg= 'Kubernetes modules not found or failed to create KubeJobManager instance (err=' + str(e) + ')'
+	logger.warn(errmsg)
+	
+
+
+
