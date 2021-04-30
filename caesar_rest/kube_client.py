@@ -143,8 +143,8 @@ class KubeJobManager(object):
 			logger.info("Loading Kube configuration incluster mode...")
 			try:
 				config_kube.load_incluster_config(client_configuration=self.configuration)
-			except:
-				logger.warn("Failed to load kube config incluster mode!")
+			except Exception as e:
+				logger.warn("Failed to load kube config incluster mode (err=%s)!" % str(e))
 				return -1
 		else:			
 			try:
@@ -153,8 +153,8 @@ class KubeJobManager(object):
 					config_kube.load_kube_config(client_configuration=self.configuration)
 				else:
 					config_kube.load_kube_config(config_file=self.configfile,client_configuration=self.configuration)
-			except:
-				logger.warn("Failed to load kube config!")
+			except Exception as e:
+				logger.warn("Failed to load kube config (err=%s)!" % str(e))
 				return -1
 
 		# - Update authentication fields
