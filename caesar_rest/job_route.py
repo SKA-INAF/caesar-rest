@@ -175,6 +175,7 @@ def submit_job():
 		"job_inputs": job_inputs,
 		"metadata": '', # FIX ME
 		"tag": '', # FIX ME
+		"scheduler": job_scheduler,
 		"state": 'PENDING',
 		"status": 'Job submitted',
 		"pid": '',
