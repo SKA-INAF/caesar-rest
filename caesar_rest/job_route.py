@@ -301,7 +301,7 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
 	submit_date= now.isoformat()
 	submit_job= jobmgr_kube.submit_job(job)
 	if submit_job is None:
-		logger.warn("Failed to submit job %d to Kubernetes cluster!" % job_id)
+		logger.warn("Failed to submit job %s to Kubernetes cluster!" % job_id)
 		return None
 
 	logger.info("Submitted job with id=%s ..." % job_id)
