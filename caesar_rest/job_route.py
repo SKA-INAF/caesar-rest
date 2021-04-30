@@ -165,6 +165,7 @@ def submit_job():
 		return make_response(jsonify(res),500)
 
 	submit_date= submit_res['submit_date']
+	job_id= submit_res['job_id']
 
 	# - Register task id in mongo
 	logger.info("Creating job object for task %s ..." % job_id)
@@ -366,13 +367,122 @@ def cancel_job(task_id):
 	# - Init response
 	res= {}
 	res['status']= ''
+
+	# - Get aai info
+	username= 'anonymous'
+	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
+		email= g.oidc_token_info['email']
+		username= utils.sanitize_username(email)
+
+	# - Get mongo info
+	mongo_dbhost= current_app.config['MONGO_HOST']
+	mongo_dbport= current_app.config['MONGO_PORT']
+	mongo_dbname= current_app.config['MONGO_DBNAME']
+
+	# - Get other options
+	job_scheduler= current_app.config['JOB_SCHEDULER']
 	
+
+	# - Cancel job
+	cmdout= {}
+	if job_scheduler=='celery':
+		logger.info("Canceling job %s assuming it was scheduled with celery ..." % task_id)
+		cmdout= cancel_celery_task(task_id)
+
+	elif job_scheduler=='kubernetes':
+		logger.info("Canceling job %s assuming it was scheduled with Kubernetes ..." % task_id)
+		cmdout= cancel_kubernets_job(task_id)
+
+	elif job_scheduler=='slurm':
+		logger.info("Canceling job %s assuming it was scheduled with slurm ..." % task_id)
+		cmdout= cancel_slurm_job(task_id)
+
+	if not cmdout:
+		errmsg= "Empty reply from cancel task method!"
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),500)
+
+	if cmdout["exit"]!=0:
+		errmsg= "Failed to cancel job " + task_id + " (err=" + cmdout["status"] + ")!"
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),500)
+
+	# - If job was canceled with success set CANCELED status in DB
+	collection_name= username + '.jobs'
+
+	state= "CANCELED"
+	status= "Job canceled by user"
+	exit_code= -1
+	#elapsed_time= task_info['elapsed_time']
+	
+	try:
+		job_collection= mongo.db[collection_name]
+		job_collection.update_one({'job_id':task_id},{'$set':{'state':state,'status':status,'exit_code':exit_code}},upsert=False)
+	except Exception as e:
+		errmsg= 'Exception caught when updating job ' + str(task_id) + ' in DB (err=' + str(e) + ')!'
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),500)
+
+	res['status']= "Job canceled and status updated in DB"
+
+	# - Get task
+	#task = background_task.AsyncResult(task_id)
+	#if not task or task is None:
+	#	errmsg= 'No task found with id ' + task_id + '!'
+	#	res['status']= errmsg
+	#	return make_response(jsonify(res),404)
+
+	# - Revoke task
+	#logger.info("Revoking task %s ..." % task_id)
+	#try:
+	#	revoke(task_id, terminate=True,signal='SIGTERM')
+		
+	#except Exception as e:
+	#	errmsg= 'Exception caught when attempting to rekove task ' + task_id + ' (err=' + str(e) + ')!' 
+	#	logger.warn(errmsg)
+	#	res['status']= errmsg
+	#	return make_response(jsonify(res),500)
+
+	# - Kill background process
+	#   NB: This is not working if running in multi nodes
+	#pid= task.info.get('pid', '')
+	#res['status']= 'Task revoked'
+
+	#logger.info("Killing pid=%s ..." % pid)
+	#try:
+	#	os.killpg(os.getpgid(int(pid)), signal.SIGKILL)  # Send the signal to all the process groups
+	#	res['status']= 'Task revoked and background process canceled with success'
+
+	#except Exception as e:
+	#	errmsg= 'Exception caught when attempting to kill background task process with PID=' + pid + ' (err=' + str(e) + ')!' 
+	#	logger.warn(errmsg)
+	#	res['status']= 'Task revoked but failed to cancel background process (err=' + str(e) + ')'
+		
+	return make_response(jsonify(res),200)
+
+
+
+#=================================
+#===   CELERY JOB CANCEL 
+#=================================
+def cancel_celery_task(task_id):
+	""" Cancel Celery task and background process """
+
+	# - Init response
+	res= {}
+	res['exit']= -1
+	res['status']= ''
+
 	# - Get task
 	task = background_task.AsyncResult(task_id)
 	if not task or task is None:
 		errmsg= 'No task found with id ' + task_id + '!'
 		res['status']= errmsg
-		return make_response(jsonify(res),404)
+		res['exit']= -1
+		return res
 
 	# - Revoke task
 	logger.info("Revoking task %s ..." % task_id)
@@ -386,7 +496,8 @@ def cancel_job(task_id):
 		errmsg= 'Exception caught when attempting to rekove task ' + task_id + ' (err=' + str(e) + ')!' 
 		logger.warn(errmsg)
 		res['status']= errmsg
-		return make_response(jsonify(res),500)
+		res['exit']= -1
+		return res
 
 	# - Kill background process
 	#   NB: This is not working if running in multi nodes
@@ -397,14 +508,74 @@ def cancel_job(task_id):
 	try:
 		os.killpg(os.getpgid(int(pid)), signal.SIGKILL)  # Send the signal to all the process groups
 		res['status']= 'Task revoked and background process canceled with success'
+		res['exit']= 0
 
 	except Exception as e:
 		errmsg= 'Exception caught when attempting to kill background task process with PID=' + pid + ' (err=' + str(e) + ')!' 
 		logger.warn(errmsg)
 		res['status']= 'Task revoked but failed to cancel background process (err=' + str(e) + ')'
-		
-	return make_response(jsonify(res),200)
+		res['exit']= -1
+		return res
 
+	return res
+	
+
+#=================================
+#===   KUBERNETES JOB CANCEL 
+#=================================
+def cancel_kubernetes_job(job_id):
+	""" Cancel Kubernetes job """
+
+	# - Init response
+	res= {}
+	res['exit']= -1
+	res['status']= ''
+
+	# - Check if Kube job mgr is not None
+	if jobmgr_kube is None:
+		errmsg= 'Kube job manager instance is None!' 
+		logger.warn(errmsg)
+		res['status']= errmsg
+		res['exit']= -1
+		return res
+ 
+	# - Cancel job
+	try:
+		if jobmgr_kube.delete_job(job_id)<0:
+			errmsg= "Failed to delete Kube job, see logs!"
+			logger.warn(errmsg)
+			res['status']= errmsg
+			res['exit']= -1
+			return res
+
+	except Exception as e:
+		errmsg= "Exception caught when deleting Kube job (err=" + str(e) + ")!"
+		logger.warn(errmsg)
+		res['status']= errmsg
+		res['exit']= -1
+		return res
+
+	res['status']= "Deleted job with success"
+	res['exit']= 0
+
+	return res
+	
+#=================================
+#===   SLURM JOB CANCEL 
+#=================================
+def cancel_slurm_job(job_id):
+	""" Cancel Slurm job """
+
+	# - Init response
+	res= {}
+	res['exit']= -1
+	res['status']= ''
+
+	# IMPLEMENT ME!!!
+	# ...
+	# ...
+
+	return res
 
 #=================================
 #===      JOB STATUS HELPER
