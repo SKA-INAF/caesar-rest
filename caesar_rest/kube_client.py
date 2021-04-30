@@ -152,6 +152,7 @@ class KubeJobManager(object):
 					logger.info("Loading Kube configuration from default config file ...")
 					config_kube.load_kube_config(client_configuration=self.configuration)
 				else:
+					logger.info("Loading Kube configuration from config file %s ..." % self.configfile)
 					config_kube.load_kube_config(config_file=self.configfile,client_configuration=self.configuration)
 			except Exception as e:
 				logger.warn("Failed to load kube config (err=%s)!" % str(e))
@@ -159,10 +160,13 @@ class KubeJobManager(object):
 
 		# - Update authentication fields
 		if self.certfile!="":
+			logger.info("Setting cert file to %s ..." % self.certfile)
 			self.configuration.cert_file= self.certfile
 		if self.keyfile!="":
+			logger.info("Setting key file to %s ..." % self.keyfile)
 			self.configuration.key_file= self.keyfile
 		if self.cafile!="":
+			logger.info("Setting ssl_ca_cert file to %s ..." % self.cafile)
 			self.configuration.ssl_ca_cert = self.cafile
 	
 		self.configuration.verify_ssl = self.verify_ssl
