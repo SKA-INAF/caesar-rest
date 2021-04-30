@@ -188,7 +188,11 @@ class KubeJobManager(object):
 				#print(config_kube.list_kube_config_contexts())
 				self.context_dict= config_kube.list_kube_config_contexts()[1]['context']
 			except Exception as e:
-				logger.warn("Failed to get context dictionary from config (err=%s)!" % str(s))
+				logger.warn("Failed to get context dictionary from config (err=%s)!" % str(e) )
+				return -1
+
+			if self.context_dict is None:
+				logger.warn("context dictionary read from config is None!")
 				return -1
 		
 			if 'namespace' in self.context_dict:
