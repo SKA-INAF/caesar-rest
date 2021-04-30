@@ -82,6 +82,9 @@ def get_args():
 	parser.add_argument('--kube_incluster', dest='kube_incluster', action='store_true')	
 	parser.set_defaults(kube_incluster=False)
 	parser.add_argument('-kube_config','--kube_config', dest='kube_config', default='', required=False, type=str, help='Kube configuration file path (default=search in standard path)')
+	parser.add_argument('-kube_cafile','--kube_cafile', dest='kube_cafile', default='', required=False, type=str, help='Kube certificate authority file path')
+	parser.add_argument('-kube_keyfile','--kube_keyfile', dest='kube_keyfile', default='', required=False, type=str, help='Kube private key file path')
+	parser.add_argument('-kube_certfile','--kube_certfile', dest='kube_certfile', default='', required=False, type=str, help='Kube certificate file path')
 	
 	# - Slurm scheduler options
 	# ...
@@ -171,8 +174,9 @@ if job_scheduler=='kubernetes' and jobmgr_kube is None:
 # - Kubernetes options
 kube_incluster= args.kube_incluster
 kube_config= args.kube_config
-
-
+kube_certfile= args.kube_certfile
+kube_keyfile= args.kube_keyfile
+kube_cafile= args.kube_cafile
 
 
 #===============================
@@ -206,6 +210,10 @@ config.SFINDERNN_WEIGHTS = sfindernn_weights
 config.JOB_SCHEDULER= job_scheduler
 config.KUBE_CONFIG_PATH= kube_config
 config.KUBE_INCLUSTER= kube_incluster
+config.KUBE_CERTFILE= kube_certfile
+config.KUBE_KEYFILE= kube_keyfile
+config.KUBE_CERTAUTHFILE= kube_cafile
+
 
 config.MOUNT_RCLONE_VOLUME= args.mount_rclone_volume
 config.MOUNT_VOLUME_PATH= args.mount_volume_path
@@ -268,6 +276,13 @@ else:
 #==   INIT KUBERNETES CLIENT (if enabled)
 #============================================
 if job_scheduler=='kubernetes' and jobmgr_kube is not None:
+
+	# - Setting options
+	jobmgr_kube.certfile= config.KUBE_CERTFILE
+	jobmgr_kube.cafile= config.KUBE_CERTAUTHFILE
+	jobmgr_kube.keyfile= config.KUBE_KEYFILE
+
+	# - Initialize client
 	logger.info("Initializing Kube job manager ...")
 	try:
 		jobmgr_kube.initialize(configfile=config.KUBE_CONFIG_PATH, incluster=config.KUBE_INCLUSTER)

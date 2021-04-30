@@ -45,6 +45,9 @@ class Config(object):
 	# - KUBERNETES options
 	KUBE_CONFIG_PATH= '' # searches by default in $HOME/.kube/config or in $KUBECONFIG
 	KUBE_INCLUSTER= True # if True assume client is running inside a pod deployed in same cluster, if False client is external to cluster
+	KUBE_CERTFILE= ''
+	KUBE_KEYFILE= ''
+	KUBE_CERTAUTHFILE= ''
 
 	# - SLURM options
 	USE_SLURM= False
