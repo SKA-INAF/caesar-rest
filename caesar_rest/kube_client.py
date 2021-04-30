@@ -168,31 +168,42 @@ class KubeJobManager(object):
 		self.configuration.verify_ssl = self.verify_ssl
 
 		# - Get some fields from config
+		#   NB: These fields are not available in incluster mode.
 		self.cluster_host= self.configuration.host
 		self.context_dict= {}
-		try:
-			self.context_dict= config_kube.list_kube_config_contexts()[1]['context']
-		except:
-			logger.warn("Failed to get context dictionary from config!")
-			return -1
+
+		if self.incluster:
+			try:
+				self.cluster_namespace= open("/var/run/secrets/kubernetes.io/serviceaccount/namespace").read()
+			else:
+				logger.warn("Failed to read namespace from kube secret file!")
+				return -1
+		else:
+			try:
+				self.context_dict= config_kube.list_kube_config_contexts()[1]['context']
+			except:
+				logger.warn("Failed to get context dictionary from config!")
+				return -1
 		
-		if 'namespace' in self.context_dict:
-			self.cluster_namespace= self.context_dict['namespace']
-		else:
-			logger.warn("No namespace key in context dictionary!")
-			return -1
+			if 'namespace' in self.context_dict:
+				self.cluster_namespace= self.context_dict['namespace']
+			else:
+				logger.warn("No namespace key in context dictionary!")
+				return -1
 
-		if 'cluster' in self.context_dict:
-			self.cluster= self.context_dict['cluster']
-		else:
-			logger.warn("No cluster key in context dictionary!")
-			return -1
+			if 'cluster' in self.context_dict:
+				self.cluster= self.context_dict['cluster']
+			else:
+				logger.warn("No cluster key in context dictionary!")
+				return -1
 
-		if 'user' in self.context_dict:
-			self.cluster_user= self.context_dict['user']
-		else:
-			logger.warn("No user key in context dictionary!")
-			return -1
+			if 'user' in self.context_dict:
+				self.cluster_user= self.context_dict['user']
+			else:
+				logger.warn("No user key in context dictionary!")
+				return -1
+		
+
 
 		print("== KUBE CLIENT CONFIG ==")
 		print("cluster=%s (host=%s)" % (self.cluster, self.cluster_host))
