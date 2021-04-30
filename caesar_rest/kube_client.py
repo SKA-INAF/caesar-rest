@@ -184,6 +184,8 @@ class KubeJobManager(object):
 				return -1
 		else:
 			try:
+				#print("kube config contexts")
+				#print(config_kube.list_kube_config_contexts())
 				self.context_dict= config_kube.list_kube_config_contexts()[1]['context']
 			except Exception as e:
 				logger.warn("Failed to get context dictionary from config (err=%s)!" % str(s))
