@@ -520,6 +520,7 @@ class SFinderConfigurator(AppConfigurator):
 			'loglevel' : ValueOption('loglevel','',str, description='Logging level string {INFO, DEBUG, WARN, ERROR, OFF} (default=INFO)'),
 			'maxfiles' : ValueOption('maxfiles','',int, description='Maximum number of input files processed in filelist (default=-1=all files)'),
 			'addrunindex' : Option('addrunindex', description='Append a run index to submission script (in case of list execution) (default=no)'),
+			'jobdir' : ValueOption('jobdir','',str, description='Job directory where to run (default=pwd)'),			
 			'outdir' : ValueOption('outdir','',str, description='Output directory where to put run output file (default=pwd)'),
 			'no-logredir' : Option('no-logredir', description='Do not redirect logs to output file in script'),
 			'no-mpi' : Option('no-mpi', description='Disable MPI run (even with 1 proc) (default=enabled)'),
