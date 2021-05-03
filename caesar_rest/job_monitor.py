@@ -100,9 +100,9 @@ def jobmonitor_task(self):
 	logger.info("Getting all job collection names from DB ...")
 	collection_names= []
 	try:
-		collection_names= db.list_collection_names(filter={"name":{"$regex": ".jobs"}})
+		collection_names= client[DB_NAME].list_collection_names(filter={"name":{"$regex": ".jobs"}})
 	except Exception as e:
-		logger.warn("Failed to get job collection names from DB!")
+		logger.warn("Failed to get job collection names from DB (err=%s)!" % str(e))
 		return
 
 	print("--> collection_names")
