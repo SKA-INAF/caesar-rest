@@ -19,9 +19,8 @@ from pymongo import MongoClient
 import caesar_rest
 from caesar_rest import __version__, __date__
 from caesar_rest import logger
-from caesar_rest import jobmgr_kube
-from caesar_rest import job_monitor
-from caesar_rest.job_monitor import monitor_jobs
+from caesar_rest import accounter
+from caesar_rest.accounter import update_account_info
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
@@ -40,24 +39,12 @@ def get_args():
 	parser = argparse.ArgumentParser(description="Parse args.")
 
 	# - Specify cmd options
-	parser.add_argument('-job_scheduler','--job_scheduler', dest='job_scheduler', default='kubernetes', required=False, type=str, help='Job scheduler to be used. Options are: {kubernetes,slurm} (default=kubernetes)')
+	parser.add_argument('-datadir','--datadir', dest='datadir', default='/opt/caesar-rest/data', required=False, type=str, help='Directory where to store uploaded data') 
+	parser.add_argument('-jobdir','--jobdir', dest='jobdir', default='/opt/caesar-rest/jobs', required=False, type=str, help='Directory where to store jobs') 
 	parser.add_argument('-job_monitoring_period','--job_monitoring_period', dest='job_monitoring_period', default=30, required=False, type=int, help='Job monitoring poll period in seconds') 
 	parser.add_argument('-dbhost','--dbhost', dest='dbhost', default='localhost', required=False, type=str, help='Host of MongoDB database (default=localhost)')
 	parser.add_argument('-dbname','--dbname', dest='dbname', default='caesardb', required=False, type=str, help='Name of MongoDB database (default=caesardb)')
 	parser.add_argument('-dbport','--dbport', dest='dbport', default=27017, required=False, type=int, help='Port of MongoDB database (default=27017)')
-
-	
-	# - Kubernetes scheduler options
-	parser.add_argument('--kube_incluster', dest='kube_incluster', action='store_true')	
-	parser.set_defaults(kube_incluster=False)
-	parser.add_argument('-kube_config','--kube_config', dest='kube_config', default='', required=False, type=str, help='Kube configuration file path (default=search in standard path)')
-	parser.add_argument('-kube_cafile','--kube_cafile', dest='kube_cafile', default='', required=False, type=str, help='Kube certificate authority file path')
-	parser.add_argument('-kube_keyfile','--kube_keyfile', dest='kube_keyfile', default='', required=False, type=str, help='Kube private key file path')
-	parser.add_argument('-kube_certfile','--kube_certfile', dest='kube_certfile', default='', required=False, type=str, help='Kube certificate file path')
-	
-	# - Slurm scheduler options
-	# ...
-
 
 	args = parser.parse_args()	
 
@@ -81,15 +68,10 @@ def main():
 		sys.exit(1)
 
 	# - Main options
+	datadir= args.datadir
+	jobdir= args.jobdir
 	job_monitoring_period= args.job_monitoring_period
-	job_scheduler= args.job_scheduler
-	if job_scheduler!='kubernetes' and job_scheduler!='slurm':
-		logger.error("Unsupported job scheduler (hint: supported are {kubernetes,slurm})!")
-		sys.exit(1)
-
-	if job_scheduler=='kubernetes' and jobmgr_kube is None:
-		logger.error("Chosen scheduler is Kubernetes but kube client failed to be instantiated (see previous logs)!")
-		sys.exit(1)
+	
 
 	#===============================
 	#==   INIT MONGO CLIENT
@@ -122,35 +104,16 @@ def main():
 		logger.error("DB instance is None!")
 		sys.exit(1)
 
-	#============================================
-	#==   INIT KUBERNETES CLIENT (if enabled)
-	#============================================
-	if job_scheduler=='kubernetes' and jobmgr_kube is not None:
-
-		# - Setting options
-		jobmgr_kube.certfile= args.kube_certfile
-		jobmgr_kube.cafile= args.kube_cafile
-		jobmgr_kube.keyfile= args.kube_keyfile
-
-		# - Initialize client
-		logger.info("Initializing Kube job manager ...")
-		try:
-			if jobmgr_kube.initialize(configfile=args.kube_config, incluster=args.kube_incluster)<0:
-				logger.error("Failed to initialize Kube job manager, see logs!")
-				sys.exit(1)
-		except Exception as e:
-			logger.error("Failed to initialize Kube job manager (err=%s)!" % str(e))
-			sys.exit(1)
 
 	#============================================
-	#==   MONITORING LOOP
+	#==   ACCOUNTING MONITORING LOOP
 	#============================================
 	try:
 		while True:
-			# - Monitor jobs in DB
-			logger.info("Monitoring jobs ...")
-			if monitor_jobs(db)<0:
-				logger.warn("Failed to monitor jobs (see logs) ...")
+			# - Monitor accounts in DB
+			logger.info("Monitoring accounts ...")
+			if update_account_info(db, job_dir, data_dir)<0:
+				logger.warn("Failed to monitor accounts (see logs) ...")
 
 			# - Sleeping a bit before monitoring again
 			logger.info("Sleeping %s seconds ..." % job_monitoring_period)
