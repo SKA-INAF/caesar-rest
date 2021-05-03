@@ -37,6 +37,7 @@ class KubeJobManager(object):
 	def __init__(self):
 
 		# - Set default vars
+		self.api_instance= None
 		self.configfile= ''
 		self.incluster= True
 		self.config_dict= {}
@@ -233,7 +234,6 @@ class KubeJobManager(object):
 	def create_batch_api_instance(self):
 		""" Create batch API client """
 
-		self.api_instance= None
 		try:
 			self.api_instance= client.BatchV1Api(client.ApiClient(self.configuration))
 		except:

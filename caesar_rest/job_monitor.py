@@ -59,8 +59,6 @@ def jobmonitor_task(self):
 	DB_NAME= os.environ.get('CAESAR_REST_DBNAME')
 	DB_HOST= os.environ.get('CAESAR_REST_DBHOST')
 	DB_PORT= os.environ.get('CAESAR_REST_DBPORT')
-	JOB_DIR= os.environ.get('CAESAR_REST_JOBDIR')
-	DATA_DIR= os.environ.get('CAESAR_REST_DATADIR')
 	
 	if DB_NAME is None or DB_NAME=="":
 		logger.warn("Env var CAESAR_REST_DBNAME not defined, please set it to backend DB name...")
@@ -71,13 +69,7 @@ def jobmonitor_task(self):
 	if DB_PORT is None or DB_PORT=="":
 		logger.warn("Env var CAESAR_REST_DBPORT not defined, please set it to backend DB port...")
 		return	
-	if JOB_DIR is None or JOB_DIR=="":
-		logger.warn("Env var CAESAR_REST_JOBDIR not defined, please set it to job top dir name ...")
-		return
-	if DATA_DIR is None or DATA_DIR=="":
-		logger.warn("Env var CAESAR_REST_DATADIR not defined, please set it to data top dir name ...")
-		return
-
+	
 	# - Connect to mongoDB	
 	logger.info("Connecting to DB (dbhost=%s, dbname=%s, dbport=%s) ..." % (DB_PORT,DB_NAME,DB_PORT))
 	client= None
@@ -163,7 +155,86 @@ def jobmonitor_task(self):
 				logger.warn("Failed to monitor %s job %s, skip to next..." % (job_scheduler, job_id))
 				continue
 
+####################################
+##   MONITOR JOBS
+####################################
+def monitor_jobs(db):
+	""" Monitor jobs stored in DB """
 
+	# - Check DB instance
+	if db is None:
+		logger.error("None DB instance given!")
+		return -1
+
+	# - Get all job collections from DB
+	logger.info("Getting all job collection names from DB ...")
+	collection_names= []
+	try:
+		collection_names= db.list_collection_names(filter={"name":{"$regex": ".jobs"}})
+	except Exception as e:
+		logger.warn("Failed to get job collection names from DB (err=%s)!" % str(e))
+		return -1
+
+	print("--> collection_names")
+	print(collection_names)
+
+	# - Loop over collection names and get all PENDING/STARTED/RUNNING jobs	
+	for collection_name in collection_names:
+
+		job_list= []
+		job_collection= None
+
+		try:
+			job_collection= db[collection_name]
+			job_cursor= job_collection.find({})
+			job_cursor= job_collection.find(
+				{"$or": [
+					{"state":"PENDING"},{"state":"STARTED"},{"state":"RUNNING"}
+				]
+				}
+			)
+
+			if job_cursor is not None:
+				job_list = list(job_cursor)
+
+		except Exception as e:
+			errmsg= 'Failed to get jobs from DB for collection ' + collection_name + ' (err=' + str(e) + ')'
+			logger.error(errmsg)
+			continue
+
+		if not job_list:
+			logger.info("No unfinished jobs to be check for collection %s ..." % collection_name)
+			continue
+			
+		# - Process list and get job statuses from scheduler
+		for job_obj in job_list:
+			job_id= job_obj['job_id']
+
+			# - Check job scheduler field
+			if 'scheduler' not in job_obj:
+				continue
+			job_scheduler= job_obj['scheduler']
+
+			# - Skip celery scheduler because these jobs are monitored by celery tasks
+			if job_scheduler=='celery':
+				continue
+
+			# - Update Kubernetes job status
+			job_moni_status= -1
+			if job_scheduler=='kubernetes':
+				job_moni_status= monitor_kubernetes_job(job_id, job_collection)
+			elif job_scheduler=='slurm':
+				job_moni_status= monitor_slurm_job(job_id, job_collection)	
+			else:
+				logger.warn("Invalid/unknown job scheduler (%s), skip job moni..." % job_scheduler)
+				continue
+
+			if job_moni_status<0:
+				logger.warn("Failed to monitor %s job %s, skip to next..." % (job_scheduler, job_id))
+				continue
+
+	return 0
+	
 
 ####################################
 ##   MONITOR KUBERNETES JOB
