@@ -453,7 +453,7 @@ class KubeJobManager(object):
 	#===============================
 	#==     CREATE CAESAR JOB
 	#===============================
-	def create_caesar_rclone_job(self, job_args, job_name="", image="sriggi/caesar-job:latest", rclone_storage_name="neanias-nextcloud", rclone_secret_name="rclone-secret", rclone_storage_path=".", rclone_mount_path="/mnt/storage"):
+	def create_caesar_rclone_job(self, job_args, job_name="", job_outdir="", image="sriggi/caesar-job:latest", rclone_storage_name="neanias-nextcloud", rclone_secret_name="rclone-secret", rclone_storage_path=".", rclone_mount_path="/mnt/storage"):
 		""" Create a CAESAR sfinder job object """
 
 		# - Check job options
@@ -467,6 +467,7 @@ class KubeJobManager(object):
 		# - Check env vars
 		env_vars= {
 			"JOB_OPTIONS": job_args,
+			"JOB_OUTDIR": job_outdir,
 			"MOUNT_RCLONE_VOLUME": "1",
 			"RCLONE_REMOTE_STORAGE": rclone_storage_name,
 			"RCLONE_REMOTE_STORAGE_PATH": rclone_storage_path,

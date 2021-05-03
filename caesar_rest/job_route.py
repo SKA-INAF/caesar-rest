@@ -262,12 +262,28 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
 	# - Generate job id
 	job_id= utils.get_uuid()
 	
+	# - Create job top dir
+	job_dir_name= 'job_' + job_id
+	job_dir= os.path.join(job_top_dir,job_dir_name)
+
+	logger.info("Creating job dir %s (top dir=%s) ..." % (job_dir,job_top_dir))
+	try:
+		os.makedirs(job_dir)
+	except OSError as exc:
+		if exc.errno != errno.EEXIST:
+			errmsg= "Failed to create job directory " + job_dir + "!" 
+			logger.error(errmsg)
+			return None
+
 	# - Create job object
 	if app_name=="sfinder":
+
+		# - Set output job dir option
 		if mount_rclone_vol:
 			job= jobmgr_kube.create_caesar_rclone_job(
 				job_args=cmd_args,
 				job_name=job_id, 
+				job_outdir=job_dir,
 				image=image, 
 				rclone_storage_name=rclone_storage_name, 
 				rclone_secret_name=rclone_secret_name, 
@@ -284,19 +300,6 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
 	if job is None:
 		logger.warn("Failed to create Kube job object!")
 		return None
-
-	# - Create job top dir
-	job_dir_name= 'job_' + job_id
-	job_dir= os.path.join(job_top_dir,job_dir_name)
-
-	logger.info("Creating job dir %s (top dir=%s) ..." % (job_dir,job_top_dir))
-	try:
-		os.makedirs(job_dir)
-	except OSError as exc:
-		if exc.errno != errno.EEXIST:
-			errmsg= "Failed to create job directory " + job_dir + "!" 
-			logger.error(errmsg)
-			return None
 
 	# - Submit job
 	now = datetime.datetime.now()
