@@ -154,7 +154,7 @@ def jobmonitor_task(self):
 			if job_scheduler=='kubernetes':
 				job_moni_status= monitor_kubernetes_job(job_id, job_collection)
 			elif job_scheduler=='slurm':
-				job_moni_status= monitor_kubernetes_job(job_id, job_collection)	
+				job_moni_status= monitor_slurm_job(job_id, job_collection)	
 			else:
 				logger.warn("Invalid/unknown job scheduler (%s), skip job moni..." % job_scheduler)
 				continue
