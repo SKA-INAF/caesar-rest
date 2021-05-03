@@ -122,7 +122,7 @@ def main():
 		while True:
 			# - Monitor accounts in DB
 			logger.info("Monitoring accounts ...")
-			if update_account_info(db, job_dir, data_dir)<0:
+			if update_account_info(db, jobdir, datadir)<0:
 				logger.warn("Failed to monitor accounts (see logs) ...")
 
 			# - Sleeping a bit before monitoring again
