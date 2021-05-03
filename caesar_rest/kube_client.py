@@ -501,7 +501,7 @@ class KubeJobManager(object):
 		# - Create job
 		job= self.create_job(
 			image, 
-			job_name="", 
+			job_name=job_name, 
 			env_vars=env_vars, 
 			vol_mounts=vol_mounts, 
 			volumes=volumes, 
