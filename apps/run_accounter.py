@@ -38,13 +38,23 @@ def get_args():
 	"""This function parses and return arguments passed in"""
 	parser = argparse.ArgumentParser(description="Parse args.")
 
-	# - Specify cmd options
+	# - Main options
 	parser.add_argument('-datadir','--datadir', dest='datadir', default='/opt/caesar-rest/data', required=False, type=str, help='Directory where to store uploaded data') 
 	parser.add_argument('-jobdir','--jobdir', dest='jobdir', default='/opt/caesar-rest/jobs', required=False, type=str, help='Directory where to store jobs') 
 	parser.add_argument('-job_monitoring_period','--job_monitoring_period', dest='job_monitoring_period', default=30, required=False, type=int, help='Job monitoring poll period in seconds') 
+
+	# - DB options
 	parser.add_argument('-dbhost','--dbhost', dest='dbhost', default='localhost', required=False, type=str, help='Host of MongoDB database (default=localhost)')
 	parser.add_argument('-dbname','--dbname', dest='dbname', default='caesardb', required=False, type=str, help='Name of MongoDB database (default=caesardb)')
 	parser.add_argument('-dbport','--dbport', dest='dbport', default=27017, required=False, type=int, help='Port of MongoDB database (default=27017)')
+
+	# - Volume mount options
+	parser.add_argument('--mount_rclone_volume', dest='mount_rclone_volume', action='store_true')	
+	parser.set_defaults(mount_rclone_volume=False)
+	parser.add_argument('-mount_volume_path','--mount_volume_path', dest='mount_volume_path', default='/mnt/storage', required=False, type=str, help='Mount volume path for container jobs')
+	parser.add_argument('-rclone_storage_name','--rclone_storage_name', dest='rclone_storage_name', default='neanias-nextcloud', required=False, type=str, help='rclone remote storage name (default=neanias-nextcloud)')
+	parser.add_argument('-rclone_storage_path','--rclone_storage_path', dest='rclone_storage_path', default='.', required=False, type=str, help='rclone remote storage path (default=.)')
+	
 
 	args = parser.parse_args()	
 
