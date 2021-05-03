@@ -15,13 +15,17 @@ result_backend = 'redis://localhost:6379/0' # correct one
 beat_schedule = {
 	'accounter_beat': {
   	'task': 'caesar_rest.accounter.accounter_task',
-  	'schedule': 60.0,
+  	'schedule': 120.0,
+	},
+	'job_monitoring_beat': {
+  	'task': 'caesar_rest.job_monitor.jobmonitor_task',
+  	'schedule': 30.0,
 	},
 }
 
 
 # - OTHER TASK OPTIONS
-imports = ('caesar_rest.workers','caesar_rest.accounter')
+imports = ('caesar_rest.workers','caesar_rest.accounter','caesar_rest.job_monitor')
 accept_content = ['json', 'application/text']
 result_accept_content = ['json']
 task_serializer = 'json'
