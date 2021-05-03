@@ -270,6 +270,7 @@ def monitor_kubernetes_job(job_id, job_collection):
 			
 	# - Update job status
 	try:
+		logger.info("Updating job %s state to %s (status=%s) ..." % (job_id, state, status))
 		job_collection.update_one({'job_id':job_id},{'$set':{'state':state,'status':status,'elapsed_time':elapsed_time}},upsert=False)
 	except Exception as e:
 		errmsg= 'Exception caught when updating job ' + str(job_id) + ' in DB (err=' + str(e) + ')!'
@@ -279,6 +280,7 @@ def monitor_kubernetes_job(job_id, job_collection):
 	# - If SUCCESS or FAILURE clear the pod
 	#   NB: ttl option not working when job is SUCCESS.
 	if state=='SUCCESS' or state=='FAILURE':
+		logger.info("Clearing job %s (state=%s) ..." % (job_id, state))
 		try:
 			res= jobmgr_kube.delete_job(job_id)
 		except Exception as e:
