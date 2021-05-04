@@ -190,9 +190,19 @@ def accounter_task(self):
 			if "state" in job:
 				job_state= job["state"]
 			if "elapsed_time" in job:
-				job_elapsed_time= float(job["elapsed_time"])
+				job_elapsed_time= 0
+				if job["elapsed_time"]!="":
+					dt= float(job["elapsed_time"])
+					if dt>=0:
+						job_elapsed_time= dt
+
 				if job_state=="SUCCESS":
-					job_completed_elapsed_time= float(job["elapsed_time"])
+					job_completed_elapsed_time= 0
+					if job["elapsed_time"]!="":
+						dt= float(job["elapsed_time"])
+						if dt>=0:
+							job_completed_elapsed_time= dt
+
 			
 			job_runtime+= job_elapsed_time
 			job_completed_runtime+= job_completed_elapsed_time
@@ -425,9 +435,18 @@ def update_account_info(DB, JOB_DIR, DATA_DIR):
 			if "state" in job:
 				job_state= job["state"]
 			if "elapsed_time" in job:
-				job_elapsed_time= float(job["elapsed_time"])
+				job_elapsed_time= 0
+				if job["elapsed_time"]!="":
+					dt= float(job["elapsed_time"])
+					if dt>=0:
+						job_elapsed_time= dt
+
 				if job_state=="SUCCESS":
-					job_completed_elapsed_time= float(job["elapsed_time"])
+					job_completed_elapsed_time= 0
+					if job["elapsed_time"]!="":
+						dt= float(job["elapsed_time"])
+						if dt>=0:
+							job_completed_elapsed_time= dt
 			
 			job_runtime+= job_elapsed_time
 			job_completed_runtime+= job_completed_elapsed_time
