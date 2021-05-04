@@ -174,6 +174,7 @@ def submit_job():
 		"submit_date": submit_date,
 		"app": app_name,	
 		"job_inputs": job_inputs,
+		"job_top_dir": job_top_dir,
 		"metadata": '', # FIX ME
 		"tag": '', # FIX ME
 		"scheduler": job_scheduler,
@@ -720,15 +721,35 @@ def get_job_output(task_id):
 		username= utils.sanitize_username(email)
 
 	# - Check job status
-	try:
-		job_status= compute_job_status(task_id)
+	#try:
+	#	job_status= compute_job_status(task_id)
 		
-	except NameError as e:
-		res['status']= str(e)
-		return make_response(jsonify(res),404)
+	#except NameError as e:
+	#	res['status']= str(e)
+	#	return make_response(jsonify(res),404)
 	
+	# - Search job id in user collection
+	collection_name= username + '.jobs'
+	job= None
+	try:
+		job_collection= mongo.db[collection_name]
+		job= job_collection.find_one({'job_id': str(task_id)})
+	except Exception as e:
+		errmsg= 'Exception catched when searching job id in DB (err=' + str(e) + ')!'
+		logger.error(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
+
+	if not job or job is None:
+		errmsg= 'Job ' + task_id + ' not found for user ' + username + '!'
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
+
+
 	# - If job state is PENDING/STARTED/RUNNING/ABORTED return 
-	job_state= job_status['state']
+	#job_state= job_status['state']
+	job_state= job['state']
 	job_not_completed= (
 		job_state=='RUNNING' or 
 		job_state=='PENDING' or

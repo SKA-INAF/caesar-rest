@@ -222,9 +222,9 @@ def monitor_jobs(db):
 			# - Update Kubernetes job status
 			job_moni_status= -1
 			if job_scheduler=='kubernetes':
-				job_moni_status= monitor_kubernetes_job(job_id, job_collection)
+				job_moni_status= monitor_kubernetes_job(job_obj, job_collection)
 			elif job_scheduler=='slurm':
-				job_moni_status= monitor_slurm_job(job_id, job_collection)	
+				job_moni_status= monitor_slurm_job(job_obj, job_collection)	
 			else:
 				logger.warn("Invalid/unknown job scheduler (%s), skip job moni..." % job_scheduler)
 				continue
@@ -239,8 +239,27 @@ def monitor_jobs(db):
 ####################################
 ##   MONITOR KUBERNETES JOB
 ####################################
-def monitor_kubernetes_job(job_id, job_collection):
+def monitor_kubernetes_job(job_obj, job_collection):
 	""" Monitor and update job status in DB """
+
+	# - Extract field
+	if not job_obj or job_obj is None:
+		logger.warn("Given job obj is None or empty!")	
+		return -1		
+	job_id= job_obj['job_id']
+	job_dir_name= 'job_' + job_id
+	tar_filename= 'job_' + job_id + '.tar.gz'
+	job_top_dir= ''
+	job_dir= ''
+	tar_file= ''
+	job_dir_existing= False
+	tar_file_existing= False
+	if job_top_dir in job_obj:
+		job_top_dir= job_obj['job_top_dir']
+		job_dir= os.path.join(job_top_dir,job_dir_name)
+		tar_file= os.path.join(job_dir,tar_filename)
+		job_dir_existing= os.path.isdir(job_dir)
+		tar_file_existing= os.path.isfile(tar_file)
 
 	# - Check job collection
 	if job_collection is None:
@@ -267,6 +286,18 @@ def monitor_kubernetes_job(job_id, job_collection):
 	state= res['state']
 	status= res['status']
 	elapsed_time= res['elapsed_time']
+
+	# - Create tar file with job output if job completed
+	if state=='SUCCESS' or state=='FAILURE':
+		if job_dir_existing and tar_file!="":
+			if tar_file_existing:
+				logger.info("Job %s output tar file %s already existing, won't create it again ..." % (job_id, tar_file))
+			else:
+				logger.info("Creating a tar file %s with job output data ..." % tar_file)
+				utils.make_tar(tar_file, job_dir)
+		else:
+			logger.warn("Won't create output data tar file %s as out directory %s not found ..." % (tar_file, job_dir_existing))
+
 			
 	# - Update job status
 	try:
@@ -280,6 +311,8 @@ def monitor_kubernetes_job(job_id, job_collection):
 	# - If SUCCESS or FAILURE clear the pod
 	#   NB: ttl option not working when job is SUCCESS.
 	if state=='SUCCESS' or state=='FAILURE':
+
+		# - Clearing job state
 		logger.info("Clearing job %s (state=%s) ..." % (job_id, state))
 		try:
 			res= jobmgr_kube.delete_job(job_id)
@@ -293,7 +326,7 @@ def monitor_kubernetes_job(job_id, job_collection):
 ####################################
 ##   MONITOR SLURM JOB
 ####################################
-def monitor_slurm_job(job_id, job_collection):
+def monitor_slurm_job(job_obj, job_collection):
 	""" Monitor and update job status in DB """
 	
 	# IMPLEMENT ME!!!
