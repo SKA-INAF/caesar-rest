@@ -394,7 +394,7 @@ def cancel_job(task_id):
 
 	elif job_scheduler=='kubernetes':
 		logger.info("Canceling job %s assuming it was scheduled with Kubernetes ..." % task_id)
-		cmdout= cancel_kubernets_job(task_id)
+		cmdout= cancel_kubernetes_job(task_id)
 
 	elif job_scheduler=='slurm':
 		logger.info("Canceling job %s assuming it was scheduled with slurm ..." % task_id)
