@@ -254,7 +254,7 @@ def monitor_kubernetes_job(job_obj, job_collection):
 	tar_file= ''
 	job_dir_existing= False
 	tar_file_existing= False
-	if job_top_dir in job_obj:
+	if 'job_top_dir' in job_obj:
 		job_top_dir= job_obj['job_top_dir']
 		job_dir= os.path.join(job_top_dir,job_dir_name)
 		tar_file= os.path.join(job_dir,tar_filename)
@@ -296,7 +296,7 @@ def monitor_kubernetes_job(job_obj, job_collection):
 				logger.info("Creating a tar file %s with job output data ..." % tar_file)
 				utils.make_tar(tar_file, job_dir)
 		else:
-			logger.warn("Won't create output data tar file %s as out directory %s not found ..." % (tar_file, job_dir_existing))
+			logger.warn("Won't create output data tar file %s as job output directory %s not found ..." % (tar_file, job_dir))
 
 			
 	# - Update job status
