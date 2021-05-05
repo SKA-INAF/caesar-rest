@@ -55,7 +55,7 @@ def get_args():
 	parser.add_argument('--ssl', dest='ssl', action='store_true')	
 	parser.set_defaults(ssl=False)
 	
-	parser.add_argument('-sfindernn_weights','--sfindernn_weights', dest='sfindernn_weights', default='/opt/caesar-rest/share/mrcnn_weights.h5', required=False, type=str, help='File (.h5) with network weights used in sfindernn app')
+	parser.add_argument('-mrcnn_weights','--mrcnn_weights', dest='mrcnn_weights', default='/opt/Software/MaskR-CNN/install/share/mrcnn_weights.h5', required=False, type=str, help='File (.h5) with network weights used in Mask-RCNN app')
 
 	parser.add_argument('--db', dest='db', action='store_true')	
 	parser.set_defaults(db=False)
@@ -124,7 +124,7 @@ ssl= args.ssl
 
 # - App options
 job_monitoring_period= args.job_monitoring_period
-sfindernn_weights= args.sfindernn_weights
+mrcnn_weights= args.mrcnn_weights
 
 # - DB & celery result backend options
 use_db= args.db
@@ -205,7 +205,7 @@ if use_db and mongo is not None:
 	config.MONGO_URI= dbhost
 	config.USE_MONGO= True
 
-config.SFINDERNN_WEIGHTS = sfindernn_weights
+config.MASKRCNN_WEIGHTS = mrcnn_weights
 
 config.JOB_SCHEDULER= job_scheduler
 config.KUBE_CONFIG_PATH= kube_config

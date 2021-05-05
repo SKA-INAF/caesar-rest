@@ -450,11 +450,12 @@ class KubeJobManager(object):
 			
 		return job
 
-	#===============================
-	#==     CREATE CAESAR JOB
-	#===============================
-	def create_caesar_rclone_job(self, job_args, job_name="", job_outdir="", image="sriggi/caesar-job:latest", rclone_storage_name="neanias-nextcloud", rclone_secret_name="rclone-secret", rclone_storage_path=".", rclone_mount_path="/mnt/storage"):
-		""" Create a CAESAR sfinder job object """
+
+	#===============================================
+	#==     CREATE JOB WITH RCLONE MOUNTED VOLUME
+	#===============================================
+	def create_job_rclone(self, image, job_args, label, job_name="", job_outdir="", rclone_storage_name="neanias-nextcloud", rclone_secret_name="rclone-secret", rclone_storage_path=".", rclone_mount_path="/mnt/storage"):
+		""" Create a standard job object with rclone mounted volume """
 
 		# - Check job options
 		if job_args=="":
@@ -507,12 +508,13 @@ class KubeJobManager(object):
 			volumes=volumes, 
 			security_context=security_context, 
 			pod_security_context=pod_security_context, 
-			label="caesar-job", 
+			label=label, 
 			image_pull_policy="Always",
 			ttl=60
 		)
 
 		return job
+
 
 	#============================
 	#==     SUBMIT JOB

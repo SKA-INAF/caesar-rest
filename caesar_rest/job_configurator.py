@@ -37,7 +37,7 @@ class JobConfigurator(object):
 
 		self.app_configurators= {
 			'sfinder': SFinderConfigurator,
-			'sfinder-nn': SFinderNNConfigurator
+			'mrcnn': MaskRCNNConfigurator
 		}
 		
 		
@@ -307,12 +307,12 @@ class AppConfigurator(object):
 		return True
 
 
-##############################
-#   SFINDER APP CONFIGURATOR
-##############################
+#######################################
+#   CAESAR SFINDER APP CONFIGURATOR
+#######################################
 
 class SFinderConfigurator(AppConfigurator):
-	""" Class to configure sfinder application """
+	""" Class to configure CAESAR sfinder application """
 
 	def __init__(self):
 		""" Return sfinder configurator class """
@@ -602,15 +602,15 @@ class SFinderConfigurator(AppConfigurator):
 #   MASK-RCNN APP CONFIGURATOR
 ##############################
 
-class SFinderNNConfigurator(AppConfigurator):
-	""" Class to configure sfinder-nn application """
+class MaskRCNNConfigurator(AppConfigurator):
+	""" Class to configure Mask-RCNN source finder application """
 
 	def __init__(self):
-		""" Return sfinder-nn configurator class """
+		""" Return Mask-RCNN configurator class """
 		AppConfigurator.__init__(self)
 
 		# - Define cmd name
-		self.weights= current_app.config['SFINDERNN_WEIGHTS'] 
+		self.weights= current_app.config['MASKRCNN_WEIGHTS'] 
 		self.cmd= 'run_mrcnn.sh --runmode=detect --weights=' + self.weights + ' '
 		self.cmd_args= []
 		#self.cmd_mode= ''

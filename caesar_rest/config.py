@@ -33,7 +33,6 @@ class Config(object):
 	JOB_MONITORING_PERIOD= 5 # in seconds
 
 	JOB_SCHEDULER= 'celery' # Options are: {'celery','kubernetes','slurm'}
-	CAESAR_JOB_IMAGE= 'sriggi/caesar-job:latest'
 
 	# - VOLUME MOUNTS options
 	MOUNT_RCLONE_VOLUME= False
@@ -67,5 +66,11 @@ class Config(object):
 	MONGO_DBNAME= 'caesardb' 
 	MONGO_URI= 'mongodb://localhost:27017/caesardb'
 
-	# - App options
-	SFINDERNN_WEIGHTS= '/opt/caesar-rest/share/mrcnn_weights.h5'
+	# - CAESAR app options
+	CAESAR_JOB_IMAGE= 'sriggi/caesar-job:latest'
+	
+	# - Mask R-CNN app options
+	MASKRCNN_JOB_IMAGE= 'sriggi/mrcnn-detect:latest'
+	MASKRCNN_WEIGHTS= '/opt/Software/MaskR-CNN/install/share/mrcnn_weights.h5'
+
+

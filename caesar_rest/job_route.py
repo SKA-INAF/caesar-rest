@@ -253,7 +253,7 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
 	res= {}
 
 	# - Get app config options
-	image= current_app.config['CAESAR_JOB_IMAGE']
+	image= ''
 	mount_rclone_vol= current_app.config['MOUNT_RCLONE_VOLUME']
 	mount_vol_path= current_app.config['MOUNT_VOLUME_PATH']
 	rclone_storage_name= current_app.config['RCLONE_REMOTE_STORAGE']
@@ -276,28 +276,38 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
 			logger.error(errmsg)
 			return None
 
-	# - Create job object
+	# - Set job options
 	if app_name=="sfinder":
+		image= current_app.config['CAESAR_JOB_IMAGE']
+		job_label= 'caesar-job'
 
-		# - Set output job dir option
-		if mount_rclone_vol:
-			job= jobmgr_kube.create_caesar_rclone_job(
-				job_args=cmd_args,
-				job_name=job_id, 
-				job_outdir=job_dir,
-				image=image, 
-				rclone_storage_name=rclone_storage_name, 
-				rclone_secret_name=rclone_secret_name, 
-				rclone_storage_path=rclone_storage_path, 
-				rclone_mount_path=mount_vol_path
-			)
-		else:
-			logger.warn("Unsupported job type required!")
-			return None
+	elif app_name=="mrcnn":
+		image= current_app.config['MASKRCNN_JOB_IMAGE']
+		job_label= 'mrcnn-job'
+
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name)
 		return None
 
+
+	# - Create job object
+	if mount_rclone_vol:
+		job= jobmgr_kube.create_job_rclone(
+			image=image, 
+			job_args=cmd_args,
+			label=job_label,
+			job_name=job_id, 
+			job_outdir=job_dir,
+			rclone_storage_name=rclone_storage_name, 
+			rclone_secret_name=rclone_secret_name, 
+			rclone_storage_path=rclone_storage_path, 
+			rclone_mount_path=mount_vol_path
+		)
+
+	else:
+		logger.warn("Unsupported job volume type required!")
+		return None
+	
 	if job is None:
 		logger.warn("Failed to create Kube job object!")
 		return None
