@@ -10,6 +10,7 @@ import time
 import datetime
 import logging
 import numpy as np
+import glob
 
 try:
 	FileNotFoundError  # python3
@@ -51,6 +52,9 @@ job_bp = Blueprint('job', __name__,url_prefix='/caesar/api/v1.0')
 job_status_bp = Blueprint('job_status', __name__,url_prefix='/caesar/api/v1.0')
 job_output_bp = Blueprint('job_output', __name__,url_prefix='/caesar/api/v1.0')
 job_cancel_bp = Blueprint('job_cancel', __name__,url_prefix='/caesar/api/v1.0')
+job_catalog_bp = Blueprint('job_catalog', __name__,url_prefix='/caesar/api/v1.0')
+job_component_catalog_bp = Blueprint('job_component_catalog', __name__,url_prefix='/caesar/api/v1.0')
+job_preview_bp = Blueprint('job_preview', __name__,url_prefix='/caesar/api/v1.0')
 
 
 #=================================
@@ -711,17 +715,14 @@ def get_job_status(task_id):
 
 
 #=================================
-#===      JOB OUTPUT 
+#===      JOB OUTPUTS 
 #=================================
-@job_output_bp.route('/job/<task_id>/output',methods=['GET'])
-@custom_require_login
-def get_job_output(task_id):
-	""" Get job output """
-
+def get_job_out_file(task_id, label):
+	""" Return job output data """
+	
 	# - Init response
 	res= {}
 	res['job_id']= task_id
-	res['state']= ''
 	res['status']= ''
 
 	# - Get aai info
@@ -730,14 +731,6 @@ def get_job_output(task_id):
 		email= g.oidc_token_info['email']
 		username= utils.sanitize_username(email)
 
-	# - Check job status
-	#try:
-	#	job_status= compute_job_status(task_id)
-		
-	#except NameError as e:
-	#	res['status']= str(e)
-	#	return make_response(jsonify(res),404)
-	
 	# - Search job id in user collection
 	collection_name= username + '.jobs'
 	job= None
@@ -758,7 +751,6 @@ def get_job_output(task_id):
 
 
 	# - If job state is PENDING/STARTED/RUNNING/ABORTED return 
-	#job_state= job_status['state']
 	job_state= job['state']
 	job_not_completed= (
 		job_state=='RUNNING' or 
@@ -767,29 +759,168 @@ def get_job_output(task_id):
 		job_state=='ABORTED' 
 	)
 	if job_not_completed:
-		logger.info("Job %s not completed (status=%s)..." % (task_id,job_state))
-		res['state']= job_state
-		res['status']= 'Job aborted or not completed, no output data available'
+		errmsg= 'Job ' + task_id + ' not yet completed (state=' + job_state + '), output not available'
+		logger.info(errmsg)
+		res['status']= errmsg
 		return make_response(jsonify(res),202)
 
-	# - Send file
+	# - Check if file exists
 	job_top_dir= current_app.config['JOB_DIR'] + '/' + username
 	job_dir_name= 'job_' + task_id
 	job_dir= os.path.join(job_top_dir,job_dir_name)
-	tar_filename= 'job_' + task_id + '.tar.gz'
-	tar_file= os.path.join(job_dir,tar_filename)
+	filenames= []
+	if label=='archive':
+		tar_filename= 'job_' + task_id + '.tar.gz'
+		tar_file= os.path.join(job_dir,tar_filename)
+		filenames= [tar_file]
 
-	logger.info("Sending tar file %s with job output data exists ..." % tar_file)
+	elif label=='islands':
+		filepattern= os.path.join(job_dir,'catalog-*.dat')
+		filenames= glob.glob(filepattern)
+
+	elif label=='components':
+		filepattern= os.path.join(job_dir,'catalog_fitcomp-*.json')
+		filenames= glob.glob(filepattern)
+		
+	elif label=='preview':
+		filepattern= os.path.join(job_dir,'plot_*.png')
+		filenames= glob.glob(filepattern)
+	
+	else:
+		errmsg= 'Cannot find desired output for job ' + task_id + '!'
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),500)
+
+	if not filenames:
+		errmsg= 'Cannot find desired output for job ' + task_id + '!'
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),500)	
+
+	if len(filenames)>1:
+		errmsg= 'More than 1 file found with desired name (this should not occur), taking the first...'
+		logger.warn(errmsg)
+		
+	filename= filenames[0]
+
+	# - Send file
+	logger.info("Sending job output file %s ..." % filename)
 	
 	try:
 		return send_file(
-			tar_file, 
+			filename, 
 			as_attachment=True
 		)
 	except FileNotFoundError:
-		res['status']= 'Job output file ' + tar_filename + ' not found!'
+		res['status']= 'Job output file ' + filename + ' not found!'
 		return make_response(jsonify(res),500)
 
 
 	return make_response(jsonify(res),200)
+	
+
+################################
+##     JOB OUTPUT TAR FILE
+################################
+@job_output_bp.route('/job/<task_id>/output',methods=['GET'])
+@custom_require_login
+def get_job_output(task_id):
+	""" Get job output """
+
+	return get_job_out_file(task_id, 'archive')
+
+	# - Init response
+	#res= {}
+	#res['job_id']= task_id
+	#res['state']= ''
+	#res['status']= ''
+
+	# - Get aai info
+	#username= 'anonymous'
+	#if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
+	#	email= g.oidc_token_info['email']
+	#	username= utils.sanitize_username(email)
+
+	# - Search job id in user collection
+	#collection_name= username + '.jobs'
+	#job= None
+	#try:
+	#	job_collection= mongo.db[collection_name]
+	#	job= job_collection.find_one({'job_id': str(task_id)})
+	#except Exception as e:
+	#	errmsg= 'Exception catched when searching job id in DB (err=' + str(e) + ')!'
+	#	logger.error(errmsg)
+	#	res['status']= errmsg
+	#	return make_response(jsonify(res),404)
+
+	#if not job or job is None:
+	#	errmsg= 'Job ' + task_id + ' not found for user ' + username + '!'
+	#	logger.warn(errmsg)
+	#	res['status']= errmsg
+	#	return make_response(jsonify(res),404)
+
+
+	# - If job state is PENDING/STARTED/RUNNING/ABORTED return 
+	#job_state= job['state']
+	#job_not_completed= (
+	#	job_state=='RUNNING' or 
+	#	job_state=='PENDING' or
+	#	job_state=='STARTED' or 
+	#	job_state=='ABORTED' 
+	#)
+	#if job_not_completed:
+	#	logger.info("Job %s not completed (status=%s)..." % (task_id,job_state))
+	#	res['state']= job_state
+	#	res['status']= 'Job aborted or not completed, no output data available'
+	#	return make_response(jsonify(res),202)
+
+	# - Send file
+	#job_top_dir= current_app.config['JOB_DIR'] + '/' + username
+	#job_dir_name= 'job_' + task_id
+	#job_dir= os.path.join(job_top_dir,job_dir_name)
+	#tar_filename= 'job_' + task_id + '.tar.gz'
+	#tar_file= os.path.join(job_dir,tar_filename)
+
+	#logger.info("Sending tar file %s with job output data exists ..." % tar_file)
+	
+	#try:
+	#	return send_file(
+	#		tar_file, 
+	#		as_attachment=True
+	#	)
+	#except FileNotFoundError:
+	#	res['status']= 'Job output file ' + tar_filename + ' not found!'
+	#	return make_response(jsonify(res),500)
+
+
+	#return make_response(jsonify(res),200)
+
+
+
+######################################################
+##     JOB OUTPUT SOURCE ISLAND/COMPONENT CATALOGS
+######################################################
+@job_catalog_bp.route('/job/<task_id>/sources',methods=['GET'])
+@custom_require_login
+def get_job_catalog(task_id):
+	""" Get job island catalog output """
+	return get_job_out_file(task_id, 'islands')
+
+@job_component_catalog_bp.route('/job/<task_id>/source-components',methods=['GET'])
+@custom_require_login
+def get_job_component_catalog(task_id):
+	""" Get job component catalog output """
+	return get_job_out_file(task_id, 'components')
+
+######################################################
+##     JOB OUTPUT SOURCE IMAGE+REGION PREVIEW
+######################################################
+@job_preview_bp.route('/job/<task_id>/preview',methods=['GET'])
+@custom_require_login
+def get_job_preview(task_id):
+	""" Get job image+regions image output """
+	return get_job_out_file(task_id, 'preview')
+
+
 	
