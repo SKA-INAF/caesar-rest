@@ -775,7 +775,7 @@ def get_job_out_file(task_id, label):
 		filenames= [tar_file]
 
 	elif label=='islands':
-		filepattern= os.path.join(job_dir,'catalog-*.dat')
+		filepattern= os.path.join(job_dir,'catalog-*.json')
 		filenames= glob.glob(filepattern)
 
 	elif label=='components':
