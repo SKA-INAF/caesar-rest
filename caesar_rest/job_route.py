@@ -11,6 +11,7 @@ import datetime
 import logging
 import numpy as np
 import glob
+import base64
 
 try:
 	FileNotFoundError  # python3
