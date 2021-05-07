@@ -55,6 +55,7 @@ job_cancel_bp = Blueprint('job_cancel', __name__,url_prefix='/caesar/api/v1.0')
 job_catalog_bp = Blueprint('job_catalog', __name__,url_prefix='/caesar/api/v1.0')
 job_component_catalog_bp = Blueprint('job_component_catalog', __name__,url_prefix='/caesar/api/v1.0')
 job_preview_bp = Blueprint('job_preview', __name__,url_prefix='/caesar/api/v1.0')
+job_preview_file_bp = Blueprint('job_preview_file', __name__,url_prefix='/caesar/api/v1.0')
 
 
 #=================================
@@ -782,7 +783,7 @@ def get_job_out_file(task_id, label):
 		filepattern= os.path.join(job_dir,'catalog_fitcomp-*.json')
 		filenames= glob.glob(filepattern)
 		
-	elif label=='preview':
+	elif label=='preview' or label=='plot':
 		filepattern= os.path.join(job_dir,'plot_*.png')
 		filenames= glob.glob(filepattern)
 	
@@ -804,17 +805,40 @@ def get_job_out_file(task_id, label):
 		
 	filename= filenames[0]
 
-	# - Send file
-	logger.info("Sending job output file %s ..." % filename)
+	# - Send file as attachment in most case
+	#   For preview send the image as base64 encoded string in json
+	if label=='preview':
+		# - Send image as string
+		image= ''
+		try:
+			with open(filename, "rb") as f:
+    		image_binary = f.read()
+				image = b64encode(image_binary).decode("utf-8")
+		except Exception as e:	
+			errmsg= 'Failed to convert file ' + filename + ' to b64 string (err=' + str(e) + ')!'
+			logger.warn(errmsg)
+			res['status']= errmsg
+			return make_response(jsonify(res),500)
+
+		if image=='':
+			errmsg= 'Failed to convert file ' + filename + ' to b64 string (err=' + str(e) + ')!'
+			logger.warn(errmsg)
+			res['status']= errmsg
+			return make_response(jsonify(res),500)
+		else:
+			return make_response(jsonify({'status': '', 'image': image}),500)
 	
-	try:
-		return send_file(
-			filename, 
-			as_attachment=True
-		)
-	except FileNotFoundError:
-		res['status']= 'Job output file ' + filename + ' not found!'
-		return make_response(jsonify(res),500)
+	else:
+		# - Send as files
+		logger.info("Sending job output file %s ..." % filename)
+		try:
+			return send_file(
+				filename, 
+				as_attachment=True
+			)
+		except FileNotFoundError:
+			res['status']= 'Job output file ' + filename + ' not found!'
+			return make_response(jsonify(res),500)
 
 
 	return make_response(jsonify(res),200)
@@ -830,73 +854,6 @@ def get_job_output(task_id):
 
 	return get_job_out_file(task_id, 'archive')
 
-	# - Init response
-	#res= {}
-	#res['job_id']= task_id
-	#res['state']= ''
-	#res['status']= ''
-
-	# - Get aai info
-	#username= 'anonymous'
-	#if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
-	#	email= g.oidc_token_info['email']
-	#	username= utils.sanitize_username(email)
-
-	# - Search job id in user collection
-	#collection_name= username + '.jobs'
-	#job= None
-	#try:
-	#	job_collection= mongo.db[collection_name]
-	#	job= job_collection.find_one({'job_id': str(task_id)})
-	#except Exception as e:
-	#	errmsg= 'Exception catched when searching job id in DB (err=' + str(e) + ')!'
-	#	logger.error(errmsg)
-	#	res['status']= errmsg
-	#	return make_response(jsonify(res),404)
-
-	#if not job or job is None:
-	#	errmsg= 'Job ' + task_id + ' not found for user ' + username + '!'
-	#	logger.warn(errmsg)
-	#	res['status']= errmsg
-	#	return make_response(jsonify(res),404)
-
-
-	# - If job state is PENDING/STARTED/RUNNING/ABORTED return 
-	#job_state= job['state']
-	#job_not_completed= (
-	#	job_state=='RUNNING' or 
-	#	job_state=='PENDING' or
-	#	job_state=='STARTED' or 
-	#	job_state=='ABORTED' 
-	#)
-	#if job_not_completed:
-	#	logger.info("Job %s not completed (status=%s)..." % (task_id,job_state))
-	#	res['state']= job_state
-	#	res['status']= 'Job aborted or not completed, no output data available'
-	#	return make_response(jsonify(res),202)
-
-	# - Send file
-	#job_top_dir= current_app.config['JOB_DIR'] + '/' + username
-	#job_dir_name= 'job_' + task_id
-	#job_dir= os.path.join(job_top_dir,job_dir_name)
-	#tar_filename= 'job_' + task_id + '.tar.gz'
-	#tar_file= os.path.join(job_dir,tar_filename)
-
-	#logger.info("Sending tar file %s with job output data exists ..." % tar_file)
-	
-	#try:
-	#	return send_file(
-	#		tar_file, 
-	#		as_attachment=True
-	#	)
-	#except FileNotFoundError:
-	#	res['status']= 'Job output file ' + tar_filename + ' not found!'
-	#	return make_response(jsonify(res),500)
-
-
-	#return make_response(jsonify(res),200)
-
-
 
 ######################################################
 ##     JOB OUTPUT SOURCE ISLAND/COMPONENT CATALOGS
@@ -905,12 +862,14 @@ def get_job_output(task_id):
 @custom_require_login
 def get_job_catalog(task_id):
 	""" Get job island catalog output """
+
 	return get_job_out_file(task_id, 'islands')
 
 @job_component_catalog_bp.route('/job/<task_id>/source-components',methods=['GET'])
 @custom_require_login
 def get_job_component_catalog(task_id):
 	""" Get job component catalog output """
+
 	return get_job_out_file(task_id, 'components')
 
 ######################################################
@@ -920,7 +879,14 @@ def get_job_component_catalog(task_id):
 @custom_require_login
 def get_job_preview(task_id):
 	""" Get job image+regions image output """
+
 	return get_job_out_file(task_id, 'preview')
 
+@job_preview_file_bp.route('/job/<task_id>/plot',methods=['GET'])
+@custom_require_login
+def get_job_preview_file(task_id):
+	""" Get job image+regions image output """
+
+	return get_job_out_file(task_id, 'plot')
 
 	
