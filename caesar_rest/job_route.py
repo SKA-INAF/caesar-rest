@@ -53,7 +53,9 @@ job_status_bp = Blueprint('job_status', __name__,url_prefix='/caesar/api/v1.0')
 job_output_bp = Blueprint('job_output', __name__,url_prefix='/caesar/api/v1.0')
 job_cancel_bp = Blueprint('job_cancel', __name__,url_prefix='/caesar/api/v1.0')
 job_catalog_bp = Blueprint('job_catalog', __name__,url_prefix='/caesar/api/v1.0')
+job_catalog_file_bp = Blueprint('job_catalog_file', __name__,url_prefix='/caesar/api/v1.0')
 job_component_catalog_bp = Blueprint('job_component_catalog', __name__,url_prefix='/caesar/api/v1.0')
+job_component_catalog_file_bp = Blueprint('job_component_catalog_file', __name__,url_prefix='/caesar/api/v1.0')
 job_preview_bp = Blueprint('job_preview', __name__,url_prefix='/caesar/api/v1.0')
 job_preview_file_bp = Blueprint('job_preview_file', __name__,url_prefix='/caesar/api/v1.0')
 
@@ -775,12 +777,20 @@ def get_job_out_file(task_id, label):
 		tar_file= os.path.join(job_dir,tar_filename)
 		filenames= [tar_file]
 
-	elif label=='islands':
+	elif label=='islands-json':
 		filepattern= os.path.join(job_dir,'catalog-*.json')
 		filenames= glob.glob(filepattern)
 
-	elif label=='components':
+	elif label=='islands':
+		filepattern= os.path.join(job_dir,'catalog-*.dat')
+		filenames= glob.glob(filepattern)
+
+	elif label=='components-json':
 		filepattern= os.path.join(job_dir,'catalog_fitcomp-*.json')
+		filenames= glob.glob(filepattern)
+
+	elif label=='components':
+		filepattern= os.path.join(job_dir,'catalog_fitcomp-*.dat')
 		filenames= glob.glob(filepattern)
 		
 	elif label=='preview' or label=='plot':
@@ -828,9 +838,19 @@ def get_job_out_file(task_id, label):
 		else:
 			return make_response(jsonify({'status': '', 'image': image}),500)
 	
-	#elif label=='islands' or label=='components':
-	#	# - Send as json string
-	#	return make_response(jsonify(res),200)
+	elif label=='islands-json' or label=='components-json':
+		# - Send as json string
+		data= ''
+		try:
+			with open(filename) as f:
+				data = json.load(f)
+		except Exception as e:	
+			errmsg= 'Failed to convert file ' + filename + ' to json string (err=' + str(e) + ')!'
+			logger.warn(errmsg)
+			res['status']= errmsg
+			return make_response(jsonify(res),500)
+
+		return make_response(jsonify(data),200)
 
 	else:
 		# - Send as files
@@ -867,14 +887,31 @@ def get_job_output(task_id):
 def get_job_catalog(task_id):
 	""" Get job island catalog output """
 
+	return get_job_out_file(task_id, 'islands-json')
+
+@job_catalog_file_bp.route('/job/<task_id>/output-sources',methods=['GET'])
+@custom_require_login
+def get_job_catalog_file(task_id):
+	""" Get job island catalog output file """
+
 	return get_job_out_file(task_id, 'islands')
+
 
 @job_component_catalog_bp.route('/job/<task_id>/source-components',methods=['GET'])
 @custom_require_login
 def get_job_component_catalog(task_id):
 	""" Get job component catalog output """
 
+	return get_job_out_file(task_id, 'components-json')
+
+@job_component_catalog_file_bp.route('/job/<task_id>/output-components',methods=['GET'])
+@custom_require_login
+def get_job_component_catalog_file(task_id):
+	""" Get job component catalog output file """
+
 	return get_job_out_file(task_id, 'components')
+
+
 
 ######################################################
 ##     JOB OUTPUT SOURCE IMAGE+REGION PREVIEW
@@ -886,7 +923,7 @@ def get_job_preview(task_id):
 
 	return get_job_out_file(task_id, 'preview')
 
-@job_preview_file_bp.route('/job/<task_id>/plot',methods=['GET'])
+@job_preview_file_bp.route('/job/<task_id>/output-plot',methods=['GET'])
 @custom_require_login
 def get_job_preview_file(task_id):
 	""" Get job image+regions image output """
