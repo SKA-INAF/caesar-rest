@@ -12,6 +12,7 @@ import numpy as np
 import hashlib
 import tarfile
 import subprocess
+import uuid
 
 # Import astro modules
 from astropy.io import fits
@@ -32,6 +33,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 # Get logger
 logger = logging.getLogger(__name__)
 
+
+def get_uuid():
+	""" Return a uuid code """
+	return uuid.uuid4().hex
 
 def tarsum(input_filename, output_filename, hash_type='md5'):
 	"""

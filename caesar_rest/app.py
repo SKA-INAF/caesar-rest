@@ -87,16 +87,22 @@ def create_app(cfg,jc):
 	from caesar_rest.upload_route import upload_bp
 	from caesar_rest.download_route import download_id_bp
 	from caesar_rest.download_route import fileids_bp
+	from caesar_rest.download_route import delete_id_bp
 	from caesar_rest.job_route import job_bp, job_status_bp, job_output_bp, job_cancel_bp
+	from caesar_rest.job_route import job_catalog_bp, job_component_catalog_bp, job_preview_bp
 	from caesar_rest.app_route import app_names_bp, app_describe_bp
 	from caesar_rest.accounting_route import accounting_bp, appstats_bp
 	app.register_blueprint(index_bp)
 	app.register_blueprint(upload_bp)
 	app.register_blueprint(download_id_bp)
 	app.register_blueprint(fileids_bp)
+	app.register_blueprint(delete_id_bp)
 	app.register_blueprint(job_bp)
 	app.register_blueprint(job_status_bp)
 	app.register_blueprint(job_output_bp)
+	app.register_blueprint(job_catalog_bp)
+	app.register_blueprint(job_component_catalog_bp)
+	app.register_blueprint(job_preview_bp)
 	app.register_blueprint(job_cancel_bp)
 	app.register_blueprint(app_names_bp)
 	app.register_blueprint(app_describe_bp)

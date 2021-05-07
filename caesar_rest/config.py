@@ -32,6 +32,22 @@ class Config(object):
 	#APP_NAMES= set(['sfinder']) 
 	JOB_MONITORING_PERIOD= 5 # in seconds
 
+	JOB_SCHEDULER= 'celery' # Options are: {'celery','kubernetes','slurm'}
+
+	# - VOLUME MOUNTS options
+	MOUNT_RCLONE_VOLUME= False
+	MOUNT_VOLUME_PATH= '/mnt/storage'
+	RCLONE_REMOTE_STORAGE= 'neanias-nextcloud'
+	RCLONE_REMOTE_STORAGE_PATH= '.'
+	RCLONE_SECRET_NAME= 'rclone-secret'
+
+	# - KUBERNETES options
+	KUBE_CONFIG_PATH= '' # searches by default in $HOME/.kube/config or in $KUBECONFIG
+	KUBE_INCLUSTER= True # if True assume client is running inside a pod deployed in same cluster, if False client is external to cluster
+	KUBE_CERTFILE= ''
+	KUBE_KEYFILE= ''
+	KUBE_CERTAUTHFILE= ''
+
 	# - SLURM options
 	USE_SLURM= False
 	SLURM_QUEUE= 'normal'
@@ -50,5 +66,11 @@ class Config(object):
 	MONGO_DBNAME= 'caesardb' 
 	MONGO_URI= 'mongodb://localhost:27017/caesardb'
 
-	# - App options
-	SFINDERNN_WEIGHTS= '/opt/caesar-rest/share/mrcnn_weights.h5'
+	# - CAESAR app options
+	CAESAR_JOB_IMAGE= 'sriggi/caesar-job:latest'
+	
+	# - Mask R-CNN app options
+	MASKRCNN_JOB_IMAGE= 'sriggi/mrcnn-detect:latest'
+	MASKRCNN_WEIGHTS= '/opt/Software/MaskR-CNN/install/share/mrcnn_weights.h5'
+
+

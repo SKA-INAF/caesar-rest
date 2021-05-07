@@ -25,7 +25,7 @@ spec:
           secretName: rclone-secret
       containers:
       - name: beat-worker
-        image: sriggi/caesar-rest-beat-worker:light
+        image: sriggi/caesar-rest-beat-worker:latest
         imagePullPolicy: Always
         volumeMounts:
           - name: rclone-secret

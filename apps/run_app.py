@@ -23,6 +23,7 @@ from caesar_rest.app import create_app
 from caesar_rest import oidc
 from caesar_rest import mongo
 from caesar_rest import celery
+from caesar_rest import jobmgr_kube
 
 
 #### GET SCRIPT ARGS ####
@@ -54,7 +55,7 @@ def get_args():
 	parser.add_argument('--ssl', dest='ssl', action='store_true')	
 	parser.set_defaults(ssl=False)
 	
-	parser.add_argument('-sfindernn_weights','--sfindernn_weights', dest='sfindernn_weights', default='/opt/caesar-rest/share/mrcnn_weights.h5', required=False, type=str, help='File (.h5) with network weights used in sfindernn app')
+	parser.add_argument('-mrcnn_weights','--mrcnn_weights', dest='mrcnn_weights', default='/opt/Software/MaskR-CNN/install/share/mrcnn_weights.h5', required=False, type=str, help='File (.h5) with network weights used in Mask-RCNN app')
 
 	parser.add_argument('--db', dest='db', action='store_true')	
 	parser.set_defaults(db=False)
@@ -75,7 +76,26 @@ def get_args():
 	parser.add_argument('-broker_user','--broker_user', dest='broker_user', default='guest', required=False, type=str, help='Username used in Celery broker (default=guest)')
 	parser.add_argument('-broker_pass','--broker_pass', dest='broker_pass', default='guest', required=False, type=str, help='Password used in Celery broker (default=guest)')
 
+	parser.add_argument('-job_scheduler','--job_scheduler', dest='job_scheduler', default='celery', required=False, type=str, help='Job scheduler to be used. Options are: {celery,kubernetes,slurm} (default=celery)')
 
+	# - Kubernetes scheduler options
+	parser.add_argument('--kube_incluster', dest='kube_incluster', action='store_true')	
+	parser.set_defaults(kube_incluster=False)
+	parser.add_argument('-kube_config','--kube_config', dest='kube_config', default='', required=False, type=str, help='Kube configuration file path (default=search in standard path)')
+	parser.add_argument('-kube_cafile','--kube_cafile', dest='kube_cafile', default='', required=False, type=str, help='Kube certificate authority file path')
+	parser.add_argument('-kube_keyfile','--kube_keyfile', dest='kube_keyfile', default='', required=False, type=str, help='Kube private key file path')
+	parser.add_argument('-kube_certfile','--kube_certfile', dest='kube_certfile', default='', required=False, type=str, help='Kube certificate file path')
+	
+	# - Slurm scheduler options
+	# ...
+
+	# - Volume mount options
+	parser.add_argument('--mount_rclone_volume', dest='mount_rclone_volume', action='store_true')	
+	parser.set_defaults(mount_rclone_volume=False)
+	parser.add_argument('-mount_volume_path','--mount_volume_path', dest='mount_volume_path', default='/mnt/storage', required=False, type=str, help='Mount volume path for container jobs')
+	parser.add_argument('-rclone_storage_name','--rclone_storage_name', dest='rclone_storage_name', default='neanias-nextcloud', required=False, type=str, help='rclone remote storage name (default=neanias-nextcloud)')
+	parser.add_argument('-rclone_storage_path','--rclone_storage_path', dest='rclone_storage_path', default='.', required=False, type=str, help='rclone remote storage path (default=.)')
+	
 	args = parser.parse_args()	
 
 	return args
@@ -104,7 +124,7 @@ ssl= args.ssl
 
 # - App options
 job_monitoring_period= args.job_monitoring_period
-sfindernn_weights= args.sfindernn_weights
+mrcnn_weights= args.mrcnn_weights
 
 # - DB & celery result backend options
 use_db= args.db
@@ -138,6 +158,25 @@ broker_pass= args.broker_pass
 broker_url= broker_proto + '://' + broker_user + ':' + broker_pass + '@' + broker_host + ':' + str(broker_port) + '/'
 logger.info("Using broker_url: %s" % broker_url)
 
+# - Celery beat options
+# ...
+
+# - Scheduler options
+job_scheduler= args.job_scheduler
+if job_scheduler!='celery' and job_scheduler!='kubernetes' and job_scheduler!='slurm':
+	logger.error("Unsupported job scheduler (hint: supported are {celery,kubernetes,slurm})!")
+	sys.exit(1)
+
+if job_scheduler=='kubernetes' and jobmgr_kube is None:
+	logger.error("Chosen scheduler is Kubernetes but kube client failed to be instantiated (see previous logs)!")
+	sys.exit(1)
+
+# - Kubernetes options
+kube_incluster= args.kube_incluster
+kube_config= args.kube_config
+kube_certfile= args.kube_certfile
+kube_keyfile= args.kube_keyfile
+kube_cafile= args.kube_cafile
 
 
 #===============================
@@ -166,7 +205,21 @@ if use_db and mongo is not None:
 	config.MONGO_URI= dbhost
 	config.USE_MONGO= True
 
-config.SFINDERNN_WEIGHTS = sfindernn_weights
+config.MASKRCNN_WEIGHTS = mrcnn_weights
+
+config.JOB_SCHEDULER= job_scheduler
+config.KUBE_CONFIG_PATH= kube_config
+config.KUBE_INCLUSTER= kube_incluster
+config.KUBE_CERTFILE= kube_certfile
+config.KUBE_KEYFILE= kube_keyfile
+config.KUBE_CERTAUTHFILE= kube_cafile
+
+
+config.MOUNT_RCLONE_VOLUME= args.mount_rclone_volume
+config.MOUNT_VOLUME_PATH= args.mount_volume_path
+config.RCLONE_REMOTE_STORAGE= args.rclone_storage_name
+config.RCLONE_REMOTE_STORAGE_PATH= args.rclone_storage_path
+
 
 # - Create data manager (DEPRECATED BY MONGO)
 ##logger.info("Creating data manager ...")
@@ -181,6 +234,10 @@ jobcfg= JobConfigurator()
 logger.info("Updating celery configuration (broker_url=%s, result_backend=%s) ..." % (broker_url, result_backend))
 celery.conf.result_backend= result_backend
 celery.conf.broker_url= broker_url
+
+#celery.conf.beat_schedule['accounter_beat']['args'][0]= args.dbhost
+#celery.conf.beat_schedule['accounter_beat']['args'][1]= args.dbport
+#celery.conf.beat_schedule['accounter_beat']['args'][2]= args.dbname
 
 #===============================
 #==   CREATE APP
@@ -214,6 +271,26 @@ if use_db and mongo is not None:
 		logger.error("Failed to initialize MongoDB to app!")
 else:
 	logger.info("Starting app without mongo backend ...")
+
+#============================================
+#==   INIT KUBERNETES CLIENT (if enabled)
+#============================================
+if job_scheduler=='kubernetes' and jobmgr_kube is not None:
+
+	# - Setting options
+	jobmgr_kube.certfile= config.KUBE_CERTFILE
+	jobmgr_kube.cafile= config.KUBE_CERTAUTHFILE
+	jobmgr_kube.keyfile= config.KUBE_KEYFILE
+
+	# - Initialize client
+	logger.info("Initializing Kube job manager ...")
+	try:
+		if jobmgr_kube.initialize(configfile=config.KUBE_CONFIG_PATH, incluster=config.KUBE_INCLUSTER)<0:
+			logger.error("Failed to initialize Kube job manager, see logs!")
+			sys.exit(1)
+	except Exception as e:
+		logger.error("Failed to initialize Kube job manager (err=%s)!" % str(e))
+		sys.exit(1)
 
 ###################
 ##   MAIN EXEC   ##

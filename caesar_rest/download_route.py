@@ -41,6 +41,8 @@ logger = logging.getLogger(__name__)
 ##############################
 download_id_bp = Blueprint('download_id', __name__,url_prefix='/caesar/api/v1.0')
 fileids_bp = Blueprint('fileids', __name__, url_prefix='/caesar/api/v1.0')
+delete_id_bp= Blueprint('delete_id', __name__,url_prefix='/caesar/api/v1.0')
+
 
 # - Returns all file ids registered in the system
 @fileids_bp.route('/fileids', methods=['GET'])
@@ -140,5 +142,83 @@ def download_by_uuid(file_uuid):
 		logger.warn(errmsg)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
+
+
+
+
+@delete_id_bp.route('/delete/<string:file_uuid>', methods=['GET', 'POST'])
+@custom_require_login
+def delete_by_uuid(file_uuid):
+	""" Delete data by uuid """
+
+	# - Init response
+	res= {
+		'status': ''
+	}
+
+	# - Get aai info
+	username= 'anonymous'
+	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
+		email= g.oidc_token_info['email']
+		username= utils.sanitize_username(email)
+
+	# - Search file uuid
+	collection_name= username + '.files'
+	item= None
+	try:
+		data_collection= mongo.db[collection_name]
+		item= data_collection.find_one({'fileid': str(file_uuid)})
+
+	except Exception as e:
+		errmsg= 'Exception caught when searching file in DB (err=' + str(e) + ')!'
+		logger.error(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
+		
+	if item and item is not None:
+		file_path= item['filepath']
+		logger.info("File with uuid=%s found at path=%s ..." % (file_uuid, file_path))
+	else:
+		logger.warn("File with uuid=%s not found in DB!" % file_uuid)
+		file_path= ''
+
+	file_existing= os.path.isfile(file_path)
+	
+	if not file_path or file_path=='' or not file_existing:
+		errmsg= 'File with uuid ' + file_uuid + ' not found on the system!'
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
+		
+	# - Remove file from filesystem
+	try:
+		os.remove(file_path)
+	except Exception as e:
+		errmsg= 'File with uuid ' + file_uuid + ' failed to be deleted (err=' + str(e) + ')!'
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
+
+	# - Remove file from DB
+	try:
+		data_collection= mongo.db[collection_name]
+		result= data_collection.delete_one({'fileid': str(file_uuid)})
+		if result.deleted_count<=0:
+			errmsg= "DB returned <=0 number of files deleted"
+			logger.error(errmsg)
+			res['status']= errmsg
+			return make_response(jsonify(res),404)
+
+	except Exception as e:
+		errmsg= 'Exception caught when deleting file in DB (err=' + str(e) + ')!'
+		logger.error(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
+
+	# - Return response
+	logger.info("Returning file %s to client ..." % file_path)
+	res['status']= 'File deleted and removed from DB'
+	return make_response(jsonify(res),200)
+
 
 

@@ -22,7 +22,7 @@ spec:
           claimName: pv-claim
       initContainers:
         - name: take-data-dir-ownership
-          image: sriggi/caesar-rest-beat-worker:light
+          image: sriggi/caesar-rest-beat-worker:latest
           command:
             - chown
             - -R
@@ -33,7 +33,7 @@ spec:
               mountPath: /mnt/storage
       containers:
       - name: beat-worker
-        image: sriggi/caesar-rest-beat-worker:light
+        image: sriggi/caesar-rest-beat-worker:latest
         imagePullPolicy: Always
         volumeMounts:
           - name: caesar-storage

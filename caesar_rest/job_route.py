@@ -10,6 +10,7 @@ import time
 import datetime
 import logging
 import numpy as np
+import glob
 
 try:
 	FileNotFoundError  # python3
@@ -38,6 +39,7 @@ from caesar_rest import oidc
 from caesar_rest import utils
 from caesar_rest.decorators import custom_require_login
 from caesar_rest import mongo
+from caesar_rest import jobmgr_kube
 
 # Get logger
 logger = logging.getLogger(__name__)
@@ -50,6 +52,9 @@ job_bp = Blueprint('job', __name__,url_prefix='/caesar/api/v1.0')
 job_status_bp = Blueprint('job_status', __name__,url_prefix='/caesar/api/v1.0')
 job_output_bp = Blueprint('job_output', __name__,url_prefix='/caesar/api/v1.0')
 job_cancel_bp = Blueprint('job_cancel', __name__,url_prefix='/caesar/api/v1.0')
+job_catalog_bp = Blueprint('job_catalog', __name__,url_prefix='/caesar/api/v1.0')
+job_component_catalog_bp = Blueprint('job_component_catalog', __name__,url_prefix='/caesar/api/v1.0')
+job_preview_bp = Blueprint('job_preview', __name__,url_prefix='/caesar/api/v1.0')
 
 
 #=================================
@@ -80,8 +85,9 @@ def submit_job():
 	mongo_dbname= current_app.config['MONGO_DBNAME']
 
 	# - Get other options
-	slurm_enabled= current_app.config['USE_SLURM']
+	job_scheduler= current_app.config['JOB_SCHEDULER']
 	
+
 	# - Get request data
 	req_data = request.get_json(silent=True)
 	if not req_data:
@@ -128,19 +134,42 @@ def submit_job():
 	if cmd_arg_list:
 		cmd_args= ' '.join(cmd_arg_list)
 
-	# - Submit task async	
-	logger.info("Submitting job %s async (cmd=%s, args=%s) ..." % (app_name,cmd,cmd_args))
-	now = datetime.datetime.now()
-	submit_date= now.isoformat()
+	# - Set job top directory
 	job_top_dir= current_app.config['JOB_DIR'] + '/' + username
-	job_monitoring_period= current_app.config['JOB_MONITORING_PERIOD']
 
-	task = background_task.apply_async(
-		[app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname, job_monitoring_period],
-		queue= app_name # set queue name to app name
-	)
-	job_id= task.id
-	logger.info("Submitted job with id=%s ..." % job_id)
+	# - Submit task async	
+	#logger.info("Submitting job %s async (cmd=%s, args=%s) ..." % (app_name,cmd,cmd_args))
+	#now = datetime.datetime.now()
+	#submit_date= now.isoformat()
+	#job_top_dir= current_app.config['JOB_DIR'] + '/' + username
+	#job_monitoring_period= current_app.config['JOB_MONITORING_PERIOD']
+
+	#task = background_task.apply_async(
+	#	[app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname, job_monitoring_period],
+	#	queue= app_name # set queue name to app name
+	#)
+	#job_id= task.id
+	#logger.info("Submitted job with id=%s ..." % job_id)
+
+	# - Submit task
+	submit_res= None
+	if job_scheduler=='celery':
+		submit_res= submit_job_celery(app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname)
+	
+	elif job_scheduler=='kubernetes':
+		submit_res= submit_job_kubernetes(app_name, cmd_args, job_top_dir)
+
+	elif job_scheduler=='slurm':
+		submit_res= submit_job_slurm()
+
+	if submit_res is None:
+		logger.warn("Failed to submit job to scheduler %s!" % job_scheduler)
+		res['state']= 'ABORTED'
+		res['status']= 'Job failed to be submitted!'
+		return make_response(jsonify(res),500)
+
+	submit_date= submit_res['submit_date']
+	job_id= submit_res['job_id']
 
 	# - Register task id in mongo
 	logger.info("Creating job object for task %s ..." % job_id)
@@ -149,8 +178,10 @@ def submit_job():
 		"submit_date": submit_date,
 		"app": app_name,	
 		"job_inputs": job_inputs,
+		"job_top_dir": job_top_dir,
 		"metadata": '', # FIX ME
 		"tag": '', # FIX ME
+		"scheduler": job_scheduler,
 		"state": 'PENDING',
 		"status": 'Job submitted',
 		"pid": '',
@@ -186,6 +217,132 @@ def submit_job():
 	
 	return make_response(jsonify(res),202)
 
+
+#=================================
+#===    SUBMIT JOB CELERY
+#=================================
+def submit_job_celery(app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname):
+	""" Submit job to celery scheduler """
+
+	# - Set task options
+	now = datetime.datetime.now()
+	submit_date= now.isoformat()
+	job_monitoring_period= current_app.config['JOB_MONITORING_PERIOD']
+
+	# - Submit task to queue
+	logger.info("Submitting job %s async (cmd=%s, args=%s) ..." % (app_name,cmd,cmd_args))
+	task = background_task.apply_async(
+		[app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname, job_monitoring_period],
+		queue= app_name # set queue name to app name
+	)
+	job_id= task.id
+	logger.info("Submitted job with id=%s ..." % job_id)
+
+	res= {
+		"job_id": job_id,
+		"submit_date": submit_date,
+		"state": "PENDING",
+		"status": "Job submitted to queue"
+	}
+
+	return res
+
+#=================================
+#===    SUBMIT JOB KUBERNETES
+#=================================
+def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
+	""" Submit job to Kubernetes scheduler """
+
+	# - Init response
+	res= {}
+
+	# - Get app config options
+	image= ''
+	mount_rclone_vol= current_app.config['MOUNT_RCLONE_VOLUME']
+	mount_vol_path= current_app.config['MOUNT_VOLUME_PATH']
+	rclone_storage_name= current_app.config['RCLONE_REMOTE_STORAGE']
+	rclone_storage_path= current_app.config['RCLONE_REMOTE_STORAGE_PATH']
+	rclone_secret_name= current_app.config['RCLONE_SECRET_NAME']
+
+	# - Generate job id
+	job_id= utils.get_uuid()
+	
+	# - Create job top dir
+	job_dir_name= 'job_' + job_id
+	job_dir= os.path.join(job_top_dir,job_dir_name)
+
+	logger.info("Creating job dir %s (top dir=%s) ..." % (job_dir,job_top_dir))
+	try:
+		os.makedirs(job_dir)
+	except OSError as exc:
+		if exc.errno != errno.EEXIST:
+			errmsg= "Failed to create job directory " + job_dir + "!" 
+			logger.error(errmsg)
+			return None
+
+	# - Set job options
+	if app_name=="sfinder":
+		image= current_app.config['CAESAR_JOB_IMAGE']
+		job_label= 'caesar-job'
+
+	elif app_name=="mrcnn":
+		image= current_app.config['MASKRCNN_JOB_IMAGE']
+		job_label= 'mrcnn-job'
+
+	else:
+		logger.warn("Unknown/unsupported app %s!" % app_name)
+		return None
+
+
+	# - Create job object
+	if mount_rclone_vol:
+		job= jobmgr_kube.create_job_rclone(
+			image=image, 
+			job_args=cmd_args,
+			label=job_label,
+			job_name=job_id, 
+			job_outdir=job_dir,
+			rclone_storage_name=rclone_storage_name, 
+			rclone_secret_name=rclone_secret_name, 
+			rclone_storage_path=rclone_storage_path, 
+			rclone_mount_path=mount_vol_path
+		)
+
+	else:
+		logger.warn("Unsupported job volume type required!")
+		return None
+	
+	if job is None:
+		logger.warn("Failed to create Kube job object!")
+		return None
+
+	# - Submit job
+	now = datetime.datetime.now()
+	submit_date= now.isoformat()
+	submit_job= jobmgr_kube.submit_job(job)
+	if submit_job is None:
+		logger.warn("Failed to submit job %s to Kubernetes cluster!" % job_id)
+		return None
+
+	logger.info("Submitted job with id=%s ..." % job_id)
+
+	res= {
+		"job_id": job_id,
+		"submit_date": submit_date,
+		"state": "PENDING",
+		"status": "Job submitted to Kubernetes scheduler"
+	}
+
+	return res
+
+#=================================
+#===    SUBMIT JOB SLURM
+#=================================
+def submit_job_slurm():
+	""" Submit job to Slurm scheduler """
+
+	# ...
+	# ...
 
 #=================================
 #===      JOB IDs 
@@ -228,13 +385,122 @@ def cancel_job(task_id):
 	# - Init response
 	res= {}
 	res['status']= ''
+
+	# - Get aai info
+	username= 'anonymous'
+	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
+		email= g.oidc_token_info['email']
+		username= utils.sanitize_username(email)
+
+	# - Get mongo info
+	mongo_dbhost= current_app.config['MONGO_HOST']
+	mongo_dbport= current_app.config['MONGO_PORT']
+	mongo_dbname= current_app.config['MONGO_DBNAME']
+
+	# - Get other options
+	job_scheduler= current_app.config['JOB_SCHEDULER']
 	
+
+	# - Cancel job
+	cmdout= {}
+	if job_scheduler=='celery':
+		logger.info("Canceling job %s assuming it was scheduled with celery ..." % task_id)
+		cmdout= cancel_celery_task(task_id)
+
+	elif job_scheduler=='kubernetes':
+		logger.info("Canceling job %s assuming it was scheduled with Kubernetes ..." % task_id)
+		cmdout= cancel_kubernetes_job(task_id)
+
+	elif job_scheduler=='slurm':
+		logger.info("Canceling job %s assuming it was scheduled with slurm ..." % task_id)
+		cmdout= cancel_slurm_job(task_id)
+
+	if not cmdout:
+		errmsg= "Empty reply from cancel task method!"
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),500)
+
+	if cmdout["exit"]!=0:
+		errmsg= "Failed to cancel job " + task_id + " (err=" + cmdout["status"] + ")!"
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),500)
+
+	# - If job was canceled with success set CANCELED status in DB
+	collection_name= username + '.jobs'
+
+	state= "CANCELED"
+	status= "Job canceled by user"
+	exit_code= -1
+	#elapsed_time= task_info['elapsed_time']
+	
+	try:
+		job_collection= mongo.db[collection_name]
+		job_collection.update_one({'job_id':task_id},{'$set':{'state':state,'status':status,'exit_code':exit_code}},upsert=False)
+	except Exception as e:
+		errmsg= 'Exception caught when updating job ' + str(task_id) + ' in DB (err=' + str(e) + ')!'
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),500)
+
+	res['status']= "Job canceled and status updated in DB"
+
+	# - Get task
+	#task = background_task.AsyncResult(task_id)
+	#if not task or task is None:
+	#	errmsg= 'No task found with id ' + task_id + '!'
+	#	res['status']= errmsg
+	#	return make_response(jsonify(res),404)
+
+	# - Revoke task
+	#logger.info("Revoking task %s ..." % task_id)
+	#try:
+	#	revoke(task_id, terminate=True,signal='SIGTERM')
+		
+	#except Exception as e:
+	#	errmsg= 'Exception caught when attempting to rekove task ' + task_id + ' (err=' + str(e) + ')!' 
+	#	logger.warn(errmsg)
+	#	res['status']= errmsg
+	#	return make_response(jsonify(res),500)
+
+	# - Kill background process
+	#   NB: This is not working if running in multi nodes
+	#pid= task.info.get('pid', '')
+	#res['status']= 'Task revoked'
+
+	#logger.info("Killing pid=%s ..." % pid)
+	#try:
+	#	os.killpg(os.getpgid(int(pid)), signal.SIGKILL)  # Send the signal to all the process groups
+	#	res['status']= 'Task revoked and background process canceled with success'
+
+	#except Exception as e:
+	#	errmsg= 'Exception caught when attempting to kill background task process with PID=' + pid + ' (err=' + str(e) + ')!' 
+	#	logger.warn(errmsg)
+	#	res['status']= 'Task revoked but failed to cancel background process (err=' + str(e) + ')'
+		
+	return make_response(jsonify(res),200)
+
+
+
+#=================================
+#===   CELERY JOB CANCEL 
+#=================================
+def cancel_celery_task(task_id):
+	""" Cancel Celery task and background process """
+
+	# - Init response
+	res= {}
+	res['exit']= -1
+	res['status']= ''
+
 	# - Get task
 	task = background_task.AsyncResult(task_id)
 	if not task or task is None:
 		errmsg= 'No task found with id ' + task_id + '!'
 		res['status']= errmsg
-		return make_response(jsonify(res),404)
+		res['exit']= -1
+		return res
 
 	# - Revoke task
 	logger.info("Revoking task %s ..." % task_id)
@@ -248,7 +514,8 @@ def cancel_job(task_id):
 		errmsg= 'Exception caught when attempting to rekove task ' + task_id + ' (err=' + str(e) + ')!' 
 		logger.warn(errmsg)
 		res['status']= errmsg
-		return make_response(jsonify(res),500)
+		res['exit']= -1
+		return res
 
 	# - Kill background process
 	#   NB: This is not working if running in multi nodes
@@ -259,14 +526,74 @@ def cancel_job(task_id):
 	try:
 		os.killpg(os.getpgid(int(pid)), signal.SIGKILL)  # Send the signal to all the process groups
 		res['status']= 'Task revoked and background process canceled with success'
+		res['exit']= 0
 
 	except Exception as e:
 		errmsg= 'Exception caught when attempting to kill background task process with PID=' + pid + ' (err=' + str(e) + ')!' 
 		logger.warn(errmsg)
 		res['status']= 'Task revoked but failed to cancel background process (err=' + str(e) + ')'
-		
-	return make_response(jsonify(res),200)
+		res['exit']= -1
+		return res
 
+	return res
+	
+
+#=================================
+#===   KUBERNETES JOB CANCEL 
+#=================================
+def cancel_kubernetes_job(job_id):
+	""" Cancel Kubernetes job """
+
+	# - Init response
+	res= {}
+	res['exit']= -1
+	res['status']= ''
+
+	# - Check if Kube job mgr is not None
+	if jobmgr_kube is None:
+		errmsg= 'Kube job manager instance is None!' 
+		logger.warn(errmsg)
+		res['status']= errmsg
+		res['exit']= -1
+		return res
+ 
+	# - Cancel job
+	try:
+		if jobmgr_kube.delete_job(job_id)<0:
+			errmsg= "Failed to delete Kube job, see logs!"
+			logger.warn(errmsg)
+			res['status']= errmsg
+			res['exit']= -1
+			return res
+
+	except Exception as e:
+		errmsg= "Exception caught when deleting Kube job (err=" + str(e) + ")!"
+		logger.warn(errmsg)
+		res['status']= errmsg
+		res['exit']= -1
+		return res
+
+	res['status']= "Deleted job with success"
+	res['exit']= 0
+
+	return res
+	
+#=================================
+#===   SLURM JOB CANCEL 
+#=================================
+def cancel_slurm_job(job_id):
+	""" Cancel Slurm job """
+
+	# - Init response
+	res= {}
+	res['exit']= -1
+	res['status']= ''
+
+	# IMPLEMENT ME!!!
+	# ...
+	# ...
+
+	return res
 
 #=================================
 #===      JOB STATUS HELPER
@@ -388,17 +715,14 @@ def get_job_status(task_id):
 
 
 #=================================
-#===      JOB OUTPUT 
+#===      JOB OUTPUTS 
 #=================================
-@job_output_bp.route('/job/<task_id>/output',methods=['GET'])
-@custom_require_login
-def get_job_output(task_id):
-	""" Get job output """
-
+def get_job_out_file(task_id, label):
+	""" Return job output data """
+	
 	# - Init response
 	res= {}
 	res['job_id']= task_id
-	res['state']= ''
 	res['status']= ''
 
 	# - Get aai info
@@ -407,16 +731,27 @@ def get_job_output(task_id):
 		email= g.oidc_token_info['email']
 		username= utils.sanitize_username(email)
 
-	# - Check job status
+	# - Search job id in user collection
+	collection_name= username + '.jobs'
+	job= None
 	try:
-		job_status= compute_job_status(task_id)
-		
-	except NameError as e:
-		res['status']= str(e)
+		job_collection= mongo.db[collection_name]
+		job= job_collection.find_one({'job_id': str(task_id)})
+	except Exception as e:
+		errmsg= 'Exception catched when searching job id in DB (err=' + str(e) + ')!'
+		logger.error(errmsg)
+		res['status']= errmsg
 		return make_response(jsonify(res),404)
-	
+
+	if not job or job is None:
+		errmsg= 'Job ' + task_id + ' not found for user ' + username + '!'
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
+
+
 	# - If job state is PENDING/STARTED/RUNNING/ABORTED return 
-	job_state= job_status['state']
+	job_state= job['state']
 	job_not_completed= (
 		job_state=='RUNNING' or 
 		job_state=='PENDING' or
@@ -424,29 +759,168 @@ def get_job_output(task_id):
 		job_state=='ABORTED' 
 	)
 	if job_not_completed:
-		logger.info("Job %s not completed (status=%s)..." % (task_id,job_state))
-		res['state']= job_state
-		res['status']= 'Job aborted or not completed, no output data available'
+		errmsg= 'Job ' + task_id + ' not yet completed (state=' + job_state + '), output not available'
+		logger.info(errmsg)
+		res['status']= errmsg
 		return make_response(jsonify(res),202)
 
-	# - Send file
+	# - Check if file exists
 	job_top_dir= current_app.config['JOB_DIR'] + '/' + username
 	job_dir_name= 'job_' + task_id
 	job_dir= os.path.join(job_top_dir,job_dir_name)
-	tar_filename= 'job_' + task_id + '.tar.gz'
-	tar_file= os.path.join(job_dir,tar_filename)
+	filenames= []
+	if label=='archive':
+		tar_filename= 'job_' + task_id + '.tar.gz'
+		tar_file= os.path.join(job_dir,tar_filename)
+		filenames= [tar_file]
 
-	logger.info("Sending tar file %s with job output data exists ..." % tar_file)
+	elif label=='islands':
+		filepattern= os.path.join(job_dir,'catalog-*.json')
+		filenames= glob.glob(filepattern)
+
+	elif label=='components':
+		filepattern= os.path.join(job_dir,'catalog_fitcomp-*.json')
+		filenames= glob.glob(filepattern)
+		
+	elif label=='preview':
+		filepattern= os.path.join(job_dir,'plot_*.png')
+		filenames= glob.glob(filepattern)
+	
+	else:
+		errmsg= 'Cannot find desired output for job ' + task_id + '!'
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),500)
+
+	if not filenames:
+		errmsg= 'Cannot find desired output for job ' + task_id + '!'
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),500)	
+
+	if len(filenames)>1:
+		errmsg= 'More than 1 file found with desired name (this should not occur), taking the first...'
+		logger.warn(errmsg)
+		
+	filename= filenames[0]
+
+	# - Send file
+	logger.info("Sending job output file %s ..." % filename)
 	
 	try:
 		return send_file(
-			tar_file, 
+			filename, 
 			as_attachment=True
 		)
 	except FileNotFoundError:
-		res['status']= 'Job output file ' + tar_filename + ' not found!'
+		res['status']= 'Job output file ' + filename + ' not found!'
 		return make_response(jsonify(res),500)
 
 
 	return make_response(jsonify(res),200)
+	
+
+################################
+##     JOB OUTPUT TAR FILE
+################################
+@job_output_bp.route('/job/<task_id>/output',methods=['GET'])
+@custom_require_login
+def get_job_output(task_id):
+	""" Get job output """
+
+	return get_job_out_file(task_id, 'archive')
+
+	# - Init response
+	#res= {}
+	#res['job_id']= task_id
+	#res['state']= ''
+	#res['status']= ''
+
+	# - Get aai info
+	#username= 'anonymous'
+	#if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info):
+	#	email= g.oidc_token_info['email']
+	#	username= utils.sanitize_username(email)
+
+	# - Search job id in user collection
+	#collection_name= username + '.jobs'
+	#job= None
+	#try:
+	#	job_collection= mongo.db[collection_name]
+	#	job= job_collection.find_one({'job_id': str(task_id)})
+	#except Exception as e:
+	#	errmsg= 'Exception catched when searching job id in DB (err=' + str(e) + ')!'
+	#	logger.error(errmsg)
+	#	res['status']= errmsg
+	#	return make_response(jsonify(res),404)
+
+	#if not job or job is None:
+	#	errmsg= 'Job ' + task_id + ' not found for user ' + username + '!'
+	#	logger.warn(errmsg)
+	#	res['status']= errmsg
+	#	return make_response(jsonify(res),404)
+
+
+	# - If job state is PENDING/STARTED/RUNNING/ABORTED return 
+	#job_state= job['state']
+	#job_not_completed= (
+	#	job_state=='RUNNING' or 
+	#	job_state=='PENDING' or
+	#	job_state=='STARTED' or 
+	#	job_state=='ABORTED' 
+	#)
+	#if job_not_completed:
+	#	logger.info("Job %s not completed (status=%s)..." % (task_id,job_state))
+	#	res['state']= job_state
+	#	res['status']= 'Job aborted or not completed, no output data available'
+	#	return make_response(jsonify(res),202)
+
+	# - Send file
+	#job_top_dir= current_app.config['JOB_DIR'] + '/' + username
+	#job_dir_name= 'job_' + task_id
+	#job_dir= os.path.join(job_top_dir,job_dir_name)
+	#tar_filename= 'job_' + task_id + '.tar.gz'
+	#tar_file= os.path.join(job_dir,tar_filename)
+
+	#logger.info("Sending tar file %s with job output data exists ..." % tar_file)
+	
+	#try:
+	#	return send_file(
+	#		tar_file, 
+	#		as_attachment=True
+	#	)
+	#except FileNotFoundError:
+	#	res['status']= 'Job output file ' + tar_filename + ' not found!'
+	#	return make_response(jsonify(res),500)
+
+
+	#return make_response(jsonify(res),200)
+
+
+
+######################################################
+##     JOB OUTPUT SOURCE ISLAND/COMPONENT CATALOGS
+######################################################
+@job_catalog_bp.route('/job/<task_id>/sources',methods=['GET'])
+@custom_require_login
+def get_job_catalog(task_id):
+	""" Get job island catalog output """
+	return get_job_out_file(task_id, 'islands')
+
+@job_component_catalog_bp.route('/job/<task_id>/source-components',methods=['GET'])
+@custom_require_login
+def get_job_component_catalog(task_id):
+	""" Get job component catalog output """
+	return get_job_out_file(task_id, 'components')
+
+######################################################
+##     JOB OUTPUT SOURCE IMAGE+REGION PREVIEW
+######################################################
+@job_preview_bp.route('/job/<task_id>/preview',methods=['GET'])
+@custom_require_login
+def get_job_preview(task_id):
+	""" Get job image+regions image output """
+	return get_job_out_file(task_id, 'preview')
+
+
 	
