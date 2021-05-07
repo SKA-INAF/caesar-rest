@@ -837,7 +837,7 @@ def get_job_out_file(task_id, label):
 			res['status']= errmsg
 			return make_response(jsonify(res),500)
 		else:
-			return make_response(jsonify({'status': '', 'image': image}),500)
+			return make_response(jsonify({'status': '', 'image': image}), 200)
 	
 	elif label=='islands-json' or label=='components-json':
 		# - Send as json string
