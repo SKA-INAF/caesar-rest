@@ -812,7 +812,7 @@ def get_job_out_file(task_id, label):
 		image= ''
 		try:
 			with open(filename, "rb") as f:
-    		image_binary = f.read()
+				image_binary = f.read()
 				image = b64encode(image_binary).decode("utf-8")
 		except Exception as e:	
 			errmsg= 'Failed to convert file ' + filename + ' to b64 string (err=' + str(e) + ')!'
@@ -828,6 +828,10 @@ def get_job_out_file(task_id, label):
 		else:
 			return make_response(jsonify({'status': '', 'image': image}),500)
 	
+	#elif label=='islands' or label=='components':
+	#	# - Send as json string
+	#	return make_response(jsonify(res),200)
+
 	else:
 		# - Send as files
 		logger.info("Sending job output file %s ..." % filename)
