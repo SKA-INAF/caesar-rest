@@ -96,8 +96,7 @@ class SlurmJobManager(object):
 				self.key = jwk_from_dict({'kty': 'oct', 'k': b64encode(priv_key)})
 
 		except Exception as e:
-			errmsg=
-			logger.warn("Failed to read private key from file %s!" % self.keyfile)
+			logger.warn("Failed to read private key from file %s (err=%s)!" % (self.keyfile,str(e)))
 			return -1
 
 		return -1
