@@ -133,8 +133,22 @@ class SlurmJobManager(object):
 		else:
 			self.token= jwt_token
 
+		# - Check token
+		if not self.is_token_valid():
+			logger.warn("Generated token is invalid, set to empty string.")
+			self.token= ""
+			return -1
+
 		return 0
 
+	def is_token_active(self):
+		""" Check if token is valid and not expired """
+
+		payload= self.decode_token(verify=True, check_exp=True)
+		if payload is None:
+			return False
+
+		return True
 	
 	def is_token_valid(self):
 		""" Check if token is valid """
@@ -173,7 +187,7 @@ class SlurmJobManager(object):
 			)
 			print(payload)
 	
-		except jwt.exceptions.JWTDecodeError:
+		except jwt.exceptions.JWTDecodeError as e:
 			logger.warn("Failed to decode token (err=%s)" % str(e))
 			return None
 
@@ -199,6 +213,12 @@ class SlurmJobManager(object):
   	##     "job_submit_user_msg" : "job_submit_user_msg"
 		##  }
 		#####################################
+
+		# - Check token is active
+		if not self.is_token_active():
+			logger.warn("Slurm rest auth token not valid or expired!")
+			return None
+		 
 
 		# - Set header
 		headers = {
