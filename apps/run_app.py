@@ -87,7 +87,12 @@ def get_args():
 	parser.add_argument('-kube_certfile','--kube_certfile', dest='kube_certfile', default='', required=False, type=str, help='Kube certificate file path')
 	
 	# - Slurm scheduler options
-	# ...
+	parser.add_argument('-slurm_keyfile','--slurm_keyfile', dest='slurm_keyfile', default='', required=False, type=str, help='Slurm rest service private key file path')
+	parser.add_argument('-slurm_user','--slurm_user', dest='slurm_user', default='cirasa', required=False, type=str, help='Username enabled to run in Slurm cluster')
+	parser.add_argument('-slurm_host','--slurm_host', dest='slurm_host', default='SLURM_HOST', required=False, type=str, help='Slurm cluster host/ipaddress')
+	parser.add_argument('-slurm_port','--slurm_port', dest='slurm_port', default=6820, required=False, type=int, help='Slurm rest service port')
+	parser.add_argument('-slurm_queue','--slurm_queue', dest='slurm_queue', default='normal', required=False, type=str, help='Slurm cluster host/ipaddress')
+	
 
 	# - Volume mount options
 	parser.add_argument('--mount_rclone_volume', dest='mount_rclone_volume', action='store_true')	
@@ -178,7 +183,14 @@ kube_certfile= args.kube_certfile
 kube_keyfile= args.kube_keyfile
 kube_cafile= args.kube_cafile
 
+# - Slurm options
+slurm_keyfile= args.slurm_keyfile
+slurm_user= args.slurm_user
+slurm_host= args.slurm_host
+slurm_port= args.slurm_port
+slurm_queue= args.slurm_queue
 
+	
 #===============================
 #==   INIT
 #===============================
@@ -214,6 +226,11 @@ config.KUBE_CERTFILE= kube_certfile
 config.KUBE_KEYFILE= kube_keyfile
 config.KUBE_CERTAUTHFILE= kube_cafile
 
+config.SLURM_KEYFILE= slurm_keyfile
+config.SLURM_QUEUE= slurm_queue
+config.SLURM_USER= slurm_user
+config.SLURM_HOST= slurm_host
+config.SLURM_PORT= slurm_port
 
 config.MOUNT_RCLONE_VOLUME= args.mount_rclone_volume
 config.MOUNT_VOLUME_PATH= args.mount_volume_path
@@ -291,6 +308,29 @@ if job_scheduler=='kubernetes' and jobmgr_kube is not None:
 	except Exception as e:
 		logger.error("Failed to initialize Kube job manager (err=%s)!" % str(e))
 		sys.exit(1)
+
+#============================================
+#==   INIT SLURM CLIENT (if enabled)
+#============================================
+if job_scheduler=='slurm' and jobmgr_slurm is not None:
+
+	# - Setting options
+	jobmgr_slurm.host= config.SLURM_HOST
+	jobmgr_slurm.port= config.SLURM_PORT	
+	jobmgr_slurm.cluster_queue= config.SLURM_QUEUE
+	jobmgr_slurm.keyfile= config.SLURM_KEYFILE
+	jobmgr_slurm.username= config.SLURM_USER
+		
+	# - Initialize client
+	logger.info("Initializing Slurm job manager ...")
+	try:
+		if jobmgr_slurm.initialize()<0:
+			logger.error("Failed to initialize Slurm job manager, see logs!")
+			sys.exit(1)
+	except Exception as e:
+		logger.error("Failed to initialize Slurm job manager (err=%s)!" % str(e))
+		sys.exit(1)
+
 
 ###################
 ##   MAIN EXEC   ##
