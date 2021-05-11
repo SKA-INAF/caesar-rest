@@ -95,7 +95,7 @@ def submit_job():
 	# - Get request data
 	req_data = request.get_json(silent=True)
 	if not req_data:
-		logger.error("Invalid request data!")
+		logger.warn("Invalid request data!")
 		res['state']= 'ABORTED'
 		res['status']= 'Invalid request data!'
 		return make_response(jsonify(res),400)
@@ -104,7 +104,7 @@ def submit_job():
 	app_name = req_data['app']
 	job_inputs = req_data['job_inputs']
 	if not app_name:
-		logger.error("No app name given!")
+		logger.warn("No app name given!")
 		res['state']= 'ABORTED'
 		res['status']= 'No app name found in request!'
 		return make_response(jsonify(res),400)
@@ -112,20 +112,34 @@ def submit_job():
 	res['app']= app_name
 
 	if not job_inputs:
-		logger.error("No job inputs given!")	
+		logger.warn("No job inputs given!")	
 		res['state']= 'ABORTED'	
-		res['status']= 'No job inputs name found in request!'
+		res['status']= 'No job inputs field found in request!'
 		return make_response(jsonify(res),400)
 
-	# - Check if valid app given
-	#supported_app= app_name in current_app.config['APP_NAMES']
-	#if not supported_app:
-	#	logger.warn("App %s not supported..." % app_name)
-	#	res['status']= 'App ' + app_name + ' is unknown or not yet supported!'
-	#	return make_response(jsonify(res),400)
+	# - Read job tag
+	job_tag= ''
+	if 'tag' in req_data:
+		job_tag= req_data['tag']
+
+	# - Read job input data (NEW)	
+	if 'data_inputs' not in req_data:
+		logger.warn("No data inputs given!")	
+		res['state']= 'ABORTED'	
+		res['status']= 'No data inputs field found in request!'
+		return make_response(jsonify(res),400)
+
+	inputfile_uid= req_data['data_inputs']
+	inputfile= get_filepath_from_uuid(inputfile_uid, username)
+	if inputfile=='':
+		logger.warn("Cannot find file for user %s corresponding to uid=%s!" % (username,inputfile_uid))	
+		res['state']= 'ABORTED'	
+		res['status']= 'Cannot find file corresponding to given data input uid!'
+		return make_response(jsonify(res),400)
 
 	# - Validate job inputs
-	(cmd,cmd_arg_list,val_status)= current_app.config['jobcfg'].validate(app_name,job_inputs)
+	#(cmd,cmd_arg_list,val_status)= current_app.config['jobcfg'].validate(app_name,job_inputs)
+	(cmd,cmd_arg_list,val_status)= current_app.config['jobcfg'].validate(app_name,job_inputs,inputfile)
 	if cmd is None or cmd_arg_list is None: 
 		logger.warn("Job input validation failed!")
 		res['state']= 'ABORTED'	
@@ -141,20 +155,6 @@ def submit_job():
 	# - Set job top directory
 	job_top_dir= current_app.config['JOB_DIR'] + '/' + username
 
-	# - Submit task async	
-	#logger.info("Submitting job %s async (cmd=%s, args=%s) ..." % (app_name,cmd,cmd_args))
-	#now = datetime.datetime.now()
-	#submit_date= now.isoformat()
-	#job_top_dir= current_app.config['JOB_DIR'] + '/' + username
-	#job_monitoring_period= current_app.config['JOB_MONITORING_PERIOD']
-
-	#task = background_task.apply_async(
-	#	[app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname, job_monitoring_period],
-	#	queue= app_name # set queue name to app name
-	#)
-	#job_id= task.id
-	#logger.info("Submitted job with id=%s ..." % job_id)
-
 	# - Submit task
 	submit_res= None
 	if job_scheduler=='celery':
@@ -164,7 +164,7 @@ def submit_job():
 		submit_res= submit_job_kubernetes(app_name, cmd_args, job_top_dir)
 
 	elif job_scheduler=='slurm':
-		submit_res= submit_job_slurm()
+		submit_res= submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir)
 
 	if submit_res is None:
 		logger.warn("Failed to submit job to scheduler %s!" % job_scheduler)
@@ -174,6 +174,7 @@ def submit_job():
 
 	submit_date= submit_res['submit_date']
 	job_id= submit_res['job_id']
+	pid= submit_res['pid']
 
 	# - Register task id in mongo
 	logger.info("Creating job object for task %s ..." % job_id)
@@ -184,11 +185,11 @@ def submit_job():
 		"job_inputs": job_inputs,
 		"job_top_dir": job_top_dir,
 		"metadata": '', # FIX ME
-		"tag": '', # FIX ME
+		"tag": job_tag,
 		"scheduler": job_scheduler,
 		"state": 'PENDING',
 		"status": 'Job submitted',
-		"pid": '',
+		"pid": pid,
 		"elapsed_time": '0',
 		"exit_code": -1
 	}
@@ -222,6 +223,7 @@ def submit_job():
 	return make_response(jsonify(res),202)
 
 
+
 #=================================
 #===    SUBMIT JOB CELERY
 #=================================
@@ -244,6 +246,7 @@ def submit_job_celery(app_name, cmd, cmd_args, job_top_dir, username, mongo_dbho
 
 	res= {
 		"job_id": job_id,
+		"pid": "",
 		"submit_date": submit_date,
 		"state": "PENDING",
 		"status": "Job submitted to queue"
@@ -285,7 +288,7 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
 			return None
 
 	# - Set job options
-	if app_name=="sfinder":
+	if app_name=="caesar":
 		image= current_app.config['CAESAR_JOB_IMAGE']
 		job_label= 'caesar-job'
 
@@ -332,6 +335,7 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
 
 	res= {
 		"job_id": job_id,
+		"pid": "",
 		"submit_date": submit_date,
 		"state": "PENDING",
 		"status": "Job submitted to Kubernetes scheduler"
@@ -342,11 +346,93 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
 #=================================
 #===    SUBMIT JOB SLURM
 #=================================
-def submit_job_slurm():
+def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir):
 	""" Submit job to Slurm scheduler """
 
-	# ...
-	# ...
+	# - Init response
+	res= {}
+
+	# - Generate job id
+	job_id= utils.get_uuid()
+	
+	# - Create job top dir
+	job_dir_name= 'job_' + job_id
+	job_dir= os.path.join(job_top_dir,job_dir_name)
+
+	logger.info("Creating job dir %s (top dir=%s) ..." % (job_dir,job_top_dir))
+	try:
+		os.makedirs(job_dir)
+	except OSError as exc:
+		if exc.errno != errno.EEXIST:
+			errmsg= "Failed to create job directory " + job_dir + "!" 
+			logger.error(errmsg)
+			return None
+
+	# - Set job options
+	image= ''
+	if app_name=="caesar":
+		image= current_app.config['SLURM_CAESAR_JOB_IMAGE']
+		#job_label= 'caesar-job'
+
+	#elif app_name=="mrcnn":
+	#	image= current_app.config['MASKRCNN_JOB_IMAGE']
+	#	job_label= 'mrcnn-job'
+
+	else:
+		logger.warn("Unknown/unsupported app %s!" % app_name)
+		return None
+
+
+	# - Create job object
+	job= jobmgr_slurm.create_job(
+		image=image, 
+		job_args=cmd_args,
+		inputfile=inputfile,
+		job_name=job_id, 
+		job_outdir=job_dir
+	)
+	
+	if job is None or job=="":
+		logger.warn("Failed to create Slurm job data!")
+		return None
+
+	# - Submit job
+	now = datetime.datetime.now()
+	submit_date= now.isoformat()
+	submit_job= jobmgr_slurm.submit_job(job)
+	if submit_job is None:
+		logger.warn("Failed to submit job %s to Slurm cluster!" % job_id)
+		return None
+
+	# - Parse reply
+	if submit_job is None or submit_job=="":
+		logger.warn("Failed to submit job or get service reply (see logs)!")
+		return None
+		
+	logger.info("Slurm service replied to job %s submission: %s" % submit_job)
+	
+	if 'job_id' not in submit_job:
+		errmsg= ''
+		if 'errors' in submit_job:
+			for errobj in submit_job['errors']:
+				errmsg+= errobj['error'] + '/'
+		logger.warn("Failed to submit job %s (err=%s)" % (job_id, errmsg))
+		return None
+
+	pid= submit_job['job_id']
+
+	logger.info("Submitted job with id=%s (pid=%s) ..." % (job_id, pid))
+	
+	# - Response
+	res= {
+		"job_id": job_id,
+		"pid": pid,
+		"submit_date": submit_date,
+		"state": "PENDING",
+		"status": "Job submitted to Slurm scheduler"
+	}
+
+	return res
 
 #=================================
 #===      JOB IDs 
@@ -717,10 +803,43 @@ def get_job_status(task_id):
 	return make_response(jsonify(res),200)
 
 
+#=================================
+#===      DATA INPUTS 
+#=================================
+def get_filepath_from_uuid(file_uuid, username):
+	""" Transform input file from uuid to actual path """		
+
+	# - Inspect inputfile (expect it is a uuid, so convert to filename)
+	logger.info("Finding inputfile uuid %s ..." % file_uuid)
+	collection_name= username + '.files'
+
+	file_path= ''
+	try:
+		data_collection= mongo.db[collection_name]
+		item= data_collection.find_one({'fileid': str(file_uuid)})
+		if item and item is not None:
+			file_path= item['filepath']
+		else:
+			logger.warn("File with uuid=%s not found in DB!" % file_uuid)
+			file_path= ''
+	except Exception as e:
+		logger.error("Exception (err=%s) catch when searching file in DB!" % str(e))
+		return ''
+		
+	if not file_path or file_path=='':
+		logger.warn("inputfile uuid %s is empty or not found in the system!" % file_uuid)
+		return ''
+
+	logger.info("inputfile uuid %s converted in %s ..." % (file_uuid,file_path))
+
+	return file_path
+
 
 #=================================
 #===      JOB OUTPUTS 
 #=================================
+
+
 def get_job_out_file(task_id, label):
 	""" Return job output data """
 	
