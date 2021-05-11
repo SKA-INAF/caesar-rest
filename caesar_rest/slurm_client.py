@@ -201,9 +201,9 @@ class SlurmJobManager(object):
 		""" Returns the number of seconds left before token expiration """
 
 		# - Get token payload
-		payload= self.decode_token(verify=True, check_exp=False)
+		payload= self.decode_token(verify=True, check_exp=True)
 		if payload is None:
-			logger.warn("Current token is not valid, cannot get expiration time data!")
+			logger.warn("Current token is not valid or expired, cannot get expiration time data!")
 			return -999
 
 		# - Get expiration time date
