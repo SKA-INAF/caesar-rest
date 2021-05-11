@@ -228,6 +228,22 @@ class SlurmJobManager(object):
 		return tdiff_sec
 		
 
+	def renew_token(self, time_to_expire_thr=30, duration=3600):
+		""" Regenerate token if expiration time is less then given threshold """
+
+		# - Check time left
+		tdiff= self.get_token_time_left()
+		if tdiff<=0:
+			logger.info("Current token is invalid or expired, regenerating ...")
+			self.generate_token(duration)
+
+		elif tdiff>0 and tdiff<time_to_expire_thr:
+			logger.info("Current token is about to expire (tdiff=%f), regenerating ..." % tdiff)
+			self.generate_token(duration)
+		
+		else:
+			logger.debug("Current token is still valid (expiring in %f seconds) ..." % tdiff)
+	
 
 	#############################
 	##   SUBMIT JOB
