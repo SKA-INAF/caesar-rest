@@ -21,7 +21,7 @@ import jwt
 from jwt import JWT
 from jwt.jwa import HS256
 from jwt.jwk import jwk_from_dict
-from jwt.utils import b64decode,b64encode
+from jwt.utils import b64decode,b64encode,get_time_from_int
 
 # - Import CAESAR-REST modules
 from caesar_rest import utils
@@ -185,7 +185,7 @@ class SlurmJobManager(object):
 				do_verify=verify,
 				do_time_check=check_exp
 			)
-			print(payload)
+			#print(payload)
 	
 		except jwt.exceptions.JWTDecodeError as e:
 			logger.warn("Failed to decode token (err=%s)" % str(e))
@@ -196,6 +196,37 @@ class SlurmJobManager(object):
 			return None
 
 		return payload
+
+	def get_token_time_left(self):
+		""" Returns the number of seconds left before token expiration """
+
+		# - Get token payload
+		payload= self.decode_token(verify=True, check_exp=False)
+		if payload is None:
+			logger.warn("Current token is not valid, cannot get expiration time data!")
+			return -999
+
+		# - Get expiration time date
+		if 'exp' not in payload:
+			logger.warn("Cannot find exp field in token payload!")
+			return -999
+
+		try:
+			expiration_date= get_time_from_int(payload['exp'])
+		except TypeError:
+			logger.warn("Invalid expired time field read (expected int)!")
+			return -999
+
+		# - Compute time diff wrt now
+		now = datetime.now(timezone.utc)
+		tdiff= expiration_date-now
+		tdiff_sec= tdiff.total_seconds()
+
+		print("tdiff")
+		print(tdiff)
+
+		return tdiff_sec
+		
 
 
 	#############################
