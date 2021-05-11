@@ -23,9 +23,6 @@ from jwt.jwa import HS256
 from jwt.jwk import jwk_from_dict
 from jwt.utils import b64decode,b64encode
 
-# - Import app
-from flask import current_app
-
 # - Import CAESAR-REST modules
 from caesar_rest import utils
 
