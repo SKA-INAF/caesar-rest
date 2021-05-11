@@ -120,7 +120,7 @@ class SlurmJobManager(object):
 		jwt_token= ''
 		try:
 			jwt_instance = JWT()
-			jwt_token= jwt_instance.encode(message, signing_key, alg='HS256')
+			jwt_token= jwt_instance.encode(message, self.key, alg='HS256')
 		except Exception as e:
 			logger.warn("Failed to generate token (err=%s)" % str(e))
 			return -1
