@@ -55,6 +55,16 @@ try:
 except Exception as e:
 	errmsg= 'Kubernetes modules not found or failed to create KubeJobManager instance (err=' + str(e) + ')'
 	logger.warn(errmsg)
+
+# - Create Slurm job manager class (to be initialized later)
+jobmgr_slurm= None
+try:
+	from caesar_rest.slurm_client import SlurmJobManager
+	jobmgr_slurm= SlurmJobManager()
+
+except Exception as e:
+	errmsg= 'Slurm required modules not found or failed to create SlurmJobManager instance (err=' + str(e) + ')'
+	logger.warn(errmsg)
 	
 
 
