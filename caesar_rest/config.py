@@ -29,7 +29,6 @@ class Config(object):
 	# - Additional options
 	JOB_DIR= '/opt/caesar-rest/jobs'
 	UPLOAD_ALLOWED_FILE_FORMATS= set(['png', 'jpg', 'jpeg', 'gif', 'fits'])
-	#APP_NAMES= set(['sfinder']) 
 	JOB_MONITORING_PERIOD= 5 # in seconds
 
 	JOB_SCHEDULER= 'celery' # Options are: {'celery','kubernetes','slurm'}
@@ -49,9 +48,12 @@ class Config(object):
 	KUBE_CERTAUTHFILE= ''
 
 	# - SLURM options
-	USE_SLURM= False
+	SLURM_KEYFILE= ''
 	SLURM_QUEUE= 'normal'
-	SLURM_USER= 'cirasa'	
+	SLURM_USER= 'cirasa'
+	SLURM_HOST= 'lofar-gpu-01.oact.inaf.it'	# 'cirasa host'
+	SLURM_PORT= 6820
+	SLURM_CAESAR_JOB_IMAGE= '/opt/containers/caesar/caesar-job_latest.sif'
 	
 	# - AAI options
 	USE_AAI = False
