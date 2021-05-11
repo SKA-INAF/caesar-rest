@@ -17,7 +17,7 @@ import pprint
 
 # - Import additional modules
 import requests
-#import pyjwt
+import jwt
 from jwt import JWT
 from jwt.jwa import HS256
 from jwt.jwk import jwk_from_dict
@@ -101,9 +101,11 @@ class SlurmJobManager(object):
 
 		return 0
 
-	#############################
-	##   GENERATE AUTH TOKEN
-	#############################
+	
+
+	####################################
+	##   GENERATE/VALIDAT AUTH TOKEN
+	####################################
 	def generate_token(self, duration=3600):
 		""" Generate a token for user from key with duration in seconds """
 
@@ -132,6 +134,54 @@ class SlurmJobManager(object):
 			self.token= jwt_token
 
 		return 0
+
+	
+	def is_token_valid(self):
+		""" Check if token is valid """
+
+		payload= self.decode_token(verify=True)
+		if payload is None:
+			return False
+
+		return True
+		
+	def is_token_expired(self):
+		""" Check if token is valid and expired """
+
+		payload= self.decode_token(verify=False, check_exp=True)
+		if payload is None:
+			return True
+
+		return False
+		
+
+	def decode_token(self, verify=True, check_exp=False):
+		""" Check if token is valid """
+
+		signing_key= None
+		if verify:
+			signing_key= self.key
+
+		try:
+			jwt_instance = JWT()
+			payload = jwt_instance.decode(
+				self.token, 
+				key=signing_key, 
+				algorithms=["HS256"],
+				do_verify=verify,
+				do_time_check=check_exp
+			)
+			print(payload)
+	
+		except jwt.exceptions.JWTDecodeError:
+			logger.warn("Failed to decode token (err=%s)" % str(e))
+			return None
+
+		except Exception as e:
+			logger.warn("Exception caught when decoding token (err=%s)" % str(e))
+			return None
+
+		return payload
 
 
 	#############################
