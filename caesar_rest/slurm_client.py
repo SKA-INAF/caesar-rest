@@ -53,7 +53,7 @@ class SlurmJobManager(object):
 	def set_cluster_url(self):
 		""" Set cluster url """
 		
-		self.cluster_url= 'http://' + self.host + ':' + self.port + '/slurm/v0.0.36' 
+		self.cluster_url= 'http://' + self.host + ':' + str(self.port) + '/slurm/v0.0.36' 
 
 	#############################
 	##   INITIALIZE
