@@ -77,6 +77,7 @@ class AppConfigurator(object):
 		""" Constructor"""
 
 		self.job_inputs= ''
+		self.data_inputs= ''
 		self.cmd= ''
 		self.cmd_args= []
 		self.cmd_mode= ''
@@ -118,8 +119,15 @@ class AppConfigurator(object):
 			return opt_value
 		return self.option_value_transformer[opt_name](opt_value)
 
-	
-	def validate(self, job_inputs):
+
+	def set_data_input_option_value(self):
+		""" Set app input option value (to be overridden in derived classes) """
+			
+		# Left empty as to be overridden in derived classes
+		
+
+	#def validate(self, job_inputs):
+	def validate(self, job_inputs, data_inputs):
 		""" Validate job input """
 
 		logger.info("Validating given inputs ...")
@@ -129,6 +137,14 @@ class AppConfigurator(object):
 			self.validation_status= 'Empty job inputs given!'
 			logger.warn(self.validation_status)
 			return False
+
+		# - Check data inputs
+		if not data_inputs or data_inputs is None:
+			self.validation_status= 'Empty or null data input given!'
+			logger.warn(self.validation_status)
+			return False
+
+		self.data_inputs= data_inputs
 
 		# - Convert json string to dictionary
 		#print("type(job_inputs)")
@@ -156,6 +172,9 @@ class AppConfigurator(object):
 		valid= self.validate_options()
 		print("--> %s args" % self.cmd)
 		print(self.cmd_args)
+
+		# - Set input data option
+		self.set_data_input_option_value()
 
 		
 		return valid

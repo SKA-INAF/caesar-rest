@@ -49,7 +49,7 @@ class MaskRCNNAppConfigurator(AppConfigurator):
 
 		# - Define dictionary with allowed options
 		self.valid_options= {
-			'image' : ValueOption('image','',str,True, description='Path to input image (.fits) to be given to classifier (default=empty)'),
+			#'image' : ValueOption('image','',str,True, description='Path to input image (.fits) to be given to classifier (default=empty)'),
 			#'weight' : ValueOption('weight','',str, description=''),
 			#'classdict' : ValueOption('classdict','',str, description=''),
 			'scoreThr' : ValueOption('scoreThr','',float, description='Detected object score threshold to select as final object (default=0.7)'),
@@ -58,9 +58,16 @@ class MaskRCNNAppConfigurator(AppConfigurator):
 		} # close dict
 	
 		# - Define option value transformers
-		self.option_value_transformer= {
-			'image': self.transform_imgname
-		}
+		#self.option_value_transformer= {
+		#	'image': self.transform_imgname
+		#}
+
+	def set_data_input_option_value(self):
+		""" Set app input option value """
+
+		input_opt= "".join("--image=%s" % self.data_inputs)
+		self.cmd_args.append(input_opt)
+
 
 	def transform_imgname(self, file_uuid):
 		""" Transform input file from uuid to actual path """		
