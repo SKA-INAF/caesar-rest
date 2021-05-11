@@ -198,7 +198,7 @@ class SlurmJobManager(object):
 			logger.warn("Empty job args given!")
 			return None
 
-		if inputfile="":
+		if inputfile=="":
 			logger.warn("Empty inputfile given!")
 			return None			
 
