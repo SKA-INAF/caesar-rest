@@ -69,7 +69,7 @@ class SlurmJobManager(object):
 		self.set_cluster_url()
 
 		# - Read private key
-		if self.read_key<0:
+		if self.read_key()<0:
 			logger.warn("Failed to read Slurm rest private key!")
 			return -1
 
