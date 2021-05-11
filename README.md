@@ -144,7 +144,7 @@ where supported `ARGS` are:
    * `db`: To enable registration of uploaded files in MongoDB. If disabled, files are registered in a python dict (NB: dict works only for apps with 1 process) (default=disabled)     
    * `dbhost=[DBHOST]`: Host of MongoDB database (default=localhost)    
    * `dbname=[DBNAME]`: Name of MongoDB database (default=caesardb)   
-   * `sfindernn_weights=[PATH]`: File (.h5) with network weights used in sfindernn app     
+   * `mrcnn_weights=[PATH]`: File (.h5) with network weights used in Mask-RCNN app     
   
 Flask default options are defined in the `config.py`. Celery options are defined in the `celery_config.py`. Other options may be defined in the future to override default Flask and Celery options.   
 
@@ -326,7 +326,8 @@ Server response contains a list of valid apps that can be queried for further de
 ```
 {
   "apps": [
-    "sfinder"
+    "caesar",
+    "mrcnn"
   ]
 }
 ```
@@ -353,17 +354,17 @@ A sample curl request would be:
 ```
 curl -X POST \   
   -H 'Content-Type: application/json' \   
-  -d '{"app":"sfinder","job_inputs":{"inputfile":"/opt/caesar-rest/data/67a49bf7555b41739095681bf52a1f99.fits","run":true,"no-logredir":true,"envfile":"/home/riggi/Software/setvars.sh","no-mpi":true,"no-nestedsearch":true,"no-extendedsearch":true}}' \   
+  -d '{"app":"caesar","job_inputs":{"inputfile":"/opt/caesar-rest/data/67a49bf7555b41739095681bf52a1f99.fits","run":true,"no-logredir":true,"envfile":"/home/riggi/Software/setvars.sh","no-mpi":true,"no-nestedsearch":true,"no-extendedsearch":true}}' \   
   --url 'http://localhost:8080/caesar/api/v1.0/job'   
 ```
 
-Job data must contain a valid app name (in this case `sfinder`) and desired job inputs, e.g. a dictionary with app valid options. Valid options for `sfinder` app are named as in `caesar` and can be retrieved using app description url described above.   
+Job data must contain a valid app name (in this case `caesar`) and desired job inputs, e.g. a dictionary with app valid options. Valid options for `caesar` app are named as in `caesar` and can be retrieved using app description url described above.   
 
 Server response is:   
 
 ```
 {
-  "app": "sfinder",
+  "app": "caesar",
   "job_id": "69ca62d7-5098-4fe7-a675-63895a2d06b1",
   "job_inputs": {
     "envfile": "/home/riggi/Software/setvars.sh",
