@@ -99,7 +99,7 @@ class SlurmJobManager(object):
 			logger.warn("Failed to read private key from file %s (err=%s)!" % (self.keyfile,str(e)))
 			return -1
 
-		return -1
+		return 0
 
 	#############################
 	##   GENERATE AUTH TOKEN
