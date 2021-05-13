@@ -45,9 +45,12 @@ def get_args():
 	# - Specify cmd options
 	parser.add_argument('-datadir','--datadir', dest='datadir', default='/opt/caesar-rest/data', required=False, type=str, help='Directory where to store uploaded data') 
 	parser.add_argument('-jobdir','--jobdir', dest='jobdir', default='/opt/caesar-rest/jobs', required=False, type=str, help='Directory where to store jobs') 
+	parser.add_argument('-job_scheduler','--job_scheduler', dest='job_scheduler', default='celery', required=False, type=str, help='Job scheduler to be used. Options are: {celery,kubernetes,slurm} (default=celery)')
 	parser.add_argument('-job_monitoring_period','--job_monitoring_period', dest='job_monitoring_period', default=5, required=False, type=int, help='Job monitoring poll period in seconds') 
 	parser.add_argument('--debug', dest='debug', action='store_true')	
 	parser.set_defaults(debug=True)	
+
+	# - AAI options
 	parser.add_argument('--aai', dest='aai', action='store_true')	
 	parser.set_defaults(aai=False)	
 	parser.add_argument('-secretfile','--secretfile', dest='secretfile', default='config/client_secrets.json', required=False, type=str, help='File (.json) with client credentials for AAI')
@@ -55,14 +58,18 @@ def get_args():
 	parser.add_argument('--ssl', dest='ssl', action='store_true')	
 	parser.set_defaults(ssl=False)
 	
+	# - Algorithm options
 	parser.add_argument('-mrcnn_weights','--mrcnn_weights', dest='mrcnn_weights', default='/opt/Software/MaskR-CNN/install/share/mrcnn_weights.h5', required=False, type=str, help='File (.h5) with network weights used in Mask-RCNN app')
 
+	# - DB options
 	parser.add_argument('--db', dest='db', action='store_true')	
 	parser.set_defaults(db=False)
 	parser.add_argument('-dbhost','--dbhost', dest='dbhost', default='localhost', required=False, type=str, help='Host of MongoDB database (default=localhost)')
 	parser.add_argument('-dbname','--dbname', dest='dbname', default='caesardb', required=False, type=str, help='Name of MongoDB database (default=caesardb)')
 	parser.add_argument('-dbport','--dbport', dest='dbport', default=27017, required=False, type=int, help='Port of MongoDB database (default=27017)')
 
+	
+	# - Celery options
 	parser.add_argument('-result_backend_host','--result_backend_host', dest='result_backend_host', default='localhost', required=False, type=str, help='Host of Celery result backend (default=localhost)')
 	parser.add_argument('-result_backend_port','--result_backend_port', dest='result_backend_port', default=6379, required=False, type=int, help='Port of Celery result backend (default=6379)')
 	parser.add_argument('-result_backend_proto','--result_backend_proto', dest='result_backend_proto', default='redis', required=False, type=str, help='Celery result backend type (default=redis)')
@@ -75,8 +82,6 @@ def get_args():
 	parser.add_argument('-broker_proto','--broker_proto', dest='broker_proto', default='amqp', required=False, type=str, help='Protocol of Celery broker (default=amqp)')
 	parser.add_argument('-broker_user','--broker_user', dest='broker_user', default='guest', required=False, type=str, help='Username used in Celery broker (default=guest)')
 	parser.add_argument('-broker_pass','--broker_pass', dest='broker_pass', default='guest', required=False, type=str, help='Password used in Celery broker (default=guest)')
-
-	parser.add_argument('-job_scheduler','--job_scheduler', dest='job_scheduler', default='celery', required=False, type=str, help='Job scheduler to be used. Options are: {celery,kubernetes,slurm} (default=celery)')
 
 	# - Kubernetes scheduler options
 	parser.add_argument('--kube_incluster', dest='kube_incluster', action='store_true')	
@@ -93,7 +98,6 @@ def get_args():
 	parser.add_argument('-slurm_port','--slurm_port', dest='slurm_port', default=6820, required=False, type=int, help='Slurm rest service port')
 	parser.add_argument('-slurm_queue','--slurm_queue', dest='slurm_queue', default='normal', required=False, type=str, help='Slurm cluster host/ipaddress')
 	
-
 	# - Volume mount options
 	parser.add_argument('--mount_rclone_volume', dest='mount_rclone_volume', action='store_true')	
 	parser.set_defaults(mount_rclone_volume=False)
@@ -131,10 +135,20 @@ ssl= args.ssl
 job_monitoring_period= args.job_monitoring_period
 mrcnn_weights= args.mrcnn_weights
 
+# - Scheduler options
+job_scheduler= args.job_scheduler
+if job_scheduler!='celery' and job_scheduler!='kubernetes' and job_scheduler!='slurm':
+	logger.error("Unsupported job scheduler (hint: supported are {celery,kubernetes,slurm})!")
+	sys.exit(1)
+
+if job_scheduler=='kubernetes' and jobmgr_kube is None:
+	logger.error("Chosen scheduler is Kubernetes but kube client failed to be instantiated (see previous logs)!")
+	sys.exit(1)
+
 # - DB & celery result backend options
 use_db= args.db
 dbhost= 'mongodb://' + args.dbhost + ':' + str(args.dbport) + '/' + args.dbname
-logger.info("Using dbhost: %s" % dbhost)
+logger.info("Using db url: %s" % dbhost)
 
 result_backend_host= args.result_backend_host
 result_backend_port= args.result_backend_port
@@ -151,7 +165,9 @@ elif result_backend_proto=='mongodb':
 else:
 	logger.error("Unsupported result backend (hint: supported are {redis,mongodb})!")
 	sys.exit(1)
-logger.info("Using result_backend: %s" % result_backend)
+
+if job_scheduler=='celery':
+	logger.info("Using result_backend: %s" % result_backend)
 
 
 # - Celery broker options
@@ -161,20 +177,10 @@ broker_proto= args.broker_proto
 broker_user= args.broker_user
 broker_pass= args.broker_pass 
 broker_url= broker_proto + '://' + broker_user + ':' + broker_pass + '@' + broker_host + ':' + str(broker_port) + '/'
-logger.info("Using broker_url: %s" % broker_url)
 
-# - Celery beat options
-# ...
+if job_scheduler=='celery':
+	logger.info("Using broker_url: %s" % broker_url)
 
-# - Scheduler options
-job_scheduler= args.job_scheduler
-if job_scheduler!='celery' and job_scheduler!='kubernetes' and job_scheduler!='slurm':
-	logger.error("Unsupported job scheduler (hint: supported are {celery,kubernetes,slurm})!")
-	sys.exit(1)
-
-if job_scheduler=='kubernetes' and jobmgr_kube is None:
-	logger.error("Chosen scheduler is Kubernetes but kube client failed to be instantiated (see previous logs)!")
-	sys.exit(1)
 
 # - Kubernetes options
 kube_incluster= args.kube_incluster
