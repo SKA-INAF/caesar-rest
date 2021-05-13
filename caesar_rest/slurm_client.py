@@ -356,7 +356,7 @@ class SlurmJobManager(object):
 		env_vars= ""
 		env_vars+= "".join("--env CHANGE_RUNUSER=0 ")
 		env_vars+= "".join("--env JOB_DIR=%s " % job_dir)
-		env_vars+= "".join("--env JOB_OPTIONS=\\\"%s\\\" " % job_args)		
+		env_vars+= "".join("--env JOB_OPTIONS=\'%s\' " % job_args)		
 		env_vars+= "".join("--env JOB_OUTDIR=%s " % job_outdir)
 
 		# - Set singularity run options
