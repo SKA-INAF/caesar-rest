@@ -144,9 +144,9 @@ def jobmonitor_task(self):
 			# - Update Kubernetes job status
 			job_moni_status= -1
 			if job_scheduler=='kubernetes':
-				job_moni_status= monitor_kubernetes_job(job_id, job_collection)
+				job_moni_status= monitor_kubernetes_job(job_obj, job_collection)
 			elif job_scheduler=='slurm':
-				job_moni_status= monitor_slurm_job(job_id, job_collection)	
+				job_moni_status= monitor_slurm_job(job_obj, job_collection)	
 			else:
 				logger.warn("Invalid/unknown job scheduler (%s), skip job moni..." % job_scheduler)
 				continue
@@ -329,9 +329,78 @@ def monitor_kubernetes_job(job_obj, job_collection):
 def monitor_slurm_job(job_obj, job_collection):
 	""" Monitor and update job status in DB """
 	
-	# IMPLEMENT ME!!!
-	# ...
-	# ...
+	# - Extract field
+	if not job_obj or job_obj is None:
+		logger.warn("Given job obj is None or empty!")	
+		return -1		
+	job_id= job_obj['job_id']
+	job_pid= job_obj['pid']
+
+	if job_pid=="":
+		logger.warn("Given job pid is empty, cannot retrieve job status from Slurm cluster!")	
+		return -1
+
+	job_dir_name= 'job_' + job_id
+	tar_filename= 'job_' + job_id + '.tar.gz'
+	job_top_dir= ''
+	job_dir= ''
+	tar_file= ''
+	job_dir_existing= False
+	tar_file_existing= False
+	if 'job_top_dir' in job_obj:
+		job_top_dir= job_obj['job_top_dir']
+		job_dir= os.path.join(job_top_dir,job_dir_name)
+		tar_file= os.path.join(job_dir,tar_filename)
+		job_dir_existing= os.path.isdir(job_dir)
+		tar_file_existing= os.path.isfile(tar_file)
+
+	# - Check job collection
+	if job_collection is None:
+		logger.warn("Given mongo job collection is None!")
+		return -1
+
+	# - Check Slurm client instance
+	if jobmgr_slurm is None:
+		logger.warn("Slurm client is None!")
+		return -1
+
+	# - Get Slurm job status
+	try:
+		res= jobmgr_slurm.get_job_status(job_pid)
+	except Exception as e:
+		logger.warn("Failed to retrieve job %s (pid=%s) status (err=%s)" % (job_id, job_pid, str(e)))
+		return -1
+
+	# - Check result
+	if not res:
+		logger.warn("Empty dict returned from Slurm client get_job_status(), cannot update job!")
+		return -1
+		
+	state= res['state']
+	status= res['status']
+	elapsed_time= res['elapsed_time']
+	exit_code= res['exit_code']
+
+	# - Create tar file with job output if job completed
+	if state=='SUCCESS' or state=='FAILURE':
+		if job_dir_existing and tar_file!="":
+			if tar_file_existing:
+				logger.info("Job %s output tar file %s already existing, won't create it again ..." % (job_id, tar_file))
+			else:
+				logger.info("Creating a tar file %s with job output data ..." % tar_file)
+				utils.make_tar(tar_file, job_dir)
+		else:
+			logger.warn("Won't create output data tar file %s as job output directory %s not found ..." % (tar_file, job_dir))
+
+			
+	# - Update job status
+	try:
+		logger.info("Updating job %s state to %s (status=%s) ..." % (job_id, state, status))
+		job_collection.update_one({'job_id':job_id},{'$set':{'state':state,'status':status,'exit_code':exit_code,'elapsed_time':elapsed_time}},upsert=False)
+	except Exception as e:
+		errmsg= 'Exception caught when updating job ' + str(job_id) + ' in DB (err=' + str(e) + ')!'
+		logger.warn(errmsg)
+		return -1
 
 	return 0
 
