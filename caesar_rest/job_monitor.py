@@ -335,7 +335,7 @@ def monitor_slurm_job(job_obj, job_collection):
 		logger.warn("Given job obj is None or empty!")	
 		return -1		
 	job_id= job_obj['job_id']
-	job_pid= job_obj['pid']
+	job_pid= str(job_obj['pid'])
 
 	if job_pid=="":
 		logger.warn("Given job pid is empty, cannot retrieve job status from Slurm cluster!")	

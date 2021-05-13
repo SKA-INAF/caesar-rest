@@ -513,7 +513,7 @@ def cancel_job(task_id):
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 	
-	job_pid= job["pid"]
+	job_pid= str(job["pid"])
 
 
 	# - Cancel job
