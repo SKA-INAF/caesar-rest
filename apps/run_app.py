@@ -258,13 +258,8 @@ logger.info("Creating job configurator ...")
 jobcfg= JobConfigurator()
 
 # - Update celery configs
-logger.info("Updating celery configuration (broker_url=%s, result_backend=%s) ..." % (broker_url, result_backend))
 celery.conf.result_backend= result_backend
 celery.conf.broker_url= broker_url
-
-#celery.conf.beat_schedule['accounter_beat']['args'][0]= args.dbhost
-#celery.conf.beat_schedule['accounter_beat']['args'][1]= args.dbport
-#celery.conf.beat_schedule['accounter_beat']['args'][2]= args.dbname
 
 #===============================
 #==   CREATE APP
