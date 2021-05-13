@@ -542,7 +542,7 @@ class SlurmJobManager(object):
 		# - Get elapsed time
 		t0= job_obj["start_time"]
 		t1= job_obj["end_time"]
-		elapsed= (t1-t0).total_seconds()
+		elapsed= (t1-t0)
 		res['elapsed_time']= elapsed
 
 		# - Get exit code
