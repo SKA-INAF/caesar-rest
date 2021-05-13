@@ -41,6 +41,7 @@ from caesar_rest import utils
 from caesar_rest.decorators import custom_require_login
 from caesar_rest import mongo
 from caesar_rest import jobmgr_kube
+from caesar_rest import jobmgr_slurm
 
 # Get logger
 logger = logging.getLogger(__name__)
