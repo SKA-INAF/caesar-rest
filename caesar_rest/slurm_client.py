@@ -258,17 +258,20 @@ class SlurmJobManager(object):
 
 		# - Check time left
 		tdiff= self.get_token_time_left()
+		status= 0
 		if tdiff<=0:
 			logger.info("Current token is invalid or expired, regenerating ...")
-			self.generate_token(duration)
+			status= self.generate_token(duration)
 
 		elif tdiff>0 and tdiff<time_to_expire_thr:
 			logger.info("Current token is about to expire (tdiff=%f), regenerating ..." % tdiff)
-			self.generate_token(duration)
+			status= self.generate_token(duration)
 		
 		else:
 			logger.debug("Current token is still valid (expiring in %f seconds) ..." % tdiff)
-	
+			status= 0
+
+		return status
 
 	#############################
 	##   SUBMIT JOB
@@ -288,8 +291,10 @@ class SlurmJobManager(object):
 
 		# - Check token is active
 		if not self.is_token_active():
-			logger.warn("Slurm rest auth token not valid or expired!")
-			return None
+			logger.warn("Slurm rest auth token not valid or expired, regenerating it ...")
+			if self.generate_token()<0:
+				logger.warn("Failed to regenerate Slurm auth token, cannot submit job!")
+				return None
 		 
 
 		# - Set header
@@ -414,5 +419,184 @@ class SlurmJobManager(object):
 		logger.info("Slurm job data: %s" % job_data)
 
 		return job_data
+
+
+	#============================
+	#==     GET JOB STATUS
+	#============================
+	def get_job_status(self, job_pid):
+		""" Retrieve job status """
+
+		# - Init response
+		res= {}
+		#res['job_id']= job_name
+		res['pid']= job_pid
+		res['state']= ''
+		res['status']= ''
+		res['exit_code']= ''
+		res['elapsed_time']= ''
+
+		# - Check token is active
+		if not self.is_token_active():
+			logger.warn("Slurm rest auth token not valid or expired, regenerating it ...")
+			if self.generate_token()<0:
+				logger.warn("Failed to regenerate Slurm auth token, cannot submit job!")
+				return None
+		 
+		# - Set header
+		headers = {
+			'Content-Type': 'application/json',
+			'X-SLURM-USER-NAME': self.username,
+			'X-SLURM-USER-TOKEN': self.token,
+		}
+
+		# - Set url
+		url= self.cluster_url + '/job/' + job_pid
+
+
+		# - Get job status
+		logger.info("Retrieving job status (pid=%s, url=%s) ..." % (job_pid, url))
+		jobout= None
+		try:
+			jobout= requests.get(
+				url, 
+				headers=headers, 
+			)
+			print("--> slurm jobout")
+			print(jobout)
+
+		except Exception as e:
+			logger.warn("Failed to query job status to url %s (err=%s)" % (url,str(e)))
+			return None
+
+		# - Parse reply and convert to dictionary
+		reply= None
+		try:
+			reply= json.loads(jobout.text)
+		except Exception as e:
+			logger.warn("Failed to convert reply to dict (err=%s)!" % str(e))
+			return None
+
+		job_objs= jobout["jobs"]
+		if len(job_objs)<1:
+			logger.warn("Returned job response has less than 1 job object!")
+			return None
+		
+		job_obj= job_objs[0]
+
+		# - Map state
+		#   NB: Slurm returns these states: {"PENDING","COMPLETED","RUNNING","SUSPENDED","CANCELLED","FAILED","TIMEOUT","NODE_FAIL","PREEMPTED","BOOT_FAIL","DEADLINE","OUT_OF_MEMORY"}
+		job_state= job_obj["job_state"]
+		if job_state=="PENDING":
+			res['state']= 'PENDING'
+			res['status']= 'Job queued and waiting for initiation'
+
+		elif job_state=="RUNNING":
+			res['state']= 'RUNNING'
+			res['status']= 'Job executing'
+
+		elif job_state=="COMPLETED":
+			res['state']= 'RUNNING'
+			res['status']= 'Job completed execution successfully'
+
+		elif job_state=="SUSPENDED":
+			res['state']= 'PENDING'
+			res['status']= 'Job was suspended'
+
+		elif job_state=="CANCELLED":
+			res['state']= 'CANCELED'
+			res['status']= 'Job was canceled by user'
+
+		elif job_state=="FAILED":
+			res['state']= 'FAILURE'
+			res['status']= 'Job completed execution unsuccessfully'
+	
+		elif job_state=="TIMEOUT":
+			res['state']= 'TIMED-OUT'
+			res['status']= 'Job terminated due to time limit reached'
+		
+		elif job_state=="NODE_FAIL":
+			res['state']= 'FAILURE'
+			res['status']= 'Job terminated due to node failure'
+
+		elif job_state=="PREEMPTED":
+			res['state']= 'FAILURE'
+			res['status']= 'Job terminated due to preemption'
+
+		elif job_state=="BOOT_FAIL":
+			res['state']= 'FAILURE'
+			res['status']= 'Job terminated due to node boot failure'
+
+		elif job_state=="DEADLINE":
+			res['state']= 'FAILURE'
+			res['status']= 'Job terminated on deadline'
+
+		elif job_state=="OUT_OF_MEMORY":
+			res['state']= 'FAILURE'
+			res['status']= 'Job terminated due to experienced out of memory error'
+
+    else:
+			res['state']= 'UNKNOWN'
+			res['status']= 'Job currently in unknown state (raw state=' + job_state + ')'
+  
+		# - Get elapsed time
+		t0= job_obj["start_time"]
+		t1= job_obj["end_time"]
+		elapsed= (t1-t0).total_seconds()
+		res['elapsed_time']= elapsed
+
+		# - Get exit code
+		res['exit_code']= job_obj["exit_code"]
+
+		return res
+
+
+	#============================
+	#==     DELETE JOB
+	#============================
+	def delete_job(self, job_pid):
+		""" Cancel a job """
+		
+		# - Check token is active
+		if not self.is_token_active():
+			logger.warn("Slurm rest auth token not valid or expired, regenerating it ...")
+			if self.generate_token()<0:
+				logger.warn("Failed to regenerate Slurm auth token, cannot submit job!")
+				return None
+		 
+		# - Set header
+		headers = {
+			'Content-Type': 'application/json',
+			'X-SLURM-USER-NAME': self.username,
+			'X-SLURM-USER-TOKEN': self.token,
+		}
+
+		# - Set url
+		url= self.cluster_url + '/job/' + job_pid
+
+		logger.info("Deleting job with pid=%s ..." % job_pid)
+		status_code= 0
+		try:
+			reply= requests.delete(
+				url, 
+				headers=headers, 
+			)
+			print("--> slurm reply to delete")
+			print(reply)
+
+			status_code= reply.status_code	
+
+		except Exception as e:
+			logger.warn("Failed to delete job with url %s (err=%s)" % (url,str(e)))
+			return None
+
+		# - Check status code
+		if status_code==200:
+			logger.info("Job with pid=%s deleted with success" % job_pid)
+		else:
+			logger.warn("Failed to delete job with pid %s (err=server replied with status code %d)!" % (job_pid,status_code))
+			return -1
+
+		return 0
 
 
