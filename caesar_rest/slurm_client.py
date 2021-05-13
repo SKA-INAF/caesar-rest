@@ -477,7 +477,7 @@ class SlurmJobManager(object):
 			logger.warn("Failed to convert reply to dict (err=%s)!" % str(e))
 			return None
 
-		job_objs= jobout["jobs"]
+		job_objs= reply["jobs"]
 		if len(job_objs)<1:
 			logger.warn("Returned job response has less than 1 job object!")
 			return None
