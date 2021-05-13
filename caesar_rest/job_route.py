@@ -184,7 +184,7 @@ def submit_job():
 		"submit_date": submit_date,
 		"app": app_name,	
 		"job_inputs": job_inputs,
-		"data_inputs": data_inputs,
+		"data_inputs": inputfile_uid,
 		"job_top_dir": job_top_dir,
 		"metadata": '', # FIX ME
 		"tag": job_tag,
@@ -219,7 +219,7 @@ def submit_job():
 	res['submit_date']= submit_date
 	res['app']= app_name
 	res['job_inputs']= job_inputs
-	res['data_inputs']= data_inputs
+	res['data_inputs']= inputfile_uid
 	res['tag']= job_tag
 	res['state']= 'PENDING'
 	res['status']= 'Job submitted and registered with success'

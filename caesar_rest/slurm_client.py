@@ -478,8 +478,8 @@ class SlurmJobManager(object):
 			return None
 
 		job_objs= reply["jobs"]
-		if len(job_objs)<1:
-			logger.warn("Returned job response has less than 1 job object!")
+		if not job_objs:
+			logger.warn("Empty job status reply, job not found or already cleared in Slurm")
 			return None
 		
 		job_obj= job_objs[0]
