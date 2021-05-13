@@ -496,7 +496,7 @@ class SlurmJobManager(object):
 			res['status']= 'Job executing'
 
 		elif job_state=="COMPLETED":
-			res['state']= 'RUNNING'
+			res['state']= 'SUCCESS'
 			res['status']= 'Job completed execution successfully'
 
 		elif job_state=="SUSPENDED":
