@@ -535,7 +535,7 @@ class SlurmJobManager(object):
 			res['state']= 'FAILURE'
 			res['status']= 'Job terminated due to experienced out of memory error'
 
-    else:
+		else:
 			res['state']= 'UNKNOWN'
 			res['status']= 'Job currently in unknown state (raw state=' + job_state + ')'
   
