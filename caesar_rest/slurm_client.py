@@ -397,7 +397,7 @@ class SlurmJobManager(object):
 			"name": job_name,
 			"environment": {"PATH":"/bin:/usr/bin/:/usr/local/bin/"},
 			"partition": self.cluster_queue,
-      "current_working_directory": cluster_batch_workdir, # this is somewhat needed otherwise slurm tries to write to / and get a permission output error
+      "current_working_directory": self.cluster_batch_workdir, # this is somewhat needed otherwise slurm tries to write to / and get a permission output error
 		#	"current_working_directory": job_outdir,
 		# "standard_out": job_logfile,
 		# "standard_error": job_logfile,
