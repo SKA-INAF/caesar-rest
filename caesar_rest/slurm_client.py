@@ -37,15 +37,19 @@ class SlurmJobManager(object):
 	
 	def __init__(self):
 	
+		# - Options to be set
 		self.host= ''
 		self.port= 6820
-		self.cluster_url= ''
-		self.cluster_queue= ''
-		self.token= '' # JWT token
-		self.keyfile= '' # Path of Slurm REST key file, e.g. /etc/slurm/jwt.key
-		self.key= ''
 		self.username= ''
-		
+		self.cluster_batch_workdir= ''
+		self.cluster_queue= ''
+		self.keyfile= '' # Path of Slurm REST key file, e.g. /etc/slurm/jwt.key
+			
+		# - Options read or automatically computed from others
+		self.cluster_url= ''
+		self.key= ''
+		self.token= '' # JWT token
+
 
 	#############################
 	##  SET CLUSTER URL
@@ -62,8 +66,29 @@ class SlurmJobManager(object):
 		""" Initialize client """
 
 		# - Check if required field were set
-		# ...		
-		# ...
+		if self.username=="":
+			logger.warn("Empty cluster username given, check given app options!")
+			return -1
+
+		if self.host=="":
+			logger.warn("Empty cluster hostname given, check given app options!")
+			return -1
+
+		if self.cluster_queue=="":
+			logger.warn("Empty cluster queue given, check given app options!")
+			return -1
+
+		if self.keyfile=="":
+			logger.warn("Empty Slurm key file given, check given app options!")
+			return -1
+
+		if not os.path.isfile(self.keyfile):
+			logger.warn("Slurm key file %s not existing on filesystem!" % self.keyfile)
+			return -1
+
+		if self.cluster_batch_workdir=="":
+			logger.warn("Slurm cluster batch workdir not given...setting it to /home/%s ..." % self.username)
+			self.cluster_batch_workdir= '/home/' + self.username
 
 		# - Set cluster url
 		self.set_cluster_url()
@@ -331,7 +356,7 @@ class SlurmJobManager(object):
 		env_vars= ""
 		env_vars+= "".join("--env CHANGE_RUNUSER=0 ")
 		env_vars+= "".join("--env JOB_DIR=%s " % job_dir)
-		env_vars+= "".join("--env JOB_OPTIONS=%s " % job_args)		
+		env_vars+= "".join("--env JOB_OPTIONS=\\\"%s\\\" " % job_args)		
 		env_vars+= "".join("--env JOB_OUTDIR=%s " % job_outdir)
 
 		# - Set singularity run options
@@ -351,8 +376,8 @@ class SlurmJobManager(object):
 		cmd+= image
 		
 		# - Set job script
-		script= "#!/bin/bash \n"
-		script+= "".join("%s \n" % cmd)
+		script= "#!/bin/bash \n "
+		script+= "".join("%s" % cmd)
 		
 		logger.info("Slurm script: %s" % script)
 
@@ -363,7 +388,7 @@ class SlurmJobManager(object):
 
 		# - Set job out log file
 		job_logfile= job_outdir + "/job_" + job_name + ".log"
-		
+
 		# - Create job object
 		#   NB: This is the minimal options needed. The environment field seems mandatory contrarily to what specified in the doc.
 		job_data_obj= {}
@@ -372,6 +397,7 @@ class SlurmJobManager(object):
 			"name": job_name,
 			"environment": {"PATH":"/bin:/usr/bin/:/usr/local/bin/"},
 			"partition": self.cluster_queue,
+      "current_working_directory": cluster_batch_workdir, # this is somewhat needed otherwise slurm tries to write to / and get a permission output error
 		#	"current_working_directory": job_outdir,
 		# "standard_out": job_logfile,
 		# "standard_error": job_logfile,

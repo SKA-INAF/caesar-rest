@@ -53,6 +53,7 @@ class Config(object):
 	SLURM_USER= 'cirasa'
 	SLURM_HOST= 'lofar-gpu-01.oact.inaf.it'	# 'cirasa host'
 	SLURM_PORT= 6820
+	SLURM_BATCH_WORKDIR= '/opt/caesar-rest/batchlogs'
 	SLURM_CAESAR_JOB_IMAGE= '/opt/containers/caesar/caesar-job_latest.sif'
 	
 	# - AAI options

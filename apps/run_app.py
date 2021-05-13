@@ -96,6 +96,7 @@ def get_args():
 	parser.add_argument('-slurm_user','--slurm_user', dest='slurm_user', default='cirasa', required=False, type=str, help='Username enabled to run in Slurm cluster')
 	parser.add_argument('-slurm_host','--slurm_host', dest='slurm_host', default='SLURM_HOST', required=False, type=str, help='Slurm cluster host/ipaddress')
 	parser.add_argument('-slurm_port','--slurm_port', dest='slurm_port', default=6820, required=False, type=int, help='Slurm rest service port')
+	parser.add_argument('-slurm_batch_workdir','--slurm_batch_workdir', dest='slurm_batch_workdir', default='', required=False, type=int, help='Clusteer directory where to place Slurm batch logs (must be writable by slurm_user)')
 	parser.add_argument('-slurm_queue','--slurm_queue', dest='slurm_queue', default='normal', required=False, type=str, help='Slurm cluster host/ipaddress')
 	
 	# - Volume mount options
@@ -198,6 +199,7 @@ slurm_keyfile= args.slurm_keyfile
 slurm_user= args.slurm_user
 slurm_host= args.slurm_host
 slurm_port= args.slurm_port
+slurm_batch_workdir= args.slurm_batch_workdir
 slurm_queue= args.slurm_queue
 
 	
@@ -240,6 +242,7 @@ config.SLURM_KEYFILE= slurm_keyfile
 config.SLURM_QUEUE= slurm_queue
 config.SLURM_USER= slurm_user
 config.SLURM_HOST= slurm_host
+config.SLURM_BATCH_WORKDIR= slurm_batch_workdir
 config.SLURM_PORT= slurm_port
 
 config.MOUNT_RCLONE_VOLUME= args.mount_rclone_volume
@@ -325,6 +328,7 @@ if job_scheduler=='slurm' and jobmgr_slurm is not None:
 	jobmgr_slurm.cluster_queue= config.SLURM_QUEUE
 	jobmgr_slurm.keyfile= config.SLURM_KEYFILE
 	jobmgr_slurm.username= config.SLURM_USER
+	jobmgr_slurm.cluster_batch_workdir= config.SLURM_BATCH_WORKDIR
 		
 	# - Initialize client
 	logger.info("Initializing Slurm job manager ...")
