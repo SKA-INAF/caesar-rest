@@ -410,7 +410,7 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir):
 		logger.warn("Failed to submit job or get service reply (see logs)!")
 		return None
 		
-	logger.info("Slurm service replied to job %s submission: %s" % submit_job)
+	logger.info("Slurm service replied to job %s submission: %s" % (job_id, submit_job))
 	
 	if 'job_id' not in submit_job:
 		errmsg= ''
