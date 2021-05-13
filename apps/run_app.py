@@ -148,7 +148,11 @@ if job_scheduler=='kubernetes' and jobmgr_kube is None:
 # - DB & celery result backend options
 use_db= args.db
 dbhost= 'mongodb://' + args.dbhost + ':' + str(args.dbport) + '/' + args.dbname
-logger.info("Using db url: %s" % dbhost)
+
+if use_db:
+	logger.info("Using db url: %s" % dbhost)
+else:
+	logger.warn("DB usage is disabled...")
 
 result_backend_host= args.result_backend_host
 result_backend_port= args.result_backend_port
