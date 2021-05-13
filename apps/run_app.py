@@ -24,7 +24,7 @@ from caesar_rest import oidc
 from caesar_rest import mongo
 from caesar_rest import celery
 from caesar_rest import jobmgr_kube
-
+from caesar_rest import jobmgr_slurm
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
