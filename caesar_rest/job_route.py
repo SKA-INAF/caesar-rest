@@ -184,6 +184,7 @@ def submit_job():
 		"submit_date": submit_date,
 		"app": app_name,	
 		"job_inputs": job_inputs,
+		"data_inputs": data_inputs,
 		"job_top_dir": job_top_dir,
 		"metadata": '', # FIX ME
 		"tag": job_tag,
@@ -218,6 +219,8 @@ def submit_job():
 	res['submit_date']= submit_date
 	res['app']= app_name
 	res['job_inputs']= job_inputs
+	res['data_inputs']= data_inputs
+	res['tag']= job_tag
 	res['state']= 'PENDING'
 	res['status']= 'Job submitted and registered with success'
 	
@@ -490,7 +493,28 @@ def cancel_job(task_id):
 
 	# - Get other options
 	job_scheduler= current_app.config['JOB_SCHEDULER']
+
+
+	# - Search job id in user collection
+	collection_name= username + '.jobs'
+	job= None
+	try:
+		job_collection= mongo.db[collection_name]
+		job= job_collection.find_one({'job_id': str(task_id)})
+	except Exception as e:
+		errmsg= 'Exception catched when searching job id in DB (err=' + str(e) + ')!'
+		logger.error(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
+
+	if not job or job is None:
+		errmsg= 'Job ' + task_id + ' not found for user ' + username + '!'
+		logger.warn(errmsg)
+		res['status']= errmsg
+		return make_response(jsonify(res),404)
 	
+	job_pid= job["pid"]
+
 
 	# - Cancel job
 	cmdout= {}
@@ -504,7 +528,7 @@ def cancel_job(task_id):
 
 	elif job_scheduler=='slurm':
 		logger.info("Canceling job %s assuming it was scheduled with slurm ..." % task_id)
-		cmdout= cancel_slurm_job(task_id)
+		cmdout= cancel_slurm_job(job_pid)
 
 	if not cmdout:
 		errmsg= "Empty reply from cancel task method!"
@@ -672,7 +696,7 @@ def cancel_kubernetes_job(job_id):
 #=================================
 #===   SLURM JOB CANCEL 
 #=================================
-def cancel_slurm_job(job_id):
+def cancel_slurm_job(job_pid):
 	""" Cancel Slurm job """
 
 	# - Init response
@@ -680,9 +704,32 @@ def cancel_slurm_job(job_id):
 	res['exit']= -1
 	res['status']= ''
 
-	# IMPLEMENT ME!!!
-	# ...
-	# ...
+	# - Check if Slurm job mgr is not None
+	if jobmgr_slurm is None:
+		errmsg= 'Slurm job manager instance is None!' 
+		logger.warn(errmsg)
+		res['status']= errmsg
+		res['exit']= -1
+		return res
+
+	# - Cancel job
+	try:
+		if jobmgr_slurm.delete_job(job_pid)<0:
+			errmsg= "Failed to delete Slurm job, see logs!"
+			logger.warn(errmsg)
+			res['status']= errmsg
+			res['exit']= -1
+			return res
+
+	except Exception as e:
+		errmsg= "Exception caught when deleting Slurm job (err=" + str(e) + ")!"
+		logger.warn(errmsg)
+		res['status']= errmsg
+		res['exit']= -1
+		return res
+
+	res['status']= "Deleted job with success"
+	res['exit']= 0
 
 	return res
 
@@ -842,8 +889,6 @@ def get_filepath_from_uuid(file_uuid, username):
 #=================================
 #===      JOB OUTPUTS 
 #=================================
-
-
 def get_job_out_file(task_id, label):
 	""" Return job output data """
 	
