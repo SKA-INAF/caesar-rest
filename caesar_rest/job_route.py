@@ -514,7 +514,14 @@ def cancel_job(task_id):
 		return make_response(jsonify(res),404)
 	
 	job_pid= str(job["pid"])
+	job_state= job["state"]
 
+	# - Do not cancel job if already completed or failed
+	if job_state=="SUCCESS" or job_state="FAILURE":
+		msg= 'Job ' + task_id + ' already completed with state ' + job_state + ', nothing to be canceled.'
+		logger.info(msg)
+		res['status']= msg
+		return make_response(jsonify(res),200)
 
 	# - Cancel job
 	cmdout= {}
