@@ -62,6 +62,7 @@ def get_args():
 	parser.add_argument('-mrcnn_weights','--mrcnn_weights', dest='mrcnn_weights', default='/opt/Software/MaskR-CNN/install/share/mrcnn_weights.h5', required=False, type=str, help='File (.h5) with network weights used in Mask-RCNN app')
 
 	# - DB options
+	parser.add_argument('--no-db', dest='db', action='store_false')
 	parser.add_argument('--db', dest='db', action='store_true')	
 	parser.set_defaults(db=True)
 	parser.add_argument('-dbhost','--dbhost', dest='dbhost', default='localhost', required=False, type=str, help='Host of MongoDB database (default=localhost)')
