@@ -37,6 +37,7 @@ from celery.exceptions import Ignore, SoftTimeLimitExceeded
 from caesar_rest.app import celery as celery_app
 from caesar_rest import utils
 from caesar_rest import jobmgr_kube
+from caesar_rest import jobmgr_slurm
 
 # Import mongo
 from pymongo import MongoClient
