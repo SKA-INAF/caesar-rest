@@ -757,6 +757,7 @@ def get_job_status(task_id):
 	res['status']= ''
 	res['exit_code']= ''
 	res['elapsed_time']= ''
+	res['tag']= ''
 
 	# - Get aai info
 	username= 'anonymous'
@@ -788,6 +789,8 @@ def get_job_status(task_id):
 	res['status']= job['status']
 	res['exit_code']= job['exit_code']
 	res['elapsed_time']= job['elapsed_time']
+	if 'tag' in job:
+		res['tag']= job['tag']
 
 	##########################################################################
 	##     ORIGINAL METHOD (RETRIEVE STATUS FROM CELERY RESULT BACKEND)
