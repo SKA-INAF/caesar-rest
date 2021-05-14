@@ -430,8 +430,8 @@ class SlurmJobManager(object):
 		#vol_opts+= "".join("-B %s " % job_outdir)
 		#vol_opts+= "".join("-B %s " % inputfile)	
 		if job_outdir_cluster!="":
-			vol_opts+= "".join("-B %s " % job_outdir_cluster)
-		vol_opts+= "".join("-B %s " % inputfile_cluster)
+			vol_opts+= "".join("-B %s:%s " % (job_outdir_cluster, job_outdir))
+		vol_opts+= "".join("-B %s:%s " % (inputfile_cluster, inputfile))
 		
 		# - Set run command
 		cmd= "singularity run "
