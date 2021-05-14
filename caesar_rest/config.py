@@ -54,8 +54,11 @@ class Config(object):
 	SLURM_HOST= 'lofar-gpu-01.oact.inaf.it'	# 'cirasa host'
 	SLURM_PORT= 6820
 	SLURM_BATCH_WORKDIR= '/opt/caesar-rest/batchlogs'
+	SLURM_JOB_DIR= '/mnt/storage/jobs'  # Path at which the job directory is mounted in Slurm cluster 
+	SLURM_DATA_DIR= '/mnt/storage/data' # Path at which the data directory is mounted in Slurm cluster
 	SLURM_CAESAR_JOB_IMAGE= '/opt/containers/caesar/caesar-job_latest.sif'
-	
+	SLURM_MASKRCNN_JOB_IMAGE= '/opt/containers/mrcnn/mrcnn-detect_latest.sif'
+
 	# - AAI options
 	USE_AAI = False
 	OIDC_CLIENT_SECRETS = 'config/client_secrets.json'
