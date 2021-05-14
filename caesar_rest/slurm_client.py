@@ -44,6 +44,10 @@ class SlurmJobManager(object):
 		self.cluster_batch_workdir= ''
 		self.cluster_queue= ''
 		self.keyfile= '' # Path of Slurm REST key file, e.g. /etc/slurm/jwt.key
+		self.cluster_jobdir= ''
+		self.cluster_datadir= ''
+		self.app_jobdir= ''
+		self.app_datadir= ''
 			
 		# - Options read or automatically computed from others
 		self.cluster_url= ''
@@ -89,6 +93,22 @@ class SlurmJobManager(object):
 		if self.cluster_batch_workdir=="":
 			logger.warn("Slurm cluster batch workdir not given...setting it to /home/%s ..." % self.username)
 			self.cluster_batch_workdir= '/home/' + self.username
+
+		if self.cluster_jobdir=="":
+			logger.warn("Empty cluster jobdir given, check given app options!")
+			return -1
+
+		if self.cluster_datadir=="":
+			logger.warn("Empty cluster datadir given, check given app options!")
+			return -1
+		
+		if self.app_jobdir=="":
+			logger.warn("Empty app jobdir given, check given app options!")
+			return -1
+
+		if self.app_datadir=="":
+			logger.warn("Empty app datadir given, check given app options!")
+			return -1
 
 		# - Set cluster url
 		self.set_cluster_url()
@@ -352,6 +372,27 @@ class SlurmJobManager(object):
 		if job_name=="":
 			job_name= utils.get_uuid()
 
+		#################################
+		###   SET CLUSTER JOB/DATA DIR
+		#################################
+		# - Find job & dir directories in Slurm cluster
+		#   by replacing app dirs with slurm dirs
+		inputfile_cluster= inputfile
+		if self.app_datadir!=self.cluster_datadir:
+			if inputfile.find(self.app_datadir)!=0:
+				logger.warn("Cannot find app data dir string (%s) in provided inputfile string (%s), this is not expected, return None!" % (self.app_datadir, inputfile))
+				return None
+			inputfile_cluster= inputfile.replace(self.app_datadir, self.cluster_datadir)
+			logger.info("Convert given inputfile from app ref (%s) to cluster ref (%s) ..." % (inputfile, inputfile_cluster))
+
+		job_outdir_cluster= job_outdir
+		if job_outdir!="" and self.app_jobdir!=self.cluster_jobdir:
+			if job_outdir.find(self.app_jobdir)!=0:
+				logger.warn("Cannot find app job dir string (%s) in provided job_outdir string (%s), this is not expected, return None!" % (self.app_jobdir, job_outdir))
+				return None
+			job_outdir_cluster= job_outdir_cluster.replace(self.app_jobdir, self.cluster_jobdir)
+			logger.info("Convert given job_outdir from app ref (%s) to cluster ref (%s) ..." % (job_outdir, job_outdir_cluster))
+
 		#############################
 		###   CREATE JOB SCRIPT
 		#############################
@@ -370,8 +411,11 @@ class SlurmJobManager(object):
 		# - Set singularity volume mount options
 		vol_opts= ""
 		vol_opts+= "".join("--scratch %s " % job_dir)
-		vol_opts+= "".join("-B %s " % job_outdir)
-		vol_opts+= "".join("-B %s " % inputfile)
+		#vol_opts+= "".join("-B %s " % job_outdir)
+		#vol_opts+= "".join("-B %s " % inputfile)	
+		if job_outdir_cluster!="":
+			vol_opts+= "".join("-B %s " % job_outdir_cluster)
+		vol_opts+= "".join("-B %s " % inputfile_cluster)
 		
 		# - Set run command
 		cmd= "singularity run "
