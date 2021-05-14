@@ -41,9 +41,11 @@ class SlurmJobManager(object):
 		self.host= ''
 		self.port= 6820
 		self.username= ''
-		self.cluster_batch_workdir= ''
-		self.cluster_queue= ''
 		self.keyfile= '' # Path of Slurm REST key file, e.g. /etc/slurm/jwt.key
+		
+		# - Options to be set for job submission
+		self.cluster_queue= ''
+		self.cluster_batch_workdir= ''
 		self.cluster_jobdir= ''
 		self.cluster_datadir= ''
 		self.app_jobdir= ''
@@ -56,12 +58,42 @@ class SlurmJobManager(object):
 
 
 	#############################
-	##  SET CLUSTER URL
+	##  CHECK/SET VARS
 	#############################
 	def set_cluster_url(self):
 		""" Set cluster url """
 		
 		self.cluster_url= 'http://' + self.host + ':' + str(self.port) + '/slurm/v0.0.36' 
+
+
+	def check_submit_vars(self):
+		""" Check mandatory vars to be set before submitting a job """
+
+		if self.cluster_queue=="":
+			logger.warn("Empty cluster queue given, check given app options!")
+			return -1
+
+		if self.cluster_batch_workdir=="":
+			logger.warn("Slurm cluster batch workdir not given...setting it to /home/%s ..." % self.username)
+			self.cluster_batch_workdir= '/home/' + self.username
+
+		if self.app_jobdir=="":
+			logger.warn("Empty app jobdir given, check given app options!")
+			return -1
+
+		if self.app_datadir=="":
+			logger.warn("Empty app datadir given, check given app options!")
+			return -1
+
+		if self.cluster_jobdir=="":
+			logger.warn("Empty cluster jobdir given, check given app options!")
+			return -1
+
+		if self.cluster_datadir=="":
+			logger.warn("Empty cluster datadir given, check given app options!")
+			return -1
+		
+		return 0
 
 	#############################
 	##   INITIALIZE
@@ -78,10 +110,6 @@ class SlurmJobManager(object):
 			logger.warn("Empty cluster hostname given, check given app options!")
 			return -1
 
-		if self.cluster_queue=="":
-			logger.warn("Empty cluster queue given, check given app options!")
-			return -1
-
 		if self.keyfile=="":
 			logger.warn("Empty Slurm key file given, check given app options!")
 			return -1
@@ -90,25 +118,6 @@ class SlurmJobManager(object):
 			logger.warn("Slurm key file %s not existing on filesystem!" % self.keyfile)
 			return -1
 
-		if self.cluster_batch_workdir=="":
-			logger.warn("Slurm cluster batch workdir not given...setting it to /home/%s ..." % self.username)
-			self.cluster_batch_workdir= '/home/' + self.username
-
-		if self.app_jobdir=="":
-			logger.warn("Empty app jobdir given, check given app options!")
-			return -1
-
-		if self.app_datadir=="":
-			logger.warn("Empty app datadir given, check given app options!")
-			return -1
-
-		if self.cluster_jobdir=="":
-			logger.warn("Empty cluster jobdir given, setting it to app jobdir!")
-			self.cluster_jobdir= self.app_jobdir
-
-		if self.cluster_datadir=="":
-			logger.warn("Empty cluster datadir given, setting it to app datadir!")
-			self.cluster_datadir= self.app_datadir
 		
 		# - Set cluster url
 		self.set_cluster_url()
@@ -127,6 +136,8 @@ class SlurmJobManager(object):
 		# ...
 
 		return 0
+
+	
 
 	#############################
 	##   READ KEY
@@ -360,6 +371,11 @@ class SlurmJobManager(object):
 	def create_job(self, image, job_args, inputfile, job_name="", job_outdir=""):
 		""" Create a standard job object with rclone mounted volume """
 
+		# - Check mandatory vars to be set
+		if self.check_submit_vars()<0:
+			logger.warn("Mandatory client option for job submission not set, see logs!")
+			return None
+
 		# - Check job options
 		if job_args=="":
 			logger.warn("Empty job args given!")
@@ -367,7 +383,7 @@ class SlurmJobManager(object):
 
 		if inputfile=="":
 			logger.warn("Empty inputfile given!")
-			return None			
+			return None	
 
 		if job_name=="":
 			job_name= utils.get_uuid()
