@@ -96,9 +96,11 @@ def get_args():
 	parser.add_argument('-slurm_user','--slurm_user', dest='slurm_user', default='cirasa', required=False, type=str, help='Username enabled to run in Slurm cluster')
 	parser.add_argument('-slurm_host','--slurm_host', dest='slurm_host', default='SLURM_HOST', required=False, type=str, help='Slurm cluster host/ipaddress')
 	parser.add_argument('-slurm_port','--slurm_port', dest='slurm_port', default=6820, required=False, type=int, help='Slurm rest service port')
-	parser.add_argument('-slurm_batch_workdir','--slurm_batch_workdir', dest='slurm_batch_workdir', default='', required=False, type=str, help='Clusteer directory where to place Slurm batch logs (must be writable by slurm_user)')
+	parser.add_argument('-slurm_batch_workdir','--slurm_batch_workdir', dest='slurm_batch_workdir', default='', required=False, type=str, help='Cluster directory where to place Slurm batch logs (must be writable by slurm_user)')
 	parser.add_argument('-slurm_queue','--slurm_queue', dest='slurm_queue', default='normal', required=False, type=str, help='Slurm cluster host/ipaddress')
-	
+	parser.add_argument('-slurm_jobdir','--slurm_jobdir', dest='slurm_jobdir', default='/mnt/storage/jobs', required=False, type=str, help='Path at which the job directory is mounted in Slurm cluster')	
+	parser.add_argument('-slurm_datadir','--slurm_datadir', dest='slurm_datadir', default='/mnt/storage/data', required=False, type=str, help='Path at which the data directory is mounted in Slurm cluster')	
+
 	# - Volume mount options
 	parser.add_argument('--mount_rclone_volume', dest='mount_rclone_volume', action='store_true')	
 	parser.set_defaults(mount_rclone_volume=False)
@@ -201,7 +203,8 @@ slurm_host= args.slurm_host
 slurm_port= args.slurm_port
 slurm_batch_workdir= args.slurm_batch_workdir
 slurm_queue= args.slurm_queue
-
+slurm_jobdir= args.slurm_jobdir
+slurm_datadir= args.slurm_datadir
 	
 #===============================
 #==   INIT
@@ -244,6 +247,9 @@ config.SLURM_USER= slurm_user
 config.SLURM_HOST= slurm_host
 config.SLURM_BATCH_WORKDIR= slurm_batch_workdir
 config.SLURM_PORT= slurm_port
+config.SLURM_JOB_DIR= slurm_jobdir
+config.SLURM_DATA_DIR= slurm_datadir
+
 
 config.MOUNT_RCLONE_VOLUME= args.mount_rclone_volume
 config.MOUNT_VOLUME_PATH= args.mount_volume_path
@@ -329,7 +335,11 @@ if job_scheduler=='slurm' and jobmgr_slurm is not None:
 	jobmgr_slurm.keyfile= config.SLURM_KEYFILE
 	jobmgr_slurm.username= config.SLURM_USER
 	jobmgr_slurm.cluster_batch_workdir= config.SLURM_BATCH_WORKDIR
-		
+	jobmgr_slurm.cluster_jobdir= config.SLURM_JOB_DIR
+	jobmgr_slurm.cluster_datadir= config.SLURM_DATA_DIR
+	jobmgr_slurm.app_jobdir= config.JOB_DIR
+	jobmgr_slurm.app_datadir= config.UPLOAD_FOLDER
+
 	# - Initialize client
 	logger.info("Initializing Slurm job manager ...")
 	try:
