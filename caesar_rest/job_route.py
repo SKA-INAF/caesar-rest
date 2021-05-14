@@ -376,16 +376,13 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir):
 	image= ''
 	if app_name=="caesar":
 		image= current_app.config['SLURM_CAESAR_JOB_IMAGE']
-		#job_label= 'caesar-job'
 
-	#elif app_name=="mrcnn":
-	#	image= current_app.config['MASKRCNN_JOB_IMAGE']
-	#	job_label= 'mrcnn-job'
-
+	elif app_name=="mrcnn":
+		image= current_app.config['SLURM_MASKRCNN_JOB_IMAGE']
+	
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name)
 		return None
-
 
 	# - Create job object
 	job= jobmgr_slurm.create_job(
@@ -568,39 +565,6 @@ def cancel_job(task_id):
 
 	res['status']= "Job canceled and status updated in DB"
 
-	# - Get task
-	#task = background_task.AsyncResult(task_id)
-	#if not task or task is None:
-	#	errmsg= 'No task found with id ' + task_id + '!'
-	#	res['status']= errmsg
-	#	return make_response(jsonify(res),404)
-
-	# - Revoke task
-	#logger.info("Revoking task %s ..." % task_id)
-	#try:
-	#	revoke(task_id, terminate=True,signal='SIGTERM')
-		
-	#except Exception as e:
-	#	errmsg= 'Exception caught when attempting to rekove task ' + task_id + ' (err=' + str(e) + ')!' 
-	#	logger.warn(errmsg)
-	#	res['status']= errmsg
-	#	return make_response(jsonify(res),500)
-
-	# - Kill background process
-	#   NB: This is not working if running in multi nodes
-	#pid= task.info.get('pid', '')
-	#res['status']= 'Task revoked'
-
-	#logger.info("Killing pid=%s ..." % pid)
-	#try:
-	#	os.killpg(os.getpgid(int(pid)), signal.SIGKILL)  # Send the signal to all the process groups
-	#	res['status']= 'Task revoked and background process canceled with success'
-
-	#except Exception as e:
-	#	errmsg= 'Exception caught when attempting to kill background task process with PID=' + pid + ' (err=' + str(e) + ')!' 
-	#	logger.warn(errmsg)
-	#	res['status']= 'Task revoked but failed to cancel background process (err=' + str(e) + ')'
-		
 	return make_response(jsonify(res),200)
 
 
