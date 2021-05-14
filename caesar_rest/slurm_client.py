@@ -94,14 +94,6 @@ class SlurmJobManager(object):
 			logger.warn("Slurm cluster batch workdir not given...setting it to /home/%s ..." % self.username)
 			self.cluster_batch_workdir= '/home/' + self.username
 
-		if self.cluster_jobdir=="":
-			logger.warn("Empty cluster jobdir given, check given app options!")
-			return -1
-
-		if self.cluster_datadir=="":
-			logger.warn("Empty cluster datadir given, check given app options!")
-			return -1
-		
 		if self.app_jobdir=="":
 			logger.warn("Empty app jobdir given, check given app options!")
 			return -1
@@ -110,6 +102,14 @@ class SlurmJobManager(object):
 			logger.warn("Empty app datadir given, check given app options!")
 			return -1
 
+		if self.cluster_jobdir=="":
+			logger.warn("Empty cluster jobdir given, setting it to app jobdir!")
+			self.cluster_jobdir= self.app_jobdir
+
+		if self.cluster_datadir=="":
+			logger.warn("Empty cluster datadir given, setting it to app datadir!")
+			self.cluster_datadir= self.app_datadir
+		
 		# - Set cluster url
 		self.set_cluster_url()
 
