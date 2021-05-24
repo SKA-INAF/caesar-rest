@@ -96,16 +96,16 @@ def submit_job():
 	# - Get request data
 	req_data = request.get_json(silent=True)
 	if not req_data:
-		logger.warn("Invalid request data!")
+		logger.warn("Invalid request data!", action="submitjob", user=username)
 		res['state']= 'ABORTED'
 		res['status']= 'Invalid request data!'
 		return make_response(jsonify(res),400)
-	logger.info("Received job data %s " % str(req_data))
+	logger.info("Received job data %s " % str(req_data), action="submitjob", user=username)
 
 	app_name = req_data['app']
 	job_inputs = req_data['job_inputs']
 	if not app_name:
-		logger.warn("No app name given!")
+		logger.warn("No app name given!", action="submitjob", user=username)
 		res['state']= 'ABORTED'
 		res['status']= 'No app name found in request!'
 		return make_response(jsonify(res),400)
@@ -113,7 +113,7 @@ def submit_job():
 	res['app']= app_name
 
 	if not job_inputs:
-		logger.warn("No job inputs given!")	
+		logger.warn("No job inputs given!", action="submitjob", user=username)	
 		res['state']= 'ABORTED'	
 		res['status']= 'No job inputs field found in request!'
 		return make_response(jsonify(res),400)
@@ -125,7 +125,7 @@ def submit_job():
 
 	# - Read job input data (NEW)	
 	if 'data_inputs' not in req_data:
-		logger.warn("No data inputs given!")	
+		logger.warn("No data inputs given!", action="submitjob", user=username)	
 		res['state']= 'ABORTED'	
 		res['status']= 'No data inputs field found in request!'
 		return make_response(jsonify(res),400)
@@ -133,7 +133,7 @@ def submit_job():
 	inputfile_uid= req_data['data_inputs']
 	inputfile= get_filepath_from_uuid(inputfile_uid, username)
 	if inputfile=='':
-		logger.warn("Cannot find file for user %s corresponding to uid=%s!" % (username,inputfile_uid))	
+		logger.warn("Cannot find file for user %s corresponding to uid=%s!" % (username,inputfile_uid), action="submitjob", user=username)	
 		res['state']= 'ABORTED'	
 		res['status']= 'Cannot find file corresponding to given data input uid!'
 		return make_response(jsonify(res),400)
@@ -142,7 +142,7 @@ def submit_job():
 	#(cmd,cmd_arg_list,val_status)= current_app.config['jobcfg'].validate(app_name,job_inputs)
 	(cmd,cmd_arg_list,val_status)= current_app.config['jobcfg'].validate(app_name,job_inputs,inputfile)
 	if cmd is None or cmd_arg_list is None: 
-		logger.warn("Job input validation failed!")
+		logger.warn("Job input validation failed!", action="submitjob", user=username)
 		res['state']= 'ABORTED'	
 		res['status']= val_status
 		return make_response(jsonify(res),400)
@@ -162,13 +162,13 @@ def submit_job():
 		submit_res= submit_job_celery(app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname)
 	
 	elif job_scheduler=='kubernetes':
-		submit_res= submit_job_kubernetes(app_name, cmd_args, job_top_dir)
+		submit_res= submit_job_kubernetes(app_name, cmd_args, job_top_dir, username)
 
 	elif job_scheduler=='slurm':
-		submit_res= submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir)
+		submit_res= submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username)
 
 	if submit_res is None:
-		logger.warn("Failed to submit job to scheduler %s!" % job_scheduler)
+		logger.warn("Failed to submit job to scheduler %s!" % job_scheduler, action="submitjob", user=username)
 		res['state']= 'ABORTED'
 		res['status']= 'Job failed to be submitted!'
 		return make_response(jsonify(res),500)
@@ -178,7 +178,7 @@ def submit_job():
 	pid= submit_res['pid']
 
 	# - Register task id in mongo
-	logger.info("Creating job object for task %s ..." % job_id)
+	logger.info("Creating job object for task %s ..." % job_id, action="submitjob", user=username)
 	job_obj= {
 		"job_id": job_id,
 		"submit_date": submit_date,
@@ -199,16 +199,16 @@ def submit_job():
 	collection_name= username + '.jobs'
 
 	try:
-		logger.info("Creating or retrieving job collection for user %s ..." % username)
+		logger.info("Creating or retrieving job collection for user %s ..." % username, action="submitjob", user=username)
 		job_collection= mongo.db[collection_name]
 
-		logger.info("Adding job obj to collection ...")
+		logger.info("Adding job obj to collection ...", action="submitjob", user=username)
 		item_id= job_collection.insert(job_obj)
 		
 	except Exception as e:
-		logger.warn("Failed to create and register job in DB (err=%s)!" % str(e))
+		logger.warn("Failed to create and register job in DB (err=%s)!" % str(e), action="submitjob", user=username)
 		flash('Job submitted but failed to be registered in DB!')
-		logger.warn("Job %s submitted but failed to be registered in DB!" % job_id)
+		logger.warn("Job %s submitted but failed to be registered in DB!" % job_id, action="submitjob", user=username)
 		res['state']= 'PENDING'
 		res['status']= 'WARN: Job submitted but failed to be registered in DB!'
 		return make_response(jsonify(res),500)
@@ -240,13 +240,13 @@ def submit_job_celery(app_name, cmd, cmd_args, job_top_dir, username, mongo_dbho
 	job_monitoring_period= current_app.config['JOB_MONITORING_PERIOD']
 
 	# - Submit task to queue
-	logger.info("Submitting job %s async (cmd=%s, args=%s) ..." % (app_name,cmd,cmd_args))
+	logger.info("Submitting job %s async (cmd=%s, args=%s) ..." % (app_name,cmd,cmd_args), action="submitjob", user=username)
 	task = background_task.apply_async(
 		[app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname, job_monitoring_period],
 		queue= app_name # set queue name to app name
 	)
 	job_id= task.id
-	logger.info("Submitted job with id=%s ..." % job_id)
+	logger.info("Submitted job with id=%s ..." % job_id, action="submitjob", user=username)
 
 	res= {
 		"job_id": job_id,
@@ -261,7 +261,7 @@ def submit_job_celery(app_name, cmd, cmd_args, job_top_dir, username, mongo_dbho
 #=================================
 #===    SUBMIT JOB KUBERNETES
 #=================================
-def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
+def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
 	""" Submit job to Kubernetes scheduler """
 
 	# - Init response
@@ -282,13 +282,13 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
 	job_dir_name= 'job_' + job_id
 	job_dir= os.path.join(job_top_dir,job_dir_name)
 
-	logger.info("Creating job dir %s (top dir=%s) ..." % (job_dir,job_top_dir))
+	logger.info("Creating job dir %s (top dir=%s) ..." % (job_dir,job_top_dir), action="submitjob", user=username)
 	try:
 		os.makedirs(job_dir)
 	except OSError as exc:
 		if exc.errno != errno.EEXIST:
 			errmsg= "Failed to create job directory " + job_dir + "!" 
-			logger.error(errmsg)
+			logger.error(errmsg, action="submitjob", user=username)
 			return None
 
 	# - Set job options
@@ -301,7 +301,7 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
 		job_label= 'mrcnn-job'
 
 	else:
-		logger.warn("Unknown/unsupported app %s!" % app_name)
+		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)
 		return None
 
 
@@ -320,11 +320,11 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
 		)
 
 	else:
-		logger.warn("Unsupported job volume type required!")
+		logger.warn("Unsupported job volume type required!", action="submitjob", user=username)
 		return None
 	
 	if job is None:
-		logger.warn("Failed to create Kube job object!")
+		logger.warn("Failed to create Kube job object!", action="submitjob", user=username)
 		return None
 
 	# - Submit job
@@ -332,10 +332,10 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
 	submit_date= now.isoformat()
 	submit_job= jobmgr_kube.submit_job(job)
 	if submit_job is None:
-		logger.warn("Failed to submit job %s to Kubernetes cluster!" % job_id)
+		logger.warn("Failed to submit job %s to Kubernetes cluster!" % job_id, action="submitjob", user=username)
 		return None
 
-	logger.info("Submitted job with id=%s ..." % job_id)
+	logger.info("Submitted job with id=%s ..." % job_id, action="submitjob", user=username)
 
 	res= {
 		"job_id": job_id,
@@ -350,7 +350,7 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir):
 #=================================
 #===    SUBMIT JOB SLURM
 #=================================
-def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir):
+def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username):
 	""" Submit job to Slurm scheduler """
 
 	# - Init response
@@ -363,13 +363,13 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir):
 	job_dir_name= 'job_' + job_id
 	job_dir= os.path.join(job_top_dir,job_dir_name)
 
-	logger.info("Creating job dir %s (top dir=%s) ..." % (job_dir,job_top_dir))
+	logger.info("Creating job dir %s (top dir=%s) ..." % (job_dir,job_top_dir), action="submitjob", user=username)
 	try:
 		os.makedirs(job_dir)
 	except OSError as exc:
 		if exc.errno != errno.EEXIST:
 			errmsg= "Failed to create job directory " + job_dir + "!" 
-			logger.error(errmsg)
+			logger.error(errmsg, action="submitjob", user=username)
 			return None
 
 	# - Set job options
@@ -381,7 +381,7 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir):
 		image= current_app.config['SLURM_MASKRCNN_JOB_IMAGE']
 	
 	else:
-		logger.warn("Unknown/unsupported app %s!" % app_name)
+		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)
 		return None
 
 	# - Create job object
@@ -394,7 +394,7 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir):
 	)
 	
 	if job is None or job=="":
-		logger.warn("Failed to create Slurm job data!")
+		logger.warn("Failed to create Slurm job data!", action="submitjob", user=username)
 		return None
 
 	# - Submit job
@@ -402,27 +402,27 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir):
 	submit_date= now.isoformat()
 	submit_job= jobmgr_slurm.submit_job(job)
 	if submit_job is None:
-		logger.warn("Failed to submit job %s to Slurm cluster!" % job_id)
+		logger.warn("Failed to submit job %s to Slurm cluster!" % job_id, action="submitjob", user=username)
 		return None
 
 	# - Parse reply
 	if submit_job is None or submit_job=="":
-		logger.warn("Failed to submit job or get service reply (see logs)!")
+		logger.warn("Failed to submit job or get service reply (see logs)!", action="submitjob", user=username)
 		return None
 		
-	logger.info("Slurm service replied to job %s submission: %s" % (job_id, submit_job))
+	logger.info("Slurm service replied to job %s submission: %s" % (job_id, submit_job), action="submitjob", user=username)
 	
 	if 'job_id' not in submit_job:
 		errmsg= ''
 		if 'errors' in submit_job:
 			for errobj in submit_job['errors']:
 				errmsg+= errobj['error'] + '/'
-		logger.warn("Failed to submit job %s (err=%s)" % (job_id, errmsg))
+		logger.warn("Failed to submit job %s (err=%s)" % (job_id, errmsg), action="submitjob", user=username)
 		return None
 
 	pid= submit_job['job_id']
 
-	logger.info("Submitted job with id=%s (pid=%s) ..." % (job_id, pid))
+	logger.info("Submitted job with id=%s (pid=%s) ..." % (job_id, pid), action="submitjob", user=username)
 	
 	# - Response
 	res= {
@@ -491,7 +491,6 @@ def cancel_job(task_id):
 	# - Get other options
 	job_scheduler= current_app.config['JOB_SCHEDULER']
 
-
 	# - Search job id in user collection
 	collection_name= username + '.jobs'
 	job= None
@@ -500,13 +499,13 @@ def cancel_job(task_id):
 		job= job_collection.find_one({'job_id': str(task_id)})
 	except Exception as e:
 		errmsg= 'Exception catched when searching job id in DB (err=' + str(e) + ')!'
-		logger.error(errmsg)
+		logger.error(errmsg, action="canceljob", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 
 	if not job or job is None:
 		errmsg= 'Job ' + task_id + ' not found for user ' + username + '!'
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="canceljob", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 	
@@ -516,33 +515,33 @@ def cancel_job(task_id):
 	# - Do not cancel job if already completed or failed
 	if job_state=="SUCCESS" or job_state=="FAILURE" or job_state=="TIMED-OUT":
 		msg= 'Job ' + task_id + ' already completed with state ' + job_state + ', nothing to be canceled.'
-		logger.info(msg)
+		logger.info(msg, action="canceljob", user=username)
 		res['status']= msg
 		return make_response(jsonify(res),200)
 
 	# - Cancel job
 	cmdout= {}
 	if job_scheduler=='celery':
-		logger.info("Canceling job %s assuming it was scheduled with celery ..." % task_id)
+		logger.info("Canceling job %s assuming it was scheduled with celery ..." % task_id, action="canceljob", user=username)
 		cmdout= cancel_celery_task(task_id)
 
 	elif job_scheduler=='kubernetes':
-		logger.info("Canceling job %s assuming it was scheduled with Kubernetes ..." % task_id)
+		logger.info("Canceling job %s assuming it was scheduled with Kubernetes ..." % task_id, action="canceljob", user=username)
 		cmdout= cancel_kubernetes_job(task_id)
 
 	elif job_scheduler=='slurm':
-		logger.info("Canceling job %s assuming it was scheduled with slurm ..." % task_id)
+		logger.info("Canceling job %s assuming it was scheduled with slurm ..." % task_id, action="canceljob", user=username)
 		cmdout= cancel_slurm_job(job_pid)
 
 	if not cmdout:
 		errmsg= "Empty reply from cancel task method!"
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="canceljob", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),500)
 
 	if cmdout["exit"]!=0:
 		errmsg= "Failed to cancel job " + task_id + " (err=" + cmdout["status"] + ")!"
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="canceljob", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),500)
 
@@ -559,7 +558,7 @@ def cancel_job(task_id):
 		job_collection.update_one({'job_id':task_id},{'$set':{'state':state,'status':status,'exit_code':exit_code}},upsert=False)
 	except Exception as e:
 		errmsg= 'Exception caught when updating job ' + str(task_id) + ' in DB (err=' + str(e) + ')!'
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="canceljob", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),500)
 
@@ -589,7 +588,7 @@ def cancel_celery_task(task_id):
 		return res
 
 	# - Revoke task
-	logger.info("Revoking task %s ..." % task_id)
+	logger.info("Revoking task %s ..." % task_id, action="canceljob")
 	try:
 		#task.revoke(task_id,terminate=True,signal='SIGKILL')
 		#task.revoke(task_id,terminate=True,signal='SIGUSR1')
@@ -598,7 +597,7 @@ def cancel_celery_task(task_id):
 		
 	except Exception as e:
 		errmsg= 'Exception caught when attempting to rekove task ' + task_id + ' (err=' + str(e) + ')!' 
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="canceljob")
 		res['status']= errmsg
 		res['exit']= -1
 		return res
@@ -608,7 +607,7 @@ def cancel_celery_task(task_id):
 	pid= task.info.get('pid', '')
 	res['status']= 'Task revoked'
 
-	logger.info("Killing pid=%s ..." % pid)
+	logger.info("Killing pid=%s ..." % pid, action="canceljob")
 	try:
 		os.killpg(os.getpgid(int(pid)), signal.SIGKILL)  # Send the signal to all the process groups
 		res['status']= 'Task revoked and background process canceled with success'
@@ -616,7 +615,7 @@ def cancel_celery_task(task_id):
 
 	except Exception as e:
 		errmsg= 'Exception caught when attempting to kill background task process with PID=' + pid + ' (err=' + str(e) + ')!' 
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="canceljob")
 		res['status']= 'Task revoked but failed to cancel background process (err=' + str(e) + ')'
 		res['exit']= -1
 		return res
@@ -638,7 +637,7 @@ def cancel_kubernetes_job(job_id):
 	# - Check if Kube job mgr is not None
 	if jobmgr_kube is None:
 		errmsg= 'Kube job manager instance is None!' 
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="canceljob")
 		res['status']= errmsg
 		res['exit']= -1
 		return res
@@ -647,14 +646,14 @@ def cancel_kubernetes_job(job_id):
 	try:
 		if jobmgr_kube.delete_job(job_id)<0:
 			errmsg= "Failed to delete Kube job, see logs!"
-			logger.warn(errmsg)
+			logger.warn(errmsg, action="canceljob")
 			res['status']= errmsg
 			res['exit']= -1
 			return res
 
 	except Exception as e:
 		errmsg= "Exception caught when deleting Kube job (err=" + str(e) + ")!"
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="canceljob")
 		res['status']= errmsg
 		res['exit']= -1
 		return res
@@ -678,7 +677,7 @@ def cancel_slurm_job(job_pid):
 	# - Check if Slurm job mgr is not None
 	if jobmgr_slurm is None:
 		errmsg= 'Slurm job manager instance is None!' 
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="canceljob")
 		res['status']= errmsg
 		res['exit']= -1
 		return res
@@ -687,14 +686,14 @@ def cancel_slurm_job(job_pid):
 	try:
 		if jobmgr_slurm.delete_job(job_pid)<0:
 			errmsg= "Failed to delete Slurm job, see logs!"
-			logger.warn(errmsg)
+			logger.warn(errmsg, action="canceljob")
 			res['status']= errmsg
 			res['exit']= -1
 			return res
 
 	except Exception as e:
 		errmsg= "Exception caught when deleting Slurm job (err=" + str(e) + ")!"
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="canceljob")
 		res['status']= errmsg
 		res['exit']= -1
 		return res
@@ -711,7 +710,7 @@ def compute_job_status(task_id):
 	""" Query job status from celery backend DB and adjust it """
 
 	# - Init reply
-	logger.info("Computing job status for task id=%s ..." % task_id)
+	logger.info("Computing job status for task id=%s ..." % task_id, action="jobstatus")
 	res= {}
 	res['job_id']= task_id
 	res['pid']= ''
@@ -726,6 +725,7 @@ def compute_job_status(task_id):
 		task = background_task.AsyncResult(task_id)
 	except:
 		errmsg= 'Failed to create instance of AsyncResult for task ' + task_id + '!'
+		logger.warn(errmsg, action="jobstatus")
 		raise NameError(errmsg)	
 
 	if not task or task is None:
@@ -792,13 +792,13 @@ def get_job_status(task_id):
 		job= job_collection.find_one({'job_id': str(task_id)})
 	except Exception as e:
 		errmsg= 'Exception catched when searching job id in DB (err=' + str(e) + ')!'
-		logger.error(errmsg)
+		logger.error(errmsg, action="jobstatus", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 
 	if not job or job is None:
 		errmsg= 'Job ' + task_id + ' not found for user ' + username + '!'
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="jobstatus", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 
@@ -832,7 +832,7 @@ def get_filepath_from_uuid(file_uuid, username):
 	""" Transform input file from uuid to actual path """		
 
 	# - Inspect inputfile (expect it is a uuid, so convert to filename)
-	logger.info("Finding inputfile uuid %s ..." % file_uuid)
+	logger.info("Finding inputfile uuid %s ..." % file_uuid, action="submitjob", user=username)
 	collection_name= username + '.files'
 
 	file_path= ''
@@ -842,17 +842,17 @@ def get_filepath_from_uuid(file_uuid, username):
 		if item and item is not None:
 			file_path= item['filepath']
 		else:
-			logger.warn("File with uuid=%s not found in DB!" % file_uuid)
+			logger.warn("File with uuid=%s not found in DB!" % file_uuid, action="submitjob", user=username)
 			file_path= ''
 	except Exception as e:
-		logger.error("Exception (err=%s) catch when searching file in DB!" % str(e))
+		logger.error("Exception (err=%s) catch when searching file in DB!" % str(e), action="submitjob", user=username)
 		return ''
 		
 	if not file_path or file_path=='':
-		logger.warn("inputfile uuid %s is empty or not found in the system!" % file_uuid)
+		logger.warn("inputfile uuid %s is empty or not found in the system!" % file_uuid, action="submitjob", user=username)
 		return ''
 
-	logger.info("inputfile uuid %s converted in %s ..." % (file_uuid,file_path))
+	logger.debug("inputfile uuid %s converted in %s ..." % (file_uuid,file_path), action="submitjob", user=username)
 
 	return file_path
 
@@ -882,13 +882,13 @@ def get_job_out_file(task_id, label):
 		job= job_collection.find_one({'job_id': str(task_id)})
 	except Exception as e:
 		errmsg= 'Exception catched when searching job id in DB (err=' + str(e) + ')!'
-		logger.error(errmsg)
+		logger.error(errmsg, action="joboutput", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 
 	if not job or job is None:
 		errmsg= 'Job ' + task_id + ' not found for user ' + username + '!'
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="joboutput", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 
@@ -903,7 +903,7 @@ def get_job_out_file(task_id, label):
 	)
 	if job_not_completed:
 		errmsg= 'Job ' + task_id + ' not yet completed (state=' + job_state + '), output not available'
-		logger.info(errmsg)
+		logger.info(errmsg, action="joboutput", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),202)
 
@@ -939,19 +939,19 @@ def get_job_out_file(task_id, label):
 	
 	else:
 		errmsg= 'Cannot find desired output for job ' + task_id + '!'
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="joboutput", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),500)
 
 	if not filenames:
 		errmsg= 'Cannot find desired output for job ' + task_id + '!'
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="joboutput", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),500)	
 
 	if len(filenames)>1:
 		errmsg= 'More than 1 file found with desired name (this should not occur), taking the first...'
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="joboutput", user=username)
 		
 	filename= filenames[0]
 
@@ -966,13 +966,13 @@ def get_job_out_file(task_id, label):
 				image = base64.b64encode(image_binary).decode("utf-8")
 		except Exception as e:	
 			errmsg= 'Failed to convert file ' + filename + ' to b64 string (err=' + str(e) + ')!'
-			logger.warn(errmsg)
+			logger.warn(errmsg, action="joboutput", user=username)
 			res['status']= errmsg
 			return make_response(jsonify(res),500)
 
 		if image=='':
 			errmsg= 'Failed to convert file ' + filename + ' to b64 string (err=' + str(e) + ')!'
-			logger.warn(errmsg)
+			logger.warn(errmsg, action="joboutput", user=username)
 			res['status']= errmsg
 			return make_response(jsonify(res),500)
 		else:
@@ -986,7 +986,7 @@ def get_job_out_file(task_id, label):
 				data = json.load(f)
 		except Exception as e:	
 			errmsg= 'Failed to convert file ' + filename + ' to json string (err=' + str(e) + ')!'
-			logger.warn(errmsg)
+			logger.warn(errmsg, action="joboutput", user=username)
 			res['status']= errmsg
 			return make_response(jsonify(res),500)
 
@@ -994,7 +994,7 @@ def get_job_out_file(task_id, label):
 
 	else:
 		# - Send as files
-		logger.info("Sending job output file %s ..." % filename)
+		logger.info("Sending job output file %s ..." % filename, action="joboutput", user=username)
 		try:
 			return send_file(
 				filename, 

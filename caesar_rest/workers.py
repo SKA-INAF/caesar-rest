@@ -44,7 +44,8 @@ from pymongo import MongoClient
 
 
 # Get logger
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 ##############################
 #      WORKERS

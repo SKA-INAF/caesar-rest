@@ -12,6 +12,8 @@ import uuid
 ##from caesar_rest.data_manager import DataManager ## DEPRECATED
 from caesar_rest.job_configurator import JobConfigurator
 
+import structlog
+
 ##############################
 #   APP CONFIG CLASS
 ##############################
@@ -78,5 +80,72 @@ class Config(object):
 	# - Mask R-CNN app options
 	MASKRCNN_JOB_IMAGE= 'sriggi/mrcnn-detect:latest'
 	MASKRCNN_WEIGHTS= '/opt/Software/MaskR-CNN/install/share/mrcnn_weights.h5'
+
+
+	# - Logging configuration
+	LOG_TO_FILE= False
+	LOG_DIR= '/opt/caesar-rest/logs'
+	LOG_FILE= 'app_logs.json'
+	LOG_LEVEL= 'INFO'
+
+#	LOGGING = {
+#		"version": 1,
+#		"disable_existing_loggers": False,
+#		"formatters": {
+#			"json_formatter": {
+#				"()": structlog.stdlib.ProcessorFormatter,
+#				"processor": structlog.processors.JSONRenderer(),
+#			},
+#			"plain_console": {
+#				"()": structlog.stdlib.ProcessorFormatter,
+#				"processor": structlog.dev.ConsoleRenderer(),
+#			},
+#			"key_value": {
+#				"()": structlog.stdlib.ProcessorFormatter,
+#				"processor": structlog.processors.KeyValueRenderer(key_order=['timestamp', 'level', 'event', 'logger']),
+#			},
+#		},
+#		"handlers": {
+#			"console": {
+#				"class": "logging.StreamHandler",
+#				"formatter": "plain_console",
+#			},
+#			"json_file": {
+#				"class": "logging.handlers.RotatingFileHandler",
+#				"filename": os.path.join(LOG_DIR, LOG_FILE),
+#				"formatter": "json_formatter",
+#				"maxBytes": 5*1024*1024, # 5 MB
+#				"backupCount": 2
+#			},
+#		},
+#		"loggers": {
+#			'app_caesar': {
+#				'handlers': ['console', 'json_file'],
+#				'level': LOG_LEVEL,
+#			}
+#		}
+#	}
+
+
+#	structlog.configure(
+#		processors=[
+#			structlog.stdlib.filter_by_level,
+#			structlog.processors.TimeStamper(fmt="iso"),
+#			structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S"),
+#			structlog.stdlib.add_logger_name,
+#			structlog.stdlib.add_log_level,
+#			structlog.stdlib.PositionalArgumentsFormatter(),
+#			structlog.processors.StackInfoRenderer(),
+#			structlog.processors.format_exc_info,
+#			structlog.processors.UnicodeDecoder(),
+#			structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+#		],
+#		context_class=structlog.threadlocal.wrap_dict(dict),
+#		logger_factory=structlog.stdlib.LoggerFactory(),
+#		wrapper_class=structlog.stdlib.BoundLogger,
+#		cache_logger_on_first_use=True,
+#	)
+
+
 
 

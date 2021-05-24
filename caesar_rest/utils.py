@@ -31,8 +31,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 # Get logger
-logger = logging.getLogger(__name__)
-
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 def get_uuid():
 	""" Return a uuid code """

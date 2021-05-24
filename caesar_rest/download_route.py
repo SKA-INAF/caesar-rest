@@ -33,8 +33,8 @@ from caesar_rest.config import Config
 from bson.objectid import ObjectId
 
 # Get logger
-logger = logging.getLogger(__name__)
-
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 ##############################
 #   CREATE BLUEPRINTS
@@ -65,7 +65,7 @@ def get_registered_file_ids():
 		res = list(file_cursor)
 	except Exception as e:
 		errmsg= 'Exception caught when getting file ids from DB (err=' + str(e) + ')!'
-		logger.error(errmsg)
+		logger.error(errmsg, action="fileids", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 
@@ -83,7 +83,7 @@ def download_id():
 	else:
 		uuid = request.args.get('uuid')
 
-	logger.info("uuid: %s" % uuid)
+	logger.info("Downloading data with uuid %s ..." % uuid, action="download", user=username)
 	return redirect(url_for('download_id.download_by_uuid',file_uuid=uuid))
 
 
@@ -113,25 +113,25 @@ def download_by_uuid(file_uuid):
 
 	except Exception as e:
 		errmsg= 'Exception caught when searching file in DB (err=' + str(e) + ')!'
-		logger.error(errmsg)
+		logger.error(errmsg, action="download", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 		
 	if item and item is not None:
 		file_path= item['filepath']
-		logger.info("File with uuid=%s found at path=%s ..." % (file_uuid, file_path))
+		logger.info("File with uuid=%s found at path=%s ..." % (file_uuid, file_path), action="download", user=username)
 	else:
-		logger.warn("File with uuid=%s not found in DB!" % file_uuid)
+		logger.warn("File with uuid=%s not found in DB!" % file_uuid, action="download", user=username)
 		file_path= ''
 	
 	if not file_path or file_path=='':
 		errmsg= 'File with uuid ' + file_uuid + ' not found on the system!'
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="download", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 		
 	# - Return file to client	
-	logger.info("Returning file %s to client ..." % file_path)
+	logger.info("Returning file %s to client ..." % file_path, action="download", user=username)
 	try:
 		return send_file(
 			file_path, 
@@ -139,7 +139,7 @@ def download_by_uuid(file_uuid):
 		)
 	except FileNotFoundError:
 		errmsg= 'File with uuid ' + file_uuid + ' not found on the system!'
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="download", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 
@@ -171,22 +171,22 @@ def delete_by_uuid(file_uuid):
 
 	except Exception as e:
 		errmsg= 'Exception caught when searching file in DB (err=' + str(e) + ')!'
-		logger.error(errmsg)
+		logger.error(errmsg, action="delete", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 		
 	if item and item is not None:
 		file_path= item['filepath']
-		logger.info("File with uuid=%s found at path=%s ..." % (file_uuid, file_path))
+		logger.info("File with uuid=%s found at path=%s ..." % (file_uuid, file_path), action="delete", user=username)
 	else:
-		logger.warn("File with uuid=%s not found in DB!" % file_uuid)
+		logger.warn("File with uuid=%s not found in DB!" % file_uuid, action="delete", user=username)
 		file_path= ''
 
 	file_existing= os.path.isfile(file_path)
 	
 	if not file_path or file_path=='' or not file_existing:
 		errmsg= 'File with uuid ' + file_uuid + ' not found on the system!'
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="delete", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 		
@@ -195,7 +195,7 @@ def delete_by_uuid(file_uuid):
 		os.remove(file_path)
 	except Exception as e:
 		errmsg= 'File with uuid ' + file_uuid + ' failed to be deleted (err=' + str(e) + ')!'
-		logger.warn(errmsg)
+		logger.warn(errmsg, action="delete", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 
@@ -205,18 +205,18 @@ def delete_by_uuid(file_uuid):
 		result= data_collection.delete_one({'fileid': str(file_uuid)})
 		if result.deleted_count<=0:
 			errmsg= "DB returned <=0 number of files deleted"
-			logger.error(errmsg)
+			logger.error(errmsg, action="delete", user=username)
 			res['status']= errmsg
 			return make_response(jsonify(res),404)
 
 	except Exception as e:
 		errmsg= 'Exception caught when deleting file in DB (err=' + str(e) + ')!'
-		logger.error(errmsg)
+		logger.error(errmsg, action="delete", user=username)
 		res['status']= errmsg
 		return make_response(jsonify(res),404)
 
 	# - Return response
-	logger.info("Returning file %s to client ..." % file_path)
+	logger.info("Returning file %s to client ..." % file_path, action="delete", user=username)
 	res['status']= 'File deleted and removed from DB'
 	return make_response(jsonify(res),200)
 

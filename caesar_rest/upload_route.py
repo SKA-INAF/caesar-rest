@@ -34,8 +34,8 @@ from caesar_rest.decorators import custom_require_login
 from caesar_rest import mongo
 
 # Get logger
-logger = logging.getLogger(__name__)
-
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 ##############################
 #   CREATE BLUEPRINT
@@ -52,8 +52,6 @@ upload_bp = Blueprint('upload', __name__, url_prefix='/caesar/api/v1.0')
 @custom_require_login
 def upload_file():
 	""" Upload image """
-
-	logger.info("request.url=%s" % request.url)
 
 	# - Get aai info
 	username= 'anonymous'
@@ -77,40 +75,39 @@ def upload_file():
 	# - Check for file
 	logger.info("Checking for file key in request ...")
 	if 'file' not in request.files:
-		flash('No file part')
-		logger.error("This request has no file part!")
-		res['status']= 'Request has no file part'
+		errmsg= "Missing file field in request!"
+		flash(errmsg)
+		logger.warn(errmsg, action="upload", user=username)
+		res['status']= errmsg
 		return make_response(jsonify(res),400)
-		#return redirect(request.url)
 		
 	f = request.files['file']
 	if not f:
-		flash('No file retrieved from request!')
-		logger.error("No file retrieved from request!")
-		res['status']= 'No file retrieved from request'
+		errmsg= "No file retrieved from request!"
+		flash(errmsg)
+		logger.warn(errmsg, action="upload", user=username)
+		res['status']= errmsg
 		return make_response(jsonify(res),400)
-		#return redirect(request.url)
-
+		
 	if f.filename == '':
-		flash('No file selected for uploading')
-		logger.error("No file selected for uploading!")
-		res['status']= 'No file selected for uploading'
+		errmsg= "No file selected for uploading"
+		flash(errmsg)
+		logger.warn(errmsg)
+		res['status']= errmsg
 		return make_response(jsonify(res),400)
-		#return redirect(request.url)
-
+		
 	if not allowed_file(f.filename):
-		flash('File format not allowed, allowed file types are: {png, jpg, jpeg, gif}')
-		logger.error("File format not allowed, allowed file types are: {png, jpg, jpeg, gif}")
-		res['status']= 'File format not allowed, allowed types are {png|jpg|jpeg|gif|fits}'
+		errmsg= "File format not allowed, allowed file types are: {png|jpg|jpeg|gif|fits}"
+		flash(errmsg)
+		logger.warn(errmsg, action="upload", user=username)
+		res['status']= errmsg
 		return make_response(jsonify(res),415)
-		#return redirect(request.url)
-
+		
 	filename= secure_filename(f.filename)
 	file_ext= os.path.splitext(filename)[1].split('.')[1]
 	file_uuid= uuid.uuid4().hex
 	filename_dest= '.'.join([file_uuid,file_ext])
 	filename_dest_dir= current_app.config['UPLOAD_FOLDER'] + '/' + str(username)
-	#filename_dest_fullpath= os.path.join(current_app.config['UPLOAD_FOLDER'], filename_dest)
 	filename_dest_fullpath= os.path.join(filename_dest_dir, filename_dest)
 	
 	file_tag = ''
@@ -118,23 +115,24 @@ def upload_file():
 		if 'tag' in request.form:
 			file_tag= request.form['tag']
 		else:
-			logger.info("No tag information given in request, set empty...")
+			logger.info("No tag information given in request, set empty...", action="upload", user=username)
 	else:
-		logger.warn("form not present in request...")
+		logger.warn("form not present in request...", action="upload", user=username)
 
 	# - Create username directory if not existing before
-	logger.info("Creating username directory if not existing before ...")
+	logger.info("Creating username directory if not existing before ...", action="upload", user=username)
 	try: 
 		os.makedirs(filename_dest_dir)
 	except OSError:
 		if not os.path.isdir(filename_dest_dir):
-			flash('Failed to create file destination dir for user!')
-			logger.warn("Failed to create file destination dir for user %s!" % username)
-			res['status']= 'Failed to create file destination dir for user!'
+			errmsg= "Failed to create file destination dir!"
+			flash(errmsg)
+			logger.warn(errmsg, action="upload", user=username)
+			res['status']= errmsg
 			return make_response(jsonify(res),500)
 	
 	# - Save file
-	logger.info("Saving file %s ..." % filename_dest_fullpath)
+	logger.info("Saving file %s ..." % filename_dest_fullpath, action="upload", user=username)
 	f.save(filename_dest_fullpath)
 	flash('File successfully uploaded')
 
@@ -153,7 +151,7 @@ def upload_file():
 	res['status']= 'File uploaded with success'
 
 	# - Register file in MongoDB
-	logger.info("Creating data file object ...")
+	logger.info("Creating data file object ...", action="upload", user=username)
 	data_fileobj= {
 		"filepath": filename_dest_fullpath,
 		"fileid": file_uuid,
@@ -168,17 +166,16 @@ def upload_file():
 	collection_name= username + '.files'
 		
 	try:			
-		logger.info("Creating or retrieving data collection %s for user %s ..." % (collection_name, username))
+		logger.info("Creating or retrieving data collection %s for user %s ..." % (collection_name, username), action="upload", user=username)
 		data_collection= mongo.db[collection_name]
 
-		logger.info("Adding data file obj to collection ...")
+		logger.info("Adding data file obj to collection ...", action="upload", user=username)
 		item_id= data_collection.insert(data_fileobj)
-		#res['uuid']= str(item_id)
 		
 	except Exception as e:
-		logger.warn("Failed to create and register data file in DB (err=%s)!" % str(e))
-		flash('File uploaded but failed to be registered in DB!')
-		logger.warn("File %s uploaded but failed to be registered in DB (err=%s)!" % (filename_dest_fullpath,str(e)))
+		errmsg= "File " + filename_dest_fullpath + " uploaded but failed to be registered in DB (err=" + str(e) + ")!"
+		logger.warn(errmsg, action="upload", user=username)
+		flash(errmsg)
 		res['status']= 'File uploaded but failed to be registered in DB'
 		return make_response(jsonify(res),500)
 

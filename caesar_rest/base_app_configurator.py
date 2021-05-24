@@ -23,8 +23,8 @@ from caesar_rest import mongo
 from caesar_rest import utils
 
 # Get logger
-logger = logging.getLogger(__name__)
-
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 ##############################
 #   APP CONFIGURATOR
@@ -130,18 +130,18 @@ class AppConfigurator(object):
 	def validate(self, job_inputs, data_inputs):
 		""" Validate job input """
 
-		logger.info("Validating given inputs ...")
+		logger.info("Validating given inputs ...", action="submitjob")
 
 		# - Check if job inputs are empty
 		if not job_inputs:		
 			self.validation_status= 'Empty job inputs given!'
-			logger.warn(self.validation_status)
+			logger.warn(self.validation_status, action="submitjob")
 			return False
 
 		# - Check data inputs
 		if not data_inputs or data_inputs is None:
 			self.validation_status= 'Empty or null data input given!'
-			logger.warn(self.validation_status)
+			logger.warn(self.validation_status, action="submitjob")
 			return False
 
 		self.data_inputs= data_inputs
@@ -153,7 +153,7 @@ class AppConfigurator(object):
 
 		if not isinstance(job_inputs,dict):
 			self.validation_status= 'Given job inputs data is not a dictionary!'
-			logger.warn(self.validation_status)
+			logger.warn(self.validation_status, action="submitjob")
 			return False
 
 		try:
@@ -161,7 +161,7 @@ class AppConfigurator(object):
 
 		except ValueError:
 			self.validation_status= 'Failed to parse job inputs as json dictionary!'
-			logger.warn(self.validation_status)
+			logger.warn(self.validation_status, action="submitjob")
 			return False
 
 		#print("type(self.job_inputs)")
@@ -191,7 +191,7 @@ class AppConfigurator(object):
 			mandatory= option.mandatory
 			if mandatory and not option_given:
 				self.validation_status= ''.join(["Mandatory option ",opt_name," not present!"])
-				logger.warn(self.validation_status)
+				logger.warn(self.validation_status, action="submitjob")
 				return False
 	
 			# - Skip if not given
@@ -207,14 +207,14 @@ class AppConfigurator(object):
 				parsed_value_type= type(parsed_value)
 				if not isinstance(parsed_value,expected_val_type):
 					self.validation_status= ''.join(["Option ",opt_name," expects a ",str(expected_val_type)," value type and not a ",str(parsed_value_type)," !"])
-					logger.warn(self.validation_status)
+					logger.warn(self.validation_status, action="submitjob")
 					return False
 
 				# - Return option value transformed (if transform function is defined in derived classes) or the same option value
 				opt_value_str= str(parsed_value)
 				transf_opt_value_str= self.get_transformed_option_value(opt_name,opt_value_str)
 				if transf_opt_value_str=='':
-					logger.warn("Transformed option value is empty string, failed validation, check logs!")
+					logger.warn("Transformed option value is empty string, failed validation, check logs!", action="submitjob")
 					return False
 
 				# - Add option

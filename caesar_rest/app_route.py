@@ -27,9 +27,10 @@ from flask import send_file, send_from_directory, safe_join, abort, make_respons
 from werkzeug.utils import secure_filename
 from caesar_rest import oidc
 from caesar_rest.decorators import custom_require_login
-# Get logger
-logger = logging.getLogger(__name__)
 
+# Get logger
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 ##############################
 #   CREATE BLUEPRINTS

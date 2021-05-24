@@ -6,8 +6,9 @@ from caesar_rest import oidc
 from caesar_rest.decorators import custom_require_login
 
 # Get logger
-import logging
-logger = logging.getLogger(__name__)
+#import logging
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 ##############################
 #   CREATE BLUEPRINT
@@ -20,7 +21,7 @@ def index():
 
 	aai_enabled= current_app.config['USE_AAI']
 	has_oidc= (oidc is not None)
-	logger.info("use_aai? %d has_oidc? %d" % (aai_enabled, has_oidc))
+	logger.debug("use_aai? %d has_oidc? %d" % (aai_enabled, has_oidc))
 
 	if aai_enabled and has_oidc:
 		if oidc.user_loggedin:
@@ -39,7 +40,7 @@ def login():
 
 	aai_enabled= current_app.config['USE_AAI']
 	has_oidc= (oidc is not None)
-	logger.info("use_aai? %d has_oidc? %d" % (aai_enabled, has_oidc))
+	logger.debug("use_aai? %d has_oidc? %d" % (aai_enabled, has_oidc))
 
 	if aai_enabled and has_oidc:
 		user_info = oidc.user_getinfo(['preferred_username', 'email', 'sub', 'name'])
@@ -57,7 +58,7 @@ def logout():
 
 	aai_enabled= current_app.config['USE_AAI']
 	has_oidc= (oidc is not None)
-	logger.info("use_aai? %d has_oidc? %d" % (aai_enabled, has_oidc))
+	logger.debug("use_aai? %d has_oidc? %d" % (aai_enabled, has_oidc))
 
 	if aai_enabled and has_oidc:
 		oidc.logout()

@@ -27,8 +27,8 @@ from caesar_rest.mrcnn_app_configurator import MaskRCNNAppConfigurator
 
 
 # Get logger
-logger = logging.getLogger(__name__)
-
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 ##############################
 #   JOB CONFIGURATOR
@@ -53,7 +53,7 @@ class JobConfigurator(object):
 		#   Delegate validation to app configurator
 		if app_name not in self.app_configurators:
 			msg= 'App ' + app_name + ' not known or supported'
-			logger.warn(msg)
+			logger.warn(msg, action="submitjob")
 			return (None,None,msg)
 
 		# - Create an instance of app configurator
@@ -63,7 +63,7 @@ class JobConfigurator(object):
 		status= configurator.validate(job_inputs, data_inputs)
 		if not status:
 			status_msg= configurator.validation_status
-			logger.warn("Given inputs for app %s failed to be validated!" % app_name)
+			logger.warn("Given inputs for app %s failed to be validated!" % app_name, action="submitjob")
 			return (None,None,status_msg)
 
 		# - Set app cmd & cmd args
@@ -81,7 +81,7 @@ class JobConfigurator(object):
 		# - Check app name if found
 		if app_name not in self.app_configurators:
 			msg= 'App ' + app_name + ' not known or supported'
-			logger.warn(msg)
+			logger.warn(msg, action="submitjob")
 			return None
 
 		# - Create an instance of app configurator
@@ -111,7 +111,7 @@ class JobConfigurator(object):
 		# - Check app name if found
 		if app_name not in self.app_configurators:
 			msg= 'App ' + app_name + ' not known or supported'
-			logger.warn(msg)
+			logger.warn(msg, action="submitjob")
 			return None
 
 		# - Create an instance of app configurator

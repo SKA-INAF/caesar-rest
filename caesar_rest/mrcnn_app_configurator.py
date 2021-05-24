@@ -25,8 +25,8 @@ from caesar_rest.base_app_configurator import AppConfigurator
 from caesar_rest.base_app_configurator import Option, ValueOption
 
 # Get logger
-logger = logging.getLogger(__name__)
-
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 
 ##############################
@@ -79,7 +79,7 @@ class MaskRCNNAppConfigurator(AppConfigurator):
 			username= utils.sanitize_username(email)
 
 		# - Inspect inputfile (expect it is a uuid, so convert to filename)
-		logger.info("Finding inputfile uuid %s ..." % file_uuid)
+		logger.info("Finding inputfile uuid %s ..." % file_uuid, action="submitjob")
 		collection_name= username + '.files'
 
 		file_path= ''
@@ -89,14 +89,14 @@ class MaskRCNNAppConfigurator(AppConfigurator):
 			if item and item is not None:
 				file_path= item['filepath']
 			else:
-				logger.warn("File with uuid=%s not found in DB!" % file_uuid)
+				logger.warn("File with uuid=%s not found in DB!" % file_uuid, action="submitjob")
 				file_path= ''
 		except Exception as e:
-			logger.error("Exception (err=%s) catch when searching file in DB!" % str(e))
+			logger.error("Exception (err=%s) catch when searching file in DB!" % str(e), action="submitjob")
 			return ''
 		
 		if not file_path or file_path=='':
-			logger.warn("imgname uuid %s is empty or not found in the system!" % file_uuid)
+			logger.warn("imgname uuid %s is empty or not found in the system!" % file_uuid, action="submitjob")
 			return ''
 
 		return file_path

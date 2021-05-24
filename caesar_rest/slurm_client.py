@@ -27,7 +27,8 @@ from jwt.utils import b64decode,b64encode,get_time_from_int
 from caesar_rest import utils
 
 # - Get logger
-logger = logging.getLogger(__name__)
+from caesar_rest import logger
+#logger = logging.getLogger(__name__)
 
 ##############################
 #      CLASSES
@@ -322,9 +323,9 @@ class SlurmJobManager(object):
 
 		# - Check token is active
 		if not self.is_token_active():
-			logger.warn("Slurm rest auth token not valid or expired, regenerating it ...")
+			logger.warn("Slurm rest auth token not valid or expired, regenerating it ...", action="submitjob")
 			if self.generate_token()<0:
-				logger.warn("Failed to regenerate Slurm auth token, cannot submit job!")
+				logger.warn("Failed to regenerate Slurm auth token, cannot submit job!", action="submitjob")
 				return None
 		 
 
@@ -339,7 +340,7 @@ class SlurmJobManager(object):
 		url= self.cluster_url + '/job/submit'
 
 		# - Submit job
-		logger.info("Submitting job (data=%s, url=%s) ..." % (job_data, url))
+		logger.info("Submitting job (data=%s, url=%s) ..." % (job_data, url), action="submitjob")
 		jobout= None
 		try:
 			jobout= requests.post(
@@ -351,7 +352,7 @@ class SlurmJobManager(object):
 			print(jobout)
 
 		except Exception as e:
-			logger.warn("Failed to submit job to url %s (err=%s)" % (url,str(e)))
+			logger.warn("Failed to submit job to url %s (err=%s)" % (url,str(e)), action="submitjob")
 			return None
 
 		# - Parse reply and convert to dictionary
@@ -359,7 +360,7 @@ class SlurmJobManager(object):
 		try:
 			reply= json.loads(jobout.text)
 		except Exception as e:
-			logger.warn("Failed to convert reply to dict (err=%s)!" % str(e))
+			logger.warn("Failed to convert reply to dict (err=%s)!" % str(e), action="submitjob")
 			return None
 
 		return reply
@@ -373,16 +374,16 @@ class SlurmJobManager(object):
 
 		# - Check mandatory vars to be set
 		if self.check_submit_vars()<0:
-			logger.warn("Mandatory client option for job submission not set, see logs!")
+			logger.warn("Mandatory client option for job submission not set, see logs!", action="submitjob")
 			return None
 
 		# - Check job options
 		if job_args=="":
-			logger.warn("Empty job args given!")
+			logger.warn("Empty job args given!", action="submitjob")
 			return None
 
 		if inputfile=="":
-			logger.warn("Empty inputfile given!")
+			logger.warn("Empty inputfile given!", action="submitjob")
 			return None	
 
 		if job_name=="":
@@ -396,18 +397,18 @@ class SlurmJobManager(object):
 		inputfile_cluster= inputfile
 		if self.app_datadir!=self.cluster_datadir:
 			if inputfile.find(self.app_datadir)!=0:
-				logger.warn("Cannot find app data dir string (%s) in provided inputfile string (%s), this is not expected, return None!" % (self.app_datadir, inputfile))
+				logger.warn("Cannot find app data dir string (%s) in provided inputfile string (%s), this is not expected, return None!" % (self.app_datadir, inputfile), action="submitjob")
 				return None
 			inputfile_cluster= inputfile.replace(self.app_datadir, self.cluster_datadir)
-			logger.info("Convert given inputfile from app ref (%s) to cluster ref (%s) ..." % (inputfile, inputfile_cluster))
+			logger.info("Convert given inputfile from app ref (%s) to cluster ref (%s) ..." % (inputfile, inputfile_cluster), action="submitjob")
 
 		job_outdir_cluster= job_outdir
 		if job_outdir!="" and self.app_jobdir!=self.cluster_jobdir:
 			if job_outdir.find(self.app_jobdir)!=0:
-				logger.warn("Cannot find app job dir string (%s) in provided job_outdir string (%s), this is not expected, return None!" % (self.app_jobdir, job_outdir))
+				logger.warn("Cannot find app job dir string (%s) in provided job_outdir string (%s), this is not expected, return None!" % (self.app_jobdir, job_outdir), action="submitjob")
 				return None
 			job_outdir_cluster= job_outdir_cluster.replace(self.app_jobdir, self.cluster_jobdir)
-			logger.info("Convert given job_outdir from app ref (%s) to cluster ref (%s) ..." % (job_outdir, job_outdir_cluster))
+			logger.info("Convert given job_outdir from app ref (%s) to cluster ref (%s) ..." % (job_outdir, job_outdir_cluster), action="submitjob")
 
 		#############################
 		###   CREATE JOB SCRIPT
@@ -444,7 +445,7 @@ class SlurmJobManager(object):
 		script= "#!/bin/bash \n "
 		script+= "".join("%s" % cmd)
 		
-		logger.info("Slurm script: %s" % script)
+		logger.info("Slurm script: %s" % script, action="submitjob")
 
 		#############################
 		###   CREATE JOB BODY
@@ -473,10 +474,10 @@ class SlurmJobManager(object):
 		try:
 			job_data= json.dumps(job_data_obj)
 		except Exception as e:
-			logger.warn("Failed to convert job data to string (err=%s)" % str(e))
+			logger.warn("Failed to convert job data to string (err=%s)" % str(e), action="submitjob")
 			return None	 
 
-		logger.info("Slurm job data: %s" % job_data)
+		logger.info("Slurm job data: %s" % job_data, action="submitjob")
 
 		return job_data
 
@@ -498,9 +499,9 @@ class SlurmJobManager(object):
 
 		# - Check token is active
 		if not self.is_token_active():
-			logger.warn("Slurm rest auth token not valid or expired, regenerating it ...")
+			logger.warn("Slurm rest auth token not valid or expired, regenerating it ...", action="jobstatus")
 			if self.generate_token()<0:
-				logger.warn("Failed to regenerate Slurm auth token, cannot submit job!")
+				logger.warn("Failed to regenerate Slurm auth token, cannot submit job!", action="jobstatus")
 				return None
 		 
 		# - Set header
@@ -515,7 +516,7 @@ class SlurmJobManager(object):
 
 
 		# - Get job status
-		logger.info("Retrieving job status (pid=%s, url=%s) ..." % (job_pid, url))
+		logger.info("Retrieving job status (pid=%s, url=%s) ..." % (job_pid, url), action="jobstatus")
 		jobout= None
 		try:
 			jobout= requests.get(
@@ -526,7 +527,7 @@ class SlurmJobManager(object):
 			print(jobout)
 
 		except Exception as e:
-			logger.warn("Failed to query job status to url %s (err=%s)" % (url,str(e)))
+			logger.warn("Failed to query job status to url %s (err=%s)" % (url,str(e)), action="jobstatus")
 			return None
 
 		# - Parse reply and convert to dictionary
@@ -534,12 +535,12 @@ class SlurmJobManager(object):
 		try:
 			reply= json.loads(jobout.text)
 		except Exception as e:
-			logger.warn("Failed to convert reply to dict (err=%s)!" % str(e))
+			logger.warn("Failed to convert reply to dict (err=%s)!" % str(e), action="jobstatus")
 			return None
 
 		job_objs= reply["jobs"]
 		if not job_objs:
-			logger.warn("Empty job status reply, job not found or already cleared in Slurm")
+			logger.warn("Empty job status reply, job not found or already cleared in Slurm", action="jobstatus")
 			return None
 		
 		job_obj= job_objs[0]
@@ -619,9 +620,9 @@ class SlurmJobManager(object):
 		
 		# - Check token is active
 		if not self.is_token_active():
-			logger.warn("Slurm rest auth token not valid or expired, regenerating it ...")
+			logger.warn("Slurm rest auth token not valid or expired, regenerating it ...", action="canceljob")
 			if self.generate_token()<0:
-				logger.warn("Failed to regenerate Slurm auth token, cannot submit job!")
+				logger.warn("Failed to regenerate Slurm auth token, cannot submit job!", action="canceljob")
 				return None
 		 
 		# - Set header
@@ -634,7 +635,7 @@ class SlurmJobManager(object):
 		# - Set url
 		url= self.cluster_url + '/job/' + job_pid
 
-		logger.info("Deleting job with pid=%s ..." % job_pid)
+		logger.info("Deleting job with pid=%s ..." % job_pid, action="canceljob")
 		status_code= 0
 		try:
 			reply= requests.delete(
@@ -647,14 +648,14 @@ class SlurmJobManager(object):
 			status_code= reply.status_code	
 
 		except Exception as e:
-			logger.warn("Failed to delete job with url %s (err=%s)" % (url,str(e)))
+			logger.warn("Failed to delete job with url %s (err=%s)" % (url,str(e)), action="canceljob")
 			return None
 
 		# - Check status code
 		if status_code==200:
-			logger.info("Job with pid=%s deleted with success" % job_pid)
+			logger.info("Job with pid=%s deleted with success" % job_pid, action="canceljob")
 		else:
-			logger.warn("Failed to delete job with pid %s (err=server replied with status code %d)!" % (job_pid,status_code))
+			logger.warn("Failed to delete job with pid %s (err=server replied with status code %d)!" % (job_pid,status_code), action="canceljob")
 			return -1
 
 		return 0

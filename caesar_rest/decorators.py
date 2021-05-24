@@ -5,9 +5,12 @@ from functools import wraps
 from flask import current_app, request, g
 from caesar_rest import oidc
 import json
+
 # Get logger
-import logging
-logger = logging.getLogger(__name__)
+#import logging
+#logger = logging.getLogger(__name__)
+
+from caesar_rest import logger
 
 def custom_require_login(view_func, scopes_required=None, render_errors=True):
 	""" Decorator to require login only if AAI is enabled """
