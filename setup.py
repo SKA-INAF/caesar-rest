@@ -51,6 +51,7 @@ reqs.append('extension-helpers')
 reqs.append('astropy')
 reqs.append('regions')
 
+reqs.append('structlog')
 
 setup(
 	name="caesar_rest",

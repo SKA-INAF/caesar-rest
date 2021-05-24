@@ -12,6 +12,9 @@ import datetime
 import numpy as np
 import argparse
 
+import structlog
+import logging
+
 # - caesar_rest modules
 import caesar_rest
 from caesar_rest import __version__, __date__
@@ -48,7 +51,16 @@ def get_args():
 	parser.add_argument('-job_scheduler','--job_scheduler', dest='job_scheduler', default='celery', required=False, type=str, help='Job scheduler to be used. Options are: {celery,kubernetes,slurm} (default=celery)')
 	parser.add_argument('-job_monitoring_period','--job_monitoring_period', dest='job_monitoring_period', default=5, required=False, type=int, help='Job monitoring poll period in seconds') 
 	parser.add_argument('--debug', dest='debug', action='store_true')	
-	parser.set_defaults(debug=True)	
+	parser.set_defaults(debug=True)
+
+	# - Log options
+	parser.add_argument('-loglevel','--loglevel', dest='loglevel', default='INFO', required=False, type=str, help='Log level to be used (default=INFO)')
+	parser.add_argument('--logtofile', dest='logtofile', action='store_true')	
+	parser.set_defaults(logtofile=False)
+	parser.add_argument('-logdir','--logdir', dest='logdir', default='/opt/caesar-rest/logs', required=False, type=str, help='Directory where to store logs')
+	parser.add_argument('-logfile','--logfile', dest='logfile', default='app_logs.json', required=False, type=str, help='Name of json log file')
+	parser.add_argument('-logfile_maxsize','--logfile_maxsize', dest='logfile_maxsize', default=5.0, required=False, type=float, help='Max file size in MB (default=5)')
+
 
 	# - AAI options
 	parser.add_argument('--aai', dest='aai', action='store_true')	
@@ -127,6 +139,39 @@ except Exception as ex:
 datadir= args.datadir
 jobdir= args.jobdir
 debug= args.debug
+
+# - Log level options
+loglevel= args.loglevel
+logtofile= args.logtofile
+logdir= args.logdir
+logfile= args.logfile
+logfilepath= os.path.join(logdir,logfile)
+logfile_maxsize= args.logfile_maxsize
+
+if logtofile:
+	logger.info("Enabling logging to file %s ..." % logfilepath)
+	
+	formatter_file= structlog.stdlib.ProcessorFormatter(
+		processor=structlog.processors.JSONRenderer(),
+	)
+
+	try:
+		handler_file= logging.handlers.RotatingFileHandler(
+			logfilepath, 
+			maxBytes=logfile_maxsize*1024*1024,
+			backupCount=2 
+		)
+	except Exception as e:
+		logger.error("Failed to initialize file logger (err=%s)!" % str(e))
+		sys.exit(1)
+
+	handler_file.setFormatter(formatter_file)
+	logger.addHandler(handler_file)
+
+logger.info("Setting log level to %s ..." % loglevel)
+logger.setLevel(loglevel)
+
+
 
 # - AAI options
 use_aai= args.aai
@@ -256,6 +301,10 @@ config.MOUNT_VOLUME_PATH= args.mount_volume_path
 config.RCLONE_REMOTE_STORAGE= args.rclone_storage_name
 config.RCLONE_REMOTE_STORAGE_PATH= args.rclone_storage_path
 
+config.LOG_TO_FILE= logtofile
+config.LOG_LEVEL= loglevel
+config.LOG_DIR= logdir
+config.LOG_FILE= logfile
 
 # - Create data manager (DEPRECATED BY MONGO)
 ##logger.info("Creating data manager ...")
