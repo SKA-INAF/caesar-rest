@@ -44,8 +44,8 @@ from caesar_rest import jobmgr_kube
 from caesar_rest import jobmgr_slurm
 
 # Get logger
-logger = logging.getLogger(__name__)
-
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 ##############################
 #   CREATE BLUEPRINTS
