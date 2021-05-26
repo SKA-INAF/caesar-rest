@@ -24,8 +24,8 @@ import structlog
 structlog.configure(
 	processors=[
 		structlog.stdlib.filter_by_level,
-#		structlog.processors.TimeStamper(fmt="iso"),
-		structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S"),
+		structlog.processors.TimeStamper(fmt="iso"),
+#		structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S"),
 		structlog.stdlib.add_logger_name,
 		structlog.stdlib.add_log_level,
 		structlog.stdlib.PositionalArgumentsFormatter(),
@@ -44,7 +44,7 @@ structlog.configure(
 
 # - Define console logger
 formatter_stream = structlog.stdlib.ProcessorFormatter(
-	processor=structlog.dev.ConsoleRenderer()
+	processor= structlog.dev.ConsoleRenderer()
 )
 handler_stream= logging.StreamHandler()
 handler_stream.setFormatter(formatter_stream)
