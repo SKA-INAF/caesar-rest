@@ -305,6 +305,7 @@ def main():
 
 	logger.info("elapsed time stats: mean=%f, median=%f, stddev=%f, mad=%f" % (elapsed_time_mean,elapsed_time_median,elapsed_time_sigma,elapsed_time_mad))
 
+
 	# - Write stats to file
 	with open(outputfile, mode='w') as fout:
 		writer = csv.writer(fout, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
