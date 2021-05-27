@@ -51,6 +51,8 @@ class SlurmJobManager(object):
 		self.cluster_datadir= ''
 		self.app_jobdir= ''
 		self.app_datadir= ''
+		self.sleep_before_run= True # to enable job directory to be created in nextcloud
+		self.sleeptime_before_run= 10
 			
 		# - Options read or automatically computed from others
 		self.cluster_url= ''
@@ -453,6 +455,8 @@ class SlurmJobManager(object):
 		
 		# - Set job script
 		script= "#!/bin/bash \n "
+		if self.sleep_before_run:
+			script+= "".join("sleep %d \n " % self.sleeptime_before_run)
 		script+= "".join("%s" % cmd)
 		
 		logger.info("Slurm script: %s" % script, action="submitjob")
