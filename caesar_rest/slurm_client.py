@@ -56,6 +56,7 @@ class SlurmJobManager(object):
 		self.cluster_url= ''
 		self.key= ''
 		self.token= '' # JWT token
+		self.request_timeout= 10
 
 
 	#############################
@@ -346,10 +347,19 @@ class SlurmJobManager(object):
 			jobout= requests.post(
 				url, 
 				headers=headers, 
-				data=job_data
+				data=job_data,
+				timeout= self.request_timeout
 			)
 			print("--> slurm jobout")
 			print(jobout)
+
+		except requests.Timeout:
+		  logger.warn("Failed to submit job to url %s (err=request timeout)" % url, action="submitjob")
+			return None
+
+		except requests.ConnectionError:
+			logger.warn("Failed to submit job to url %s (err=connection error)" % url, action="submitjob")
+			return None
 
 		except Exception as e:
 			logger.warn("Failed to submit job to url %s (err=%s)" % (url,str(e)), action="submitjob")
@@ -462,7 +472,7 @@ class SlurmJobManager(object):
 		job_data_obj["job"]= {
 			"name": job_name,
 			"environment": {"PATH":"/bin:/usr/bin/:/usr/local/bin/"},
-			"partition": self.cluster_queue,
+		#	"partition": self.cluster_queue, ## NB: commented for the moment, as suspected to be bugged in slurm
       "current_working_directory": self.cluster_batch_workdir, # this is somewhat needed otherwise slurm tries to write to / and get a permission output error
 		#	"current_working_directory": job_outdir,
 		# "standard_out": job_logfile,
@@ -521,10 +531,19 @@ class SlurmJobManager(object):
 		try:
 			jobout= requests.get(
 				url, 
-				headers=headers, 
+				headers=headers,
+				timeout= self.request_timeout 
 			)
 			print("--> slurm jobout")
 			print(jobout)
+
+		except requests.Timeout:
+		  logger.warn("Failed to query job status to url %s (err=request timeout)" % url, action="jobstatus")
+			return None
+
+		except requests.ConnectionError:
+			logger.warn("Failed to query job status to url %s (err=connection error)" % url, action="jobstatus")
+			return None
 
 		except Exception as e:
 			logger.warn("Failed to query job status to url %s (err=%s)" % (url,str(e)), action="jobstatus")
@@ -641,11 +660,20 @@ class SlurmJobManager(object):
 			reply= requests.delete(
 				url, 
 				headers=headers, 
+				timeout= self.request_timeout
 			)
 			print("--> slurm reply to delete")
 			print(reply)
 
 			status_code= reply.status_code	
+
+		except requests.Timeout:
+		  logger.warn("Failed to delete job with url %s (err=request timeout)" % url, action="canceljob")
+			return None
+
+		except requests.ConnectionError:
+			logger.warn("Failed to delete job with url %s (err=connection error)" % url, action="canceljob")
+			return None
 
 		except Exception as e:
 			logger.warn("Failed to delete job with url %s (err=%s)" % (url,str(e)), action="canceljob")
