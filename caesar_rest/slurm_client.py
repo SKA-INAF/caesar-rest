@@ -354,7 +354,7 @@ class SlurmJobManager(object):
 			print(jobout)
 
 		except requests.Timeout:
-		  logger.warn("Failed to submit job to url %s (err=request timeout)" % url, action="submitjob")
+			logger.warn("Failed to submit job to url %s (err=request timeout)" % url, action="submitjob")
 			return None
 
 		except requests.ConnectionError:
@@ -538,7 +538,7 @@ class SlurmJobManager(object):
 			print(jobout)
 
 		except requests.Timeout:
-		  logger.warn("Failed to query job status to url %s (err=request timeout)" % url, action="jobstatus")
+			logger.warn("Failed to query job status to url %s (err=request timeout)" % url, action="jobstatus")
 			return None
 
 		except requests.ConnectionError:
@@ -668,7 +668,7 @@ class SlurmJobManager(object):
 			status_code= reply.status_code	
 
 		except requests.Timeout:
-		  logger.warn("Failed to delete job with url %s (err=request timeout)" % url, action="canceljob")
+			logger.warn("Failed to delete job with url %s (err=request timeout)" % url, action="canceljob")
 			return None
 
 		except requests.ConnectionError:
