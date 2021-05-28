@@ -540,8 +540,8 @@ class SlurmJobManager(object):
 				params= params,
 				timeout= self.request_timeout 
 			)
-			#print("--> slurm jobout")
-			#print(jobout)
+			print("--> slurm jobout")
+			print(jobout)
 
 		except requests.Timeout:
 			logger.warn("Failed to query job status to url %s (err=request timeout)" % url, action="jobstatus")
@@ -569,12 +569,14 @@ class SlurmJobManager(object):
 			return None
 
 		if len(job_objs)!=len(job_pids):
-			logger.warn("Retrieved job status has size different wrt given job pids (possibly some jobs have not been found) ...")
+			logger.warn("Retrieved job status has size different wrt given job pids (possibly some jobs have not been found because already cleared) ...")
 
 		# - Loop over job objs and get data
 		resdict= {}
 		for job_obj in job_objs:
 			res= self.get_job_state_data_from_slurm_obj(job_obj)
+			print("res")
+			print(res)
 			job_pid= res['pid']
 			resdict[job_pid]= res
 
