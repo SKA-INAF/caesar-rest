@@ -499,17 +499,91 @@ class SlurmJobManager(object):
 	#============================
 	#==     GET JOB STATUS
 	#============================
+	def get_job_statuses(self, job_pids):
+		""" Retrieve job status for selected list of jobs """
+	
+		# - Check pid list
+		if not job_pids or job_pids is None:
+			logger.warn("Given input list of job pids is empty or None!")
+			return None
+
+		# - Check token is active
+		if not self.is_token_active():
+			logger.warn("Slurm rest auth token not valid or expired, regenerating it ...", action="jobstatus")
+			if self.generate_token()<0:
+				logger.warn("Failed to regenerate Slurm auth token, cannot submit job!", action="jobstatus")
+				return None
+		 
+		# - Set header
+		headers = {
+			'Content-Type': 'application/json',
+			'X-SLURM-USER-NAME': self.username,
+			'X-SLURM-USER-TOKEN': self.token,
+		}
+
+		# - Set url
+		url= self.cluster_url + '/jobs'
+
+		# - Set request parameters
+		job_pids_str= ','.join(map(str, job_pids)) 
+		params= {
+			"job_name": job_pids_str
+		}
+
+		# - Get job statuses
+		logger.info("Retrieving job status (pid=%s, url=%s) ..." % (job_pid, url), action="jobstatus")
+		jobout= None
+		try:
+			jobout= requests.get(
+				url, 
+				headers=headers,
+				params= params,
+				timeout= self.request_timeout 
+			)
+			#print("--> slurm jobout")
+			#print(jobout)
+
+		except requests.Timeout:
+			logger.warn("Failed to query job status to url %s (err=request timeout)" % url, action="jobstatus")
+			return None
+
+		except requests.ConnectionError:
+			logger.warn("Failed to query job status to url %s (err=connection error)" % url, action="jobstatus")
+			return None
+
+		except Exception as e:
+			logger.warn("Failed to query job status to url %s (err=%s)" % (url,str(e)), action="jobstatus")
+			return None
+
+		# - Parse reply and convert to dictionary
+		reply= None
+		try:
+			reply= json.loads(jobout.text)
+		except Exception as e:
+			logger.warn("Failed to convert reply to dict (err=%s)!" % str(e), action="jobstatus")
+			return None
+
+		job_objs= reply["jobs"]
+		if not job_objs:
+			logger.warn("Empty job status list reply, jobs not found or already cleared in Slurm", action="jobstatus")
+			return None
+
+		if len(job_objs)!=len(job_pids):
+			logger.warn("Retrieved job status has size different wrt given job pids (possibly some jobs have not been found) ...")
+
+		# - Loop over job objs and get data
+		resdict= {}
+		for job_obj in job_objs:
+			res= self.get_job_state_data_from_slurm_obj(job_obj)
+			job_pid= res['pid']
+			resdict[job_pid]= res
+
+		return resdict
+		
+		
+
 	def get_job_status(self, job_pid):
 		""" Retrieve job status """
-
-		# - Init response
-		res= {}
-		#res['job_id']= job_name
-		res['pid']= job_pid
-		res['state']= ''
-		res['status']= ''
-		res['exit_code']= ''
-		res['elapsed_time']= ''
 
 		# - Check token is active
 		if not self.is_token_active():
@@ -527,7 +601,6 @@ class SlurmJobManager(object):
 
 		# - Set url
 		url= self.cluster_url + '/job/' + job_pid
-
 
 		# - Get job status
 		logger.info("Retrieving job status (pid=%s, url=%s) ..." % (job_pid, url), action="jobstatus")
@@ -568,60 +641,37 @@ class SlurmJobManager(object):
 		
 		job_obj= job_objs[0]
 
+		# - Set job state response from slurm dict
+		res= self.get_job_state_data_from_slurm_obj(job_obj)	
+
+		return res
+
+
+	def get_job_state_data_from_slurm_obj(self, job_obj):
+		""" Set job state data """
+
+		# - Init data
+		res= {}
+		res['pid']= ''
+		res['state']= ''
+		res['status']= ''
+		res['exit_code']= ''
+		res['elapsed_time']= ''
+
+		# - Check obj
+		if job_obj is None or not job_obj:
+			logger.warn("Given slurm job status dict for job %s is empty or None..." % job_pid)
+			return res
+		
+		# - Get job id
+		res['pid']= job_obj["job_id"]
+
 		# - Map state
 		#   NB: Slurm returns these states: {"PENDING","COMPLETED","RUNNING","SUSPENDED","CANCELLED","FAILED","TIMEOUT","NODE_FAIL","PREEMPTED","BOOT_FAIL","DEADLINE","OUT_OF_MEMORY"}
 		job_state= job_obj["job_state"]
-		if job_state=="PENDING":
-			res['state']= 'PENDING'
-			res['status']= 'Job queued and waiting for initiation'
-
-		elif job_state=="RUNNING":
-			res['state']= 'RUNNING'
-			res['status']= 'Job executing'
-
-		elif job_state=="COMPLETED":
-			res['state']= 'SUCCESS'
-			res['status']= 'Job completed execution successfully'
-
-		elif job_state=="SUSPENDED":
-			res['state']= 'PENDING'
-			res['status']= 'Job was suspended'
-
-		elif job_state=="CANCELLED":
-			res['state']= 'CANCELED'
-			res['status']= 'Job was canceled by user'
-
-		elif job_state=="FAILED":
-			res['state']= 'FAILURE'
-			res['status']= 'Job completed execution unsuccessfully'
-	
-		elif job_state=="TIMEOUT":
-			res['state']= 'TIMED-OUT'
-			res['status']= 'Job terminated due to time limit reached'
-		
-		elif job_state=="NODE_FAIL":
-			res['state']= 'FAILURE'
-			res['status']= 'Job terminated due to node failure'
-
-		elif job_state=="PREEMPTED":
-			res['state']= 'FAILURE'
-			res['status']= 'Job terminated due to preemption'
-
-		elif job_state=="BOOT_FAIL":
-			res['state']= 'FAILURE'
-			res['status']= 'Job terminated due to node boot failure'
-
-		elif job_state=="DEADLINE":
-			res['state']= 'FAILURE'
-			res['status']= 'Job terminated on deadline'
-
-		elif job_state=="OUT_OF_MEMORY":
-			res['state']= 'FAILURE'
-			res['status']= 'Job terminated due to experienced out of memory error'
-
-		else:
-			res['state']= 'UNKNOWN'
-			res['status']= 'Job currently in unknown state (raw state=' + job_state + ')'
+		mapped_state= self.get_job_state_from_slurm_state(job_state)
+		res['state']= mapped_state[0]
+		res['status']= mapped_state[1]
   
 		# - Get elapsed time
 		t0= job_obj["start_time"]
@@ -634,6 +684,51 @@ class SlurmJobManager(object):
 
 		return res
 
+
+	def get_job_state_from_slurm_state(self, job_state):
+		""" Get job state & status mapped from slurm state """
+	
+		res= ()
+		if job_state=="PENDING":
+			res= ('PENDING', 'Job queued and waiting for initiation')
+
+		elif job_state=="RUNNING":
+			res= ('RUNNING', 'Job executing')
+
+		elif job_state=="COMPLETED":
+			res= ('SUCCESS', 'Job completed execution successfully')
+
+		elif job_state=="SUSPENDED":
+			res= ('PENDING', 'Job was suspended')
+
+		elif job_state=="CANCELLED":
+			res= ('CANCELED', 'Job was canceled by user')
+			
+		elif job_state=="FAILED":
+			res= ('FAILURE', 'Job completed execution unsuccessfully')
+	
+		elif job_state=="TIMEOUT":
+			res= ('TIMED-OUT', 'Job terminated due to time limit reached')
+		
+		elif job_state=="NODE_FAIL":
+			res= ('FAILURE', 'Job terminated due to node failure')
+			
+		elif job_state=="PREEMPTED":
+			res= ('FAILURE', 'Job terminated due to preemption')
+
+		elif job_state=="BOOT_FAIL":
+			res= ('FAILURE', 'Job terminated due to node boot failure')
+			
+		elif job_state=="DEADLINE":
+			res= ('FAILURE', 'Job terminated on deadline')
+
+		elif job_state=="OUT_OF_MEMORY":
+			res= ('FAILURE', 'Job terminated due to experienced out of memory error')
+
+		else:
+			res= ('UNKNOWN', 'Job currently in unknown state (raw state=' + job_state + ')')
+			
+		return res
 
 	#============================
 	#==     DELETE JOB

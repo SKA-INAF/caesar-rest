@@ -208,7 +208,16 @@ def monitor_jobs(db):
 			continue
 			
 		# - Process list and get job statuses from scheduler
+		kube_jobs= []
+		slurm_jobs= []
+		
 		for job_obj in job_list:
+
+			# - Check job obj
+			if not job_obj or job_obj is None:
+				logger.warn("Skip current job obj as None or empty ...", action="jobmonitor")	
+				continue
+
 			job_id= job_obj['job_id']
 
 			# - Check job scheduler field
@@ -220,19 +229,42 @@ def monitor_jobs(db):
 			if job_scheduler=='celery':
 				continue
 
-			# - Update Kubernetes job status
-			job_moni_status= -1
+			# - Fill kube jobs to be monitored
 			if job_scheduler=='kubernetes':
-				job_moni_status= monitor_kubernetes_job(job_obj, job_collection)
+				kube_jobs.append(job_obj)
 			elif job_scheduler=='slurm':
-				job_moni_status= monitor_slurm_job(job_obj, job_collection)	
+				slurm_jobs.append(job_obj)
 			else:
 				logger.warn("Invalid/unknown job scheduler (%s), skip job moni..." % job_scheduler, action="jobmonitor")
 				continue
+	
+			# - Update Kubernetes job status
+			#job_moni_status= -1
+			#if job_scheduler=='kubernetes':
+			#	job_moni_status= monitor_kubernetes_job(job_obj, job_collection)
+			#elif job_scheduler=='slurm':
+			#	job_moni_status= monitor_slurm_job(job_obj, job_collection)	
+			#else:
+			#	logger.warn("Invalid/unknown job scheduler (%s), skip job moni..." % job_scheduler, action="jobmonitor")
+			#	continue
 
-			if job_moni_status<0:
-				logger.warn("Failed to monitor %s job %s, skip to next..." % (job_scheduler, job_id), action="jobmonitor")
+			#if job_moni_status<0:
+			#	logger.warn("Failed to monitor %s job %s, skip to next..." % (job_scheduler, job_id), action="jobmonitor")
+			#	continue
+	
+		# - Update Kubernetes job status	
+		for job_obj in kube_jobs:
+			job_id= job_obj['job_id']
+			if monitor_kubernetes_job(job_obj, job_collection)<0:
+				logger.warn("Failed to monitor Kube job %s, skip to next..." % (job_id), action="jobmonitor")
 				continue
+
+		# - Update slurm jobs status
+		if slurm_jobs:
+			if monitor_slurm_jobs(slurm_jobs, job_collection)<0:
+				logger.warn("Failed to monitor Slurm jobs ...", action="jobmonitor")
+				
+
 
 	return 0
 	
@@ -327,6 +359,72 @@ def monitor_kubernetes_job(job_obj, job_collection):
 ####################################
 ##   MONITOR SLURM JOB
 ####################################
+def monitor_slurm_jobs(job_objs, job_collection):
+	""" Monitor and update job status in DB """
+
+	# - Check Slurm client instance
+	if jobmgr_slurm is None:
+		logger.warn("Slurm client is None!", action="jobmonitor")
+		return -1
+
+	# - Check job collection
+	if job_collection is None:
+		logger.warn("Given mongo job collection is None!", action="jobmonitor")
+		return -1
+
+	# - Check job objs
+	if not job_objs or job_objs is None:
+		logger.warn("Given job objs is None or empty!", action="jobmonitor")	
+		return -1
+
+	# - Find list of job pids to be monitored
+	job_pids= []
+	for job_obj in job_objs:
+		job_id= job_obj['job_id']
+		job_pid= str(job_obj['pid'])
+		if job_pid=="":
+			logger.warn("Current Slurm job pid is empty, skip to next ...", action="jobmonitor")	
+			continue
+
+		job_pids.append(job_pid)
+
+	# - Query Slurm job status
+	logger.info("#%d/%d Slurm jobs to be queried for status ..." % (len(job_pids), len(job_objs)), action="jobmonitor")
+	
+	try:
+		resdict= jobmgr_slurm.get_job_statuses(job_pids)
+	except Exception as e:
+		logger.warn("Failed to retrieve Slurm job statuses (err=%s)" % (str(e)), action="jobmonitor")
+		return -1
+
+	if not resdict or resdict is None:
+		logger.warn("Empty or None reply returned from Slurm client get_job_statuses(), cannot update job!", action="jobmonitor")
+		return -1
+
+	# - Loop over jobs and update their status
+	for job_obj in job_objs:
+		job_id= job_obj['job_id']
+		job_pid= str(job_obj['pid'])
+
+		# - Search status data with this pid
+		if job_pid not in resdict:
+			logger.warn("Cannot find Slurm job pid %s in dictionary of job status data, skip to next job ..." % job_pid, action="jobmonitor")
+			continue
+
+		res= resdict[job_pid]
+		if not res or res is None:
+			logger.warn("Empty or None job status dict for job pid %s, cannot update job, skip to next job ..." % job_pid, action="jobmonitor")
+			continue
+
+		# - Update status in DB and perform actions on completed jobs
+		if update_slurm_job(job_obj, res, job_collection)<0:
+			logger.warn("Failed to update Slurm job (id=%s, pid=%s), skip to next..." % (job_id, job_pid), action="jobmonitor")
+			continue
+
+
+	return 0
+	
+
 def monitor_slurm_job(job_obj, job_collection):
 	""" Monitor and update job status in DB """
 	
@@ -407,4 +505,57 @@ def monitor_slurm_job(job_obj, job_collection):
 
 
 
+def update_slurm_job(job_obj, res, job_collection):
+	""" Update slurm job status """
+
+	# - Check result
+	if not res or res is None:
+		logger.warn("Empty or None job status dict given, cannot update job!", action="jobmonitor")
+		return -1
 	
+	# - Get fields
+	job_id= job_obj['job_id']
+	job_pid= str(job_obj['pid'])
+
+	job_dir_name= 'job_' + job_id
+	tar_filename= 'job_' + job_id + '.tar.gz'
+	job_top_dir= ''
+	job_dir= ''
+	tar_file= ''
+	job_dir_existing= False
+	tar_file_existing= False
+	if 'job_top_dir' in job_obj:
+		job_top_dir= job_obj['job_top_dir']
+		job_dir= os.path.join(job_top_dir,job_dir_name)
+		tar_file= os.path.join(job_dir,tar_filename)
+		job_dir_existing= os.path.isdir(job_dir)
+		tar_file_existing= os.path.isfile(tar_file)
+
+	state= res['state']
+	status= res['status']
+	elapsed_time= res['elapsed_time']
+	exit_code= res['exit_code']
+
+	# - Create tar file with job output if job completed
+	if state=='SUCCESS' or state=='FAILURE':
+		if job_dir_existing and tar_file!="":
+			if tar_file_existing:
+				logger.info("Job %s output tar file %s already existing, won't create it again ..." % (job_id, tar_file), action="jobmonitor")
+			else:
+				logger.info("Creating a tar file %s with job output data ..." % tar_file, action="jobmonitor")
+				utils.make_tar(tar_file, job_dir)
+		else:
+			logger.warn("Won't create output data tar file %s as job output directory %s not found ..." % (tar_file, job_dir), action="jobmonitor")
+
+	# - Update job status
+	try:
+		logger.info("Updating job %s state to %s (status=%s) ..." % (job_id, state, status), action="jobmonitor")
+		job_collection.update_one({'job_id':job_id},{'$set':{'state':state,'status':status,'exit_code':exit_code,'elapsed_time':elapsed_time}},upsert=False)
+	except Exception as e:
+		errmsg= 'Exception caught when updating job ' + str(job_id) + ' in DB (err=' + str(e) + ')!'
+		logger.warn(errmsg, action="jobmonitor")
+		return -1
+
+	return 0
+
+
