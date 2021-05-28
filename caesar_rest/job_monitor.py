@@ -126,7 +126,7 @@ def jobmonitor_task(self):
 			continue
 
 		if not job_list:
-			logger.info("No unfinished jobs to be check for collection %s ..." % collection_name, action="jobmonitor")
+			logger.info("No unfinished jobs to be monitored for collection %s ..." % collection_name, action="jobmonitor")
 			continue
 			
 		# - Process list and get job statuses from scheduler
