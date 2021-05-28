@@ -401,6 +401,9 @@ def monitor_slurm_jobs(job_objs, job_collection):
 		logger.warn("Empty or None reply returned from Slurm client get_job_statuses(), cannot update job!", action="jobmonitor")
 		return -1
 
+	print("resdict")
+	print(resdict)
+
 	# - Loop over jobs and update their status
 	for job_obj in job_objs:
 		job_id= job_obj['job_id']

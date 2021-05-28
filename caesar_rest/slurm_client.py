@@ -540,8 +540,8 @@ class SlurmJobManager(object):
 				params= params,
 				timeout= self.request_timeout 
 			)
-			print("--> slurm jobout")
-			print(jobout)
+			#print("--> slurm jobout")
+			#print(jobout)
 
 		except requests.Timeout:
 			logger.warn("Failed to query job status to url %s (err=request timeout)" % url, action="jobstatus")
