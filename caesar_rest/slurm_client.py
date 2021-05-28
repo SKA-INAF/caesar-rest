@@ -577,7 +577,7 @@ class SlurmJobManager(object):
 			res= self.get_job_state_data_from_slurm_obj(job_obj)
 			print("res")
 			print(res)
-			job_pid= res['pid']
+			job_pid= str(res['pid'])
 			resdict[job_pid]= res
 
 		return resdict
