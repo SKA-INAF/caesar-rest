@@ -531,7 +531,7 @@ class SlurmJobManager(object):
 		}
 
 		# - Get job statuses
-		logger.info("Retrieving job status (pid=%s, url=%s) ..." % (job_pid, url), action="jobstatus")
+		logger.info("Retrieving job statuses (pids=%s, url=%s) ..." % (job_pids_str, url), action="jobstatus")
 		jobout= None
 		try:
 			jobout= requests.get(
