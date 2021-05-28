@@ -35,6 +35,7 @@ def get_args():
 	parser.add_argument('-service_host','--service_host', dest='service_host', required=True, type=str, help='Service host or ipaddress')
 	parser.add_argument('-service_port','--service_port', dest='service_port', required=True, type=str, help='Service port')
 	parser.add_argument('-outputfile','--outputfile', dest='outputfile', default='jobstats.csv', required=False, type=str, help='Output csv file with job stats')
+	parser.add_argument('-sleep_time','--sleep_time', dest='sleep_time', default=10, required=False, type=int, help='Sleep time after each job monitoring')
 	
 
 	args = parser.parse_args()	
@@ -119,7 +120,8 @@ def main():
 	host= args.service_host
 	port= args.service_port
 	njobs= args.njobs	
-	outputfile= args.outputfile
+	outputfile= args.outputfile	
+	sleep_time= args.sleep_time
 
 	url= ''.join("http://%s:%s/caesar/api/v1.0/job" % (host,port))
 
@@ -192,7 +194,6 @@ def main():
 
 
 	# - Monitor jobs
-	sleep_time= 10
 	timeout= 10
 	jobs_completed= False
 	job_status_data_list= []
