@@ -397,9 +397,26 @@ def monitor_slurm_jobs(job_objs, job_collection):
 		logger.warn("Failed to retrieve Slurm job statuses (err=%s)" % (str(e)), action="jobmonitor")
 		return -1
 
-	if not resdict or resdict is None:
-		logger.warn("Empty or None reply returned from Slurm client get_job_statuses(), cannot update job!", action="jobmonitor")
+	if resdict is None:
+		logger.warn("None reply returned from Slurm client get_job_statuses(), cannot update job!", action="jobmonitor")
 		return -1
+
+	if not resdict:
+		logger.warn("Empty reply returned from Slurm client get_job_statuses(), will set previously RUNNING jobs to CLEARED state ...", action="jobmonitor")
+		for job_obj in job_objs:
+			job_id= job_obj['job_id']
+			job_pid= str(job_obj['pid'])
+			job_state= job_obj['state']
+			elapsed= job_obj['elapsed_time']
+
+			if job_state=='RUNNING':
+				resdict[job_pid]= {
+					'state': 'CLEARED',
+					'status': 'Job was presumably cleared and finished with unknown state',
+					'elapsed_time': elapsed,
+					'exit_code': -1
+				}
+				
 
 	print("resdict")
 	print(resdict)
@@ -408,13 +425,25 @@ def monitor_slurm_jobs(job_objs, job_collection):
 	for job_obj in job_objs:
 		job_id= job_obj['job_id']
 		job_pid= str(job_obj['pid'])
+		job_state= job_obj['state']
+		elapsed= job_obj['elapsed_time']
 
 		# - Search status data with this pid
 		if job_pid not in resdict:
-			logger.warn("Cannot find Slurm job pid %s in dictionary of job status data, skip to next job ..." % job_pid, action="jobmonitor")
-			continue
+			#logger.warn("Cannot find Slurm job pid %s in dictionary of job status data, skip to next job ..." % job_pid, action="jobmonitor")
+			#continue
+			logger.warn("Cannot find Slurm job pid %s in dictionary of job status data, probably it was cleared, will set to CLEARED if it was previously RUNNING ..." % job_pid, action="jobmonitor")
+			res= {}
+			if job_state=='RUNNING':
+				res= {
+					'state': 'CLEARED',
+					'status': 'Job was presumably cleared and finished with unknown state',
+					'elapsed_time': elapsed,
+					'exit_code': -1
+				}
+		else:	
+			res= resdict[job_pid]
 
-		res= resdict[job_pid]
 		if not res or res is None:
 			logger.warn("Empty or None job status dict for job pid %s, cannot update job, skip to next job ..." % job_pid, action="jobmonitor")
 			continue
@@ -484,7 +513,7 @@ def monitor_slurm_job(job_obj, job_collection):
 	exit_code= res['exit_code']
 
 	# - Create tar file with job output if job completed
-	if state=='SUCCESS' or state=='FAILURE':
+	if state=='SUCCESS' or state=='FAILURE' or state=='CLEARED':
 		if job_dir_existing and tar_file!="":
 			if tar_file_existing:
 				logger.info("Job %s output tar file %s already existing, won't create it again ..." % (job_id, tar_file), action="jobmonitor")

@@ -566,7 +566,7 @@ class SlurmJobManager(object):
 		job_objs= reply["jobs"]
 		if not job_objs:
 			logger.warn("Empty job status list reply, jobs not found or already cleared in Slurm", action="jobstatus")
-			return None
+			return {}
 
 		if len(job_objs)!=len(job_pids):
 			logger.warn("Retrieved job status has size different wrt given job pids (possibly some jobs have not been found because already cleared) ...")
