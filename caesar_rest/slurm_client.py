@@ -53,6 +53,7 @@ class SlurmJobManager(object):
 		self.app_datadir= ''
 		self.sleep_before_run= True # to enable job directory to be created in nextcloud
 		self.sleeptime_before_run= 10
+		self.max_cores= 4
 			
 		# - Options read or automatically computed from others
 		self.cluster_url= ''
@@ -381,7 +382,7 @@ class SlurmJobManager(object):
 	#===============================================
 	#==     CREATE JOB WITH PRE-MOUNTED VOLUME
 	#===============================================
-	def create_job(self, image, job_args, inputfile, job_name="", job_outdir=""):
+	def create_job(self, image, job_args, inputfile, job_name="", job_outdir="", run_opts={}):
 		""" Create a standard job object with rclone mounted volume """
 
 		# - Check mandatory vars to be set
@@ -400,6 +401,16 @@ class SlurmJobManager(object):
 
 		if job_name=="":
 			job_name= utils.get_uuid()
+
+		# - Parse run options
+		ncores= 1
+		if run_opts:
+			if 'ncores' in run_opts:
+				ncores= run_opts["ncores"]
+
+		if ncores>self.max_cores:
+			logger.warn("Requested ncores (%d) exceeds max (%d), set ncores to max..." % (ncores,self.max_cores), action="submitjob")
+			ncores= self.max_cores
 
 		#################################
 		###   SET CLUSTER JOB/DATA DIR
@@ -481,6 +492,7 @@ class SlurmJobManager(object):
 		#	"current_working_directory": job_outdir,
 		# "standard_out": job_logfile,
 		# "standard_error": job_logfile,
+			"tasks_per_node": ncores
 		}
 
 		# - Convert dict to string

@@ -285,6 +285,29 @@ class CaesarAppConfigurator(AppConfigurator):
 		self.cmd_args.append(input_opt)
 
 
+	def set_ncores_from_options(self):
+		""" Returns the number of cores from parsed options (to be overridden) """
+		
+		# - Search if --nthreads option was given and extract value
+		matching= [s for s in self.cmd_args if "--nthreads" in s]
+		self.run_options["ncores"]= 1
+		if matching:
+			parsed_option_vals= matching[0].split('=')
+			if len(parsed_option_vals)==2:
+				try:
+					nthreads= int(parsed_option_vals[1])
+					if nthreads>0:						
+						self.run_options["ncores"]= nthreads
+						logger.info("Set job ncores to %d ..." % self.run_options["ncores"], action="submitjob")
+					else:
+						logger.warn("Parsed nthreads value (%d) is <=0, setting ncores=1 ..." % nthreads, action="submitjob")
+				except:
+					logger.warn("Failed to parse nthreads option, setting ncores=1 ...", action="submitjob")			
+			else:
+				logger.warn("Expected 2 fields when parsing nthreads option, setting ncores=1 ...", action="submitjob")
+
+
+
 	def transform_inputfile(self,file_uuid):
 		""" Transform input file from uuid to actual path """		
 	

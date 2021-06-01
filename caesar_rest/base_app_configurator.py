@@ -86,6 +86,9 @@ class AppConfigurator(object):
 		self.options= []
 		self.option_value_transformer= {}
 		self.batch_processing_support= False
+		self.run_options= {
+			"ncores": 1
+		}
 
 	def describe_dict(self):
 		""" Return a dictionary describing valid options """
@@ -109,6 +112,11 @@ class AppConfigurator(object):
 		json_str= self.describe_str()
 		return json.loads(json_str)
 
+	def set_ncores_from_options(self):
+		""" Set the number of cores from parsed options (to be overridden) """
+		
+		self.run_options["ncores"]= 1
+
 
 	def get_transformed_option_value(self, opt_name, opt_value):
 		""" Returns same option value or transformed option value (if a transformed function is defined in the dictionary) """
@@ -126,7 +134,6 @@ class AppConfigurator(object):
 		# Left empty as to be overridden in derived classes
 		
 
-	#def validate(self, job_inputs):
 	def validate(self, job_inputs, data_inputs):
 		""" Validate job input """
 
@@ -175,6 +182,9 @@ class AppConfigurator(object):
 
 		# - Set input data option
 		self.set_data_input_option_value()
+
+		# - Set ncores option
+		self.set_ncores_from_options()
 
 		
 		return valid

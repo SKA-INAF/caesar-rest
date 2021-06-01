@@ -60,6 +60,7 @@ class Config(object):
 	SLURM_DATA_DIR= '/mnt/storage/data' # Path at which the data directory is mounted in Slurm cluster
 	SLURM_CAESAR_JOB_IMAGE= '/opt/containers/caesar/caesar-job_latest.sif'
 	SLURM_MASKRCNN_JOB_IMAGE= '/opt/containers/mrcnn/mrcnn-detect_latest.sif'
+	SLURM_MAX_CORE_PER_JOB= 4 # Maximum number of cores reserved for a job
 
 	# - AAI options
 	USE_AAI = False

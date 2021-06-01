@@ -45,7 +45,6 @@ class JobConfigurator(object):
 		}
 		
 		
-	#def validate(self,app_name, job_inputs):
 	def validate(self,app_name, job_inputs, data_inputs):
 		""" Validate job inputs """
 
@@ -59,7 +58,6 @@ class JobConfigurator(object):
 		# - Create an instance of app configurator
 		configurator= self.app_configurators[app_name]()
 		
-		#status= configurator.validate(job_inputs)
 		status= configurator.validate(job_inputs, data_inputs)
 		if not status:
 			status_msg= configurator.validation_status
@@ -72,8 +70,9 @@ class JobConfigurator(object):
 		if configurator.cmd_mode!="":
 			cmd_args.append(configurator.cmd_mode)
 		status_msg= configurator.validation_status
-		
-		return (cmd,cmd_args,status_msg)
+		run_opts= configurator.run_options		
+
+		return (cmd,cmd_args,status_msg,run_opts)
 
 	def get_app_description(self,app_name):
 		""" Return a json dict describing given app """
@@ -121,6 +120,5 @@ class JobConfigurator(object):
 		flag= configurator.batch_processing_support
 
 		return flag
-
 
 

@@ -112,6 +112,8 @@ def get_args():
 	parser.add_argument('-slurm_queue','--slurm_queue', dest='slurm_queue', default='normal', required=False, type=str, help='Slurm cluster host/ipaddress')
 	parser.add_argument('-slurm_jobdir','--slurm_jobdir', dest='slurm_jobdir', default='/mnt/storage/jobs', required=False, type=str, help='Path at which the job directory is mounted in Slurm cluster')	
 	parser.add_argument('-slurm_datadir','--slurm_datadir', dest='slurm_datadir', default='/mnt/storage/data', required=False, type=str, help='Path at which the data directory is mounted in Slurm cluster')	
+	parser.add_argument('-slurm_max_cores_per_job','--slurm_max_cores_per_job', dest='slurm_max_cores_per_job', default=4, required=False, type=int, help='Slurm maximum number of cores reserved for a job (default=4)')
+	
 
 	# - Volume mount options
 	parser.add_argument('--mount_rclone_volume', dest='mount_rclone_volume', action='store_true')	
@@ -250,6 +252,7 @@ slurm_batch_workdir= args.slurm_batch_workdir
 slurm_queue= args.slurm_queue
 slurm_jobdir= args.slurm_jobdir
 slurm_datadir= args.slurm_datadir
+slurm_max_cores_per_job= args.slurm_max_cores_per_job
 	
 #===============================
 #==   INIT
@@ -294,7 +297,7 @@ config.SLURM_BATCH_WORKDIR= slurm_batch_workdir
 config.SLURM_PORT= slurm_port
 config.SLURM_JOB_DIR= slurm_jobdir
 config.SLURM_DATA_DIR= slurm_datadir
-
+config.SLURM_MAX_CORE_PER_JOB= slurm_max_cores_per_job
 
 config.MOUNT_RCLONE_VOLUME= args.mount_rclone_volume
 config.MOUNT_VOLUME_PATH= args.mount_volume_path
@@ -388,6 +391,7 @@ if job_scheduler=='slurm' and jobmgr_slurm is not None:
 	jobmgr_slurm.cluster_datadir= config.SLURM_DATA_DIR
 	jobmgr_slurm.app_jobdir= config.JOB_DIR
 	jobmgr_slurm.app_datadir= config.UPLOAD_FOLDER
+	jobmgr_slurm.max_cores= config.SLURM_MAX_CORE_PER_JOB
 
 	# - Initialize client
 	logger.info("Initializing Slurm job manager ...")

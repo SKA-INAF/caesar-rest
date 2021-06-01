@@ -139,20 +139,18 @@ def submit_job():
 		return make_response(jsonify(res),400)
 
 	# - Validate job inputs
-	#(cmd,cmd_arg_list,val_status)= current_app.config['jobcfg'].validate(app_name,job_inputs)
-	(cmd,cmd_arg_list,val_status)= current_app.config['jobcfg'].validate(app_name,job_inputs,inputfile)
+	(cmd,cmd_arg_list,val_status,run_opts)= current_app.config['jobcfg'].validate(app_name,job_inputs,inputfile)
 	if cmd is None or cmd_arg_list is None: 
 		logger.warn("Job input validation failed!", action="submitjob", user=username)
 		res['state']= 'ABORTED'	
 		res['status']= val_status
 		return make_response(jsonify(res),400)
 
-	
 	# - Convert cmd arg list to string
 	cmd_args= ''
 	if cmd_arg_list:
 		cmd_args= ' '.join(cmd_arg_list)
-
+	
 	# - Set job top directory
 	job_top_dir= current_app.config['JOB_DIR'] + '/' + username
 
@@ -165,7 +163,7 @@ def submit_job():
 		submit_res= submit_job_kubernetes(app_name, cmd_args, job_top_dir, username)
 
 	elif job_scheduler=='slurm':
-		submit_res= submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username)
+		submit_res= submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_opts)
 
 	if submit_res is None:
 		logger.warn("Failed to submit job to scheduler %s!" % job_scheduler, action="submitjob", user=username)
@@ -350,7 +348,7 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
 #=================================
 #===    SUBMIT JOB SLURM
 #=================================
-def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username):
+def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_opts):
 	""" Submit job to Slurm scheduler """
 
 	# - Init response
@@ -390,7 +388,8 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username):
 		job_args=cmd_args,
 		inputfile=inputfile,
 		job_name=job_id, 
-		job_outdir=job_dir
+		job_outdir=job_dir,
+		run_opts=run_opts
 	)
 	
 	if job is None or job=="":
