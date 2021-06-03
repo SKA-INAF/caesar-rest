@@ -61,7 +61,7 @@ class Config(object):
 	SLURM_CAESAR_JOB_IMAGE= '/opt/containers/caesar/caesar-job_latest.sif'
 	SLURM_MASKRCNN_JOB_IMAGE= '/opt/containers/mrcnn/mrcnn-detect_latest.sif'
 	SLURM_MAX_CORE_PER_JOB= 4 # Maximum number of cores reserved for a job
-
+	
 	# - AAI options
 	USE_AAI = False
 	OIDC_CLIENT_SECRETS = 'config/client_secrets.json'

@@ -87,7 +87,8 @@ class AppConfigurator(object):
 		self.option_value_transformer= {}
 		self.batch_processing_support= False
 		self.run_options= {
-			"ncores": 1
+			"ncores": 1,
+			"nproc": 1
 		}
 
 	def describe_dict(self):
@@ -116,6 +117,11 @@ class AppConfigurator(object):
 		""" Set the number of cores from parsed options (to be overridden) """
 		
 		self.run_options["ncores"]= 1
+
+	def set_nproc_from_options(self):
+		""" Set the number of MPI proc from parsed options (to be overridden) """
+		
+		self.run_options["nproc"]= 1
 
 
 	def get_transformed_option_value(self, opt_name, opt_value):
@@ -185,6 +191,9 @@ class AppConfigurator(object):
 
 		# - Set ncores option
 		self.set_ncores_from_options()
+
+		# - Set nproc option
+		self.set_nproc_from_options()
 
 		
 		return valid

@@ -382,7 +382,7 @@ class SlurmJobManager(object):
 	#===============================================
 	#==     CREATE JOB WITH PRE-MOUNTED VOLUME
 	#===============================================
-	def create_job(self, image, job_args, inputfile, job_name="", job_outdir="", run_opts={}):
+	def create_job(self, image, job_args, inputfile, job_name="", job_outdir="", job_run_opts={}):
 		""" Create a standard job object with rclone mounted volume """
 
 		# - Check mandatory vars to be set
@@ -403,14 +403,24 @@ class SlurmJobManager(object):
 			job_name= utils.get_uuid()
 
 		# - Parse run options
-		ncores= 1
-		if run_opts:
-			if 'ncores' in run_opts:
-				ncores= run_opts["ncores"]
+		nthreads= 1
+		nproc= 1
+		if job_run_opts:
+			if 'ncores' in job_run_opts:
+				nthreads= job_run_opts["ncores"]
+			if 'nproc' in job_run_opts:
+				nproc= job_run_opts["nproc"]
 
-		if ncores>self.max_cores:
-			logger.warn("Requested ncores (%d) exceeds max (%d), set ncores to max..." % (ncores,self.max_cores), action="submitjob")
-			ncores= self.max_cores
+		if nthreads>self.max_cores:
+			logger.warn("Requested nthreads (%d) exceeds max (%d), set nthreads to max..." % (nthreads,self.max_cores), action="submitjob")
+			nthreads= self.max_cores
+
+		if nproc>self.max_cores:
+			logger.warn("Requested nproc (%d) exceeds max (%d), set nproc to 1..." % (nproc,self.max_cores), action="submitjob")
+			nproc= 1
+		
+		
+		
 
 		#################################
 		###   SET CLUSTER JOB/DATA DIR
@@ -458,7 +468,10 @@ class SlurmJobManager(object):
 		vol_opts+= "".join("-B %s:%s " % (inputfile_cluster, inputfile))
 		
 		# - Set run command
-		cmd= "singularity run "
+		cmd= ""
+		if nproc>1:
+			cmd+= "".join("mpirun --report-bindings --np %d --map-by ppr:$NPROC:node:pe=$NTHREADS --bind-to core " % (nproc, nthreads))
+		cmd+= "singularity run "
 		cmd+= run_opts
 		cmd+= vol_opts
 		cmd+= env_vars
@@ -492,7 +505,9 @@ class SlurmJobManager(object):
 		#	"current_working_directory": job_outdir,
 		# "standard_out": job_logfile,
 		# "standard_error": job_logfile,
-			"tasks_per_node": ncores
+		#	"tasks_per_node": ncores,
+			"cpus_per_task": nthreads,
+			"tasks": nproc
 		}
 
 		# - Convert dict to string

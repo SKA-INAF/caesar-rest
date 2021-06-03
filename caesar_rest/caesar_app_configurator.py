@@ -246,7 +246,7 @@ class CaesarAppConfigurator(AppConfigurator):
 			#'outdir' : ValueOption('outdir','',str, description='Output directory where to put run output file (default=pwd)'),
 			'no-logredir' : Option('no-logredir', description='Do not redirect logs to output file in script'),
 			'no-mpi' : Option('no-mpi', description='Disable MPI run (even with 1 proc) (default=enabled)'),
-			'mpioptions' : ValueOption('mpioptions','',str, description='Options to be passed to MPI (e.g. --bind-to {none,hwthread, core, l1cache, l2cache, l3cache, socket, numa, board}) (default=none)'),
+			#'mpioptions' : ValueOption('mpioptions','',str, description='Options to be passed to MPI (e.g. --bind-to {none,hwthread, core, l1cache, l2cache, l3cache, socket, numa, board}) (default=none)'),
 			'nproc' : ValueOption('nproc','',int, description='Number of MPI processors per node used (NB: mpi tot nproc=nproc x nnodes) (default=1)'),
 			'nthreads' : ValueOption('nthreads','',int, description='Number of threads to be used in OpenMP (default=-1=all available in node)'),
 			#'hostfile' : ValueOption('hostfile','',str, description='Ascii file with list of hosts used by MPI (default=no hostfile used)'),
@@ -306,6 +306,26 @@ class CaesarAppConfigurator(AppConfigurator):
 			else:
 				logger.warn("Expected 2 fields when parsing nthreads option, setting ncores=1 ...", action="submitjob")
 
+	def set_nproc_from_options(self):
+		""" Returns the number of MPI proc from parsed options (to be overridden) """
+		
+		# - Search if --nproc option was given and extract value
+		matching= [s for s in self.cmd_args if "--nproc" in s]
+		self.run_options["nproc"]= 1
+		if matching:
+			parsed_option_vals= matching[0].split('=')
+			if len(parsed_option_vals)==2:
+				try:
+					nproc= int(parsed_option_vals[1])
+					if nproc>0:						
+						self.run_options["nproc"]= nproc
+						logger.info("Set job MPI proc to %d ..." % self.run_options["nproc"], action="submitjob")
+					else:
+						logger.warn("Parsed nproc value (%d) is <=0, setting nproc=1 ..." % nproc, action="submitjob")
+				except:
+					logger.warn("Failed to parse nproc option, setting nproc=1 ...", action="submitjob")			
+			else:
+				logger.warn("Expected 2 fields when parsing nproc option, setting nproc=1 ...", action="submitjob")
 
 
 	def transform_inputfile(self,file_uuid):
