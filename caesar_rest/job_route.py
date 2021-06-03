@@ -389,7 +389,7 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_o
 		inputfile=inputfile,
 		job_name=job_id, 
 		job_outdir=job_dir,
-		run_opts=run_opts
+		job_run_opts=run_opts
 	)
 	
 	if job is None or job=="":
