@@ -473,7 +473,7 @@ class SlurmJobManager(object):
 		# - Set run command
 		cmd= ""
 		if nproc>1:
-			cmd+= "".join("mpirun --report-bindings --np %d --map-by ppr:$NPROC:node:pe=$NTHREADS --bind-to core " % (nproc, nthreads))
+			cmd+= "".join("mpirun --report-bindings --np %d --map-by ppr:%d:node:pe=%d --bind-to core " % (nproc, nproc, nthreads))
 		cmd+= "singularity run "
 		cmd+= run_opts
 		cmd+= vol_opts
