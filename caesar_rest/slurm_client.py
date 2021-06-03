@@ -466,6 +466,9 @@ class SlurmJobManager(object):
 		if job_outdir_cluster!="":
 			vol_opts+= "".join("-B %s:%s " % (job_outdir_cluster, job_outdir))
 		vol_opts+= "".join("-B %s:%s " % (inputfile_cluster, inputfile))
+
+		if nproc>1:
+			vol_opts+= "-B /etc/libibverbs.d "
 		
 		# - Set run command
 		cmd= ""
