@@ -78,6 +78,14 @@ def get_registered_file_ids():
 @custom_require_login
 def download_id():
 	""" Download data by uuid """
+
+	# - Get aai info
+	username= 'anonymous'
+	if ('oidc_token_info' in g) and (g.oidc_token_info is not None and 'email' in g.oidc_token_info): 
+		email= g.oidc_token_info['email']
+		username= utils.sanitize_username(email)
+
+	# - Get args
 	if request.method == 'POST':
 		uuid = request.form['uuid']
 	else:
