@@ -12,8 +12,10 @@ This software is under development. Tested originally with python 2.7 but switch
 ## **Credit**
 This software is distributed with GPLv3 license. If you use caesar-rest for your research, please add repository link or acknowledge authors in your papers.   
 
-## **Dependencies**  
-caesar-rest service uses the following external libraries:   
+## **Installation**  
+
+### **Install dependencies**
+To run caesar rest service you need to install the following tools:  
 
 * Flask [https://palletsprojects.com/p/flask/]     
 * uwsgi [https://uwsgi-docs.readthedocs.io/en/latest/index.html]   
@@ -39,28 +41,7 @@ For the Slurm-based job management, you need to install these python modules:
 
 To enable OpenID Connect based authentication you need to install:    
 
-* flask-oidc-ex python module [https://pypi.org/project/flask-oidc-ex/]    
-
-## **Installation**  
-
-### **Install dependencies**
-To run caesar rest service you need to install the following tools:  
-
-* Flask [https://palletsprojects.com/p/flask/]     
-* rabbitmq [https://www.rabbitmq.com/]    
-* redis [https://redis.io/]  
-* celery [http://www.celeryproject.org/] 
-* uwsgi [https://uwsgi-docs.readthedocs.io/en/latest/index.html]   
-* nginx [https://nginx.org/]   
-
-To enable registration of uploaded files in a DB (MongoDB in this case) you need to install:   
-
-* mongodb [https://www.mongodb.com/]   
-* Flask-PyMongo python module [https://flask-pymongo.readthedocs.io/en/latest/]   
-
-To enable OpenID Connect based authentication you need to install:    
-
-* Flask-OIDC python module [https://flask-oidc.readthedocs.io/en/latest/]    
+* flask-oidc-ex python module [https://pypi.org/project/flask-oidc-ex/] 
 
 ### **Package installation**
 To build and install the package:    
