@@ -20,11 +20,20 @@ caesar-rest service uses the following external libraries:
 * mongodb [https://www.mongodb.com/]   
 * flask-pymongo python module [https://flask-pymongo.readthedocs.io/en/latest/]   
 
-To use Celery-based job management you need to install:   
+For the Celery-based job management, you need to install celery, a broker and a result backend service:   
 
-* rabbitmq [https://www.rabbitmq.com/]    
-* redis [https://redis.io/]  
-* celery [http://www.celeryproject.org/] 
+* celery [http://www.celeryproject.org/]   
+* broker: rabbitmq [https://www.rabbitmq.com/]    
+* result backend: redis [https://redis.io/] or mongodb [https://www.mongodb.com/]     
+
+For the Kubernetes-based job management, you need to install the Kubernetes python client library:    
+
+* kubernetes [https://pypi.org/project/kubernetes/]
+
+For the Slurm-based job management, you need to install these python modules:    
+
+* requests [https://docs.python-requests.org/en/master/]    
+* jwt [https://pypi.org/project/jwt/]     
 
 To enable OpenID Connect based authentication you need to install:    
 
