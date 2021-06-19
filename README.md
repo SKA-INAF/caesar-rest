@@ -3,7 +3,8 @@
 </p>
 
 # caesar-rest
-caesar-rest provides a rest interface for caesar [https://github.com/SKA-INAF/caesar] source finding applications, based on Flask python web framework. Celery task queue is used to execute caesar application jobs asynchronously. In this application Celery is configured by default to use a RabbitMQ broker for message exchange and Redis as task result store. In a production environment caesar rest service can be run behind nginx+uwsgi http server. 
+caesar-rest is a REST-ful web service for astronomical source extraction and classification with the caesar source extractor [https://github.com/SKA-INAF/caesar]. The software is developed in python and consists of a few containerized microservices, deployable on standalone servers or on a distributed cloud infrastructure. The core component is the REST web application, based on the Flask framework and running behind a nginx+uwsgi http server, and providing APIs for managing the input data (e.g. data upload/download/removal) and source finding jobs (e.g. submit, get status, get outputs) with different job management systems (Kubernetes, Slurm, Celery). Additional services (AAI, user DB, log storage, job monitor, accounting) enable the user authentication, the storage and retrieval of user data and job information, the monitoring of submitted jobs, and the aggregation of service logs and user data/job stats.
+Besides caesar, we also foresee to integrate other tools widely used in the radio community (e.g. Aegean, PyBDSF) and newly developed source finders based on deep learning models.    
 
 ## **Status**
 This software is under development. Tested originally with python 2.7 but switched to python 3.6 later on (some apps are only available for python 3). 
@@ -18,7 +19,8 @@ caesar-rest service uses the following external libraries:
 * uwsgi [https://uwsgi-docs.readthedocs.io/en/latest/index.html]   
 * nginx [https://nginx.org/]   
 * mongodb [https://www.mongodb.com/]   
-* flask-pymongo python module [https://flask-pymongo.readthedocs.io/en/latest/]   
+* flask-pymongo python module [https://flask-pymongo.readthedocs.io/en/latest/]  
+* structlog python module [https://www.structlog.org/en/stable/]     
 
 For the Celery-based job management, you need to install celery, a broker and a result backend service:   
 
