@@ -1,3 +1,7 @@
+<p align="left">
+  <img src="share/CAESAR-REST_Architecture.png" alt="Software architecture"/ width="500" height="500">
+</p>
+
 # caesar-rest
 caesar-rest provides a rest interface for caesar [https://github.com/SKA-INAF/caesar] source finding applications, based on Flask python web framework. Celery task queue is used to execute caesar application jobs asynchronously. In this application Celery is configured by default to use a RabbitMQ broker for message exchange and Redis as task result store. In a production environment caesar rest service can be run behind nginx+uwsgi http server. 
 
@@ -6,6 +10,25 @@ This software is under development. Tested originally with python 2.7 but switch
 
 ## **Credit**
 This software is distributed with GPLv3 license. If you use caesar-rest for your research, please add repository link or acknowledge authors in your papers.   
+
+## **Dependencies**  
+caesar-rest service uses the following external libraries:   
+
+* Flask [https://palletsprojects.com/p/flask/]     
+* uwsgi [https://uwsgi-docs.readthedocs.io/en/latest/index.html]   
+* nginx [https://nginx.org/]   
+* mongodb [https://www.mongodb.com/]   
+* flask-pymongo python module [https://flask-pymongo.readthedocs.io/en/latest/]   
+
+To use Celery-based job management you need to install:   
+
+* rabbitmq [https://www.rabbitmq.com/]    
+* redis [https://redis.io/]  
+* celery [http://www.celeryproject.org/] 
+
+To enable OpenID Connect based authentication you need to install:    
+
+* flask-oidc-ex python module [https://pypi.org/project/flask-oidc-ex/]    
 
 ## **Installation**  
 
