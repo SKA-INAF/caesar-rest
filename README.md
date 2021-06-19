@@ -61,7 +61,9 @@ To use package scripts:
 * Add binary directory to your ```PATH``` environment variable:   
   ``` export PATH=$PATH:$INSTALL_DIR/bin ```    
 
-## **How to run?**  
+## **Run the application**  
+
+In the following we describe the steps done to deploy and run the application and the auxiliary services. Three possible options are described below for the deployment, depending of whether the job management is done with celery, Kubernetes, or with Slurm.     
 
 ### **Preliminary setup**
 Before running the application you must do some preparatory stuff:   
@@ -73,13 +75,19 @@ Before running the application you must do some preparatory stuff:
 * (OPTIONAL) Create the run directory for system services (see below), e.g. `/opt/caesar-rest/run` 
 * (OPTIONAL) Create a dedicated user & group (e.g. `caesar`) allowed to run the application and services and give it ownership of the directories previously created     
 
-### **Run backend services**
-To run caesar-rest you must first run the message broker, the task store and worker services:
+### **Run DB service**
+caesar-rest requires a MongoDB service where to store user data and job information. To start the DB service:    
+
+```systemctl start mongodb.service```
+
+### **Run Celery services (OPTIONAL)**
+If you want to manage jobs with Celery, you must run a message broker service (i.e. rabbitmq), a task store service (i.e. redis or mongdb) and one or more Celery worker services:
 
 * Run rabbitmq message broker service:  
    ```systemctl start rabbitmq-server.service```   
-* Run redis store service:    
-   ```systemctl start redis.service```   
+* Run task store service:    
+   ```systemctl start redis.service``` or      
+   ```systemctl start mongodb.service```   
 * Run celery worker with desired concurrency level (e.g. 2):  
    ```celery -A caesar_rest worker --loglevel=INFO --concurrency=2```   
    
