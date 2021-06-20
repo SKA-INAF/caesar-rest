@@ -101,11 +101,15 @@ If you want to manage jobs with Celery, you must run a message broker service (i
 To run the rabbimq message broker service:   
    
 ```systemctl start rabbitmq-server.service```   
+
+Alternatively, you can use the Docker container ```sriggi/caesar-rest-broker:latest``` (see https://hub.docker.com/r/sriggi/caesar-rest-broker) and deploy it with DockerCompose or Kubernetes (see the configuration files under the repository ```config``` directory.      
    
 #### **Run task store service**   
 If you have chosen MongoDB as task store, you are already running the service (see previous section `Run DB service`). However, if you want to use Redis as task store, run it as follows:       
   
 ```systemctl start redis.service```    
+
+Docker container is still to be produced.   
    
 #### **Run celery workers**   
 Run celery worker with desired concurrency level (e.g. 2):  
@@ -171,6 +175,8 @@ In production you may want to run this as a system service:
 * Start the service:   
   
      ```sudo systemctl caesar-workers.service start```    
+     
+Alternatively, you can use the Docker container ```sriggi/caesar-rest-worker:latest``` (https://hub.docker.com/r/sriggi/caesar-rest-worker) and deploy it with DockerCompose or Kubernetes (see the configuration files under the repository ```config``` directory.    
    
 ### **Run the application in development mode**   
 To run caesar-rest in development mode, e.g. for debug or testing purposes:   
