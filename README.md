@@ -43,6 +43,10 @@ To enable OpenID Connect based authentication you need to install:
 
 * flask-oidc-ex python module [https://pypi.org/project/flask-oidc-ex/] 
 
+To enable log forwarding to a LogStash/ElasticSearch service, you need to install the filebeat service:    
+
+* filebeat [https://www.elastic.co/guide/en/beats/filebeat/index.html]    
+
 ### **Package installation**
 To build and install the package:    
 
@@ -61,9 +65,9 @@ To use package scripts:
 * Add binary directory to your ```PATH``` environment variable:   
   ``` export PATH=$PATH:$INSTALL_DIR/bin ```    
 
-## **Run the application**  
+## **How to run the service?**  
 
-In the following we describe the steps done to deploy and run the application and the auxiliary services. Three possible options are described below for the deployment, depending of whether the job management is done with celery, Kubernetes, or with Slurm.     
+In the following we describe the steps done to deploy and run the application and the auxiliary services. Three possible options are described below for the deployment, depending of whether the job management is done with celery, Kubernetes, or with Slurm. To ease the deployment we provide Docker containers and configuration files for Docker Compose or Kubernetes.       
 
 ### **Preliminary setup**
 Before running the application you must do some preparatory stuff:   
@@ -81,23 +85,40 @@ caesar-rest requires a MongoDB service where to store user data and job informat
 
 ```systemctl start mongodb.service```   
 
+Alternatively you can use the Docker container ```sriggi/caesar-rest-db:latest``` (see https://hub.docker.com/r/sriggi/caesar-rest-db) and deploy it with DockerCompose or Kubernetes (see the configuration files under the repository ```config``` directory.   
+
 ### **Run Filebeat service**   
-WRITE ME
+caesar-rest uses filebeat to forward file logs to an ElasticSearch service. To start the service:   
+
+```systemctl start filebeat.service```    
+
+Alternatively, you can use the Docker container for the application ```sriggi/caesar-rest:latest``` (see https://hub.docker.com/r/sriggi/caesar-rest) setting the container option ```FORWARD_LOGS=1```. This will start the filebeat service in the web application container.   
 
 ### **Run Celery services (OPTIONAL)**
-If you want to manage jobs with Celery, you must run a message broker service (i.e. rabbitmq), a task store service (i.e. redis or mongdb) and one or more Celery worker services:
+If you want to manage jobs with Celery, you must run a message broker service (i.e. rabbitmq), a task store service (i.e. redis or mongdb) and one or more Celery worker services.   
 
-* Run rabbitmq message broker service:  
-   ```systemctl start rabbitmq-server.service```   
-* Run task store service:    
-   ```systemctl start redis.service``` or      
-   ```systemctl start mongodb.service```   
-* Run celery worker with desired concurrency level (e.g. 2):  
-   ```celery -A caesar_rest worker --loglevel=INFO --concurrency=2```   
+#### **Run broker service**   
+To run the rabbimq message broker service:   
    
-   In production you may want to run this as a system service:   
+```systemctl start rabbitmq-server.service```   
+
+Alternatively, you can use the Docker container ```sriggi/caesar-rest-broker:latest``` (see https://hub.docker.com/r/sriggi/caesar-rest-broker) and deploy it with DockerCompose or Kubernetes (see the configuration files under the repository ```config``` directory.      
+   
+#### **Run task store service**   
+If you have chosen MongoDB as task store, you are already running the service (see previous section `Run DB service`). However, if you want to use Redis as task store, run it as follows:       
+  
+```systemctl start redis.service```    
+
+Docker container is still to be produced.   
+   
+#### **Run celery workers**   
+Run celery worker with desired concurrency level (e.g. 2), message queue (e.g. celery), broker and result backend urls:  
+   
+```celery --broker=[BROKER_URL] --result-backend=[RESULT_BACKEND_URL] --app=caesar_rest worker --loglevel=INFO --concurrency=2 -Q celery```   
+   
+In production you may want to run this as a system service:   
        
-   - Create a `/etc/default/caesar-workers` configuration file (e.g. see the example in the `config/celery` directory):  
+* Create a `/etc/default/caesar-workers` configuration file (e.g. see the example in the `config/celery` directory):  
    
      ```
      # The names of the workers. Only one here. 
@@ -123,7 +144,7 @@ If you want to manage jobs with Celery, you must run a message broker service (i
      CELERY_BIN=/usr/local/bin/celery    
      ```
      
-   - Create a `/etc/systemd/system/caesar-workers.service` systemd service file:    
+* Create a `/etc/systemd/system/caesar-workers.service` systemd service file:    
    
      ```
      [Unit]    
@@ -151,10 +172,15 @@ If you want to manage jobs with Celery, you must run a message broker service (i
      WantedBy=multi-user.target   
      ```
   
-  - Start the service:   
+* Start the service:   
+  
      ```sudo systemctl caesar-workers.service start```    
+     
+Alternatively, you can use the Docker container ```sriggi/caesar-rest-worker:latest``` (https://hub.docker.com/r/sriggi/caesar-rest-worker) and deploy it with DockerCompose or Kubernetes (see the configuration files under the repository ```config``` directory.      
    
-### **Run the application in development mode**   
+### **Run the web application**   
+
+#### **Run the application in development mode**   
 To run caesar-rest in development mode, e.g. for debug or testing purposes:   
 
   ```$INSTALL_DIR/bin/run_app.py --[ARGS]```
@@ -220,14 +246,14 @@ where supported `ARGS` are:
   
 Flask default options are defined in the `config.py`. Celery options are defined in the `celery_config.py`. Other options may be defined in the future to override default Flask and Celery options.   
 
-### **Run the application in production**   
+#### **Run the application in production**   
 In a production environment you can run the application behind a nginx+uwsgi (or nginx+gunicorn) server. In the `config` directory of the repository you can find sample files to create and configure required services. For example:  
 
 * Start the application with uwsgi:   
      
-  ```uwsgi --wsgi-file $INSTALL_DIR/bin/run_app.py --callable app [WSGI_CONFIG_FILE]```
+  uwsgi --wsgi-file $INSTALL_DIR/bin/run_app.py --callable app [WSGI_CONFIG_FILE]
 
-  where `WSGI_CONFIG_FILE` is a configuration file (.ini format) for uwsgi. A sample configuration file is provided in the `config/uwgsi` directory:   
+  where ```WSGI_CONFIG_FILE``` is a configuration file (.ini format) for uwsgi. A sample configuration file is provided in the `config/uwgsi` directory:   
   
   ```
   [uwsgi]
@@ -244,6 +270,12 @@ In a production environment you can run the application behind a nginx+uwsgi (or
   vacuum = true  
   die-on-term = true  
   ```
+  
+  Alternatively you can configure options from command line, e.g.:    
+  
+   ```uwsgi --uid=[RUNUSER] --gid=[RUNUSER] --binary-path /usr/local/bin/uwsgi --wsgi-file=$INSTALL_DIR/bin/run_app.py --callable=app --pyargv=[APP_ARGS] --workers=[NWORKERS] --enable-threads --threads=[NTHREADS] --http-socket="0.0.0.0:[PORT]" --http-timeout=[SOCKET_TIMEOUT] --http-enable-proxy-protocol --http-auto-chunked --socket-timeout=[SOCKET_TIMEOUT] --master --chmod-socket=660 --chown-socket=[RUNUSER] --buffer-size=[BUFFER_SIZE] --vacuum --die-on-term ```
+  
+  where ```APP_ARGS``` are the application command line options described in the previous paragraph and ```RUNUSER``` is the username chosen for running the service. The other options are described in the uwsgi online documentation.    
   
   In production you may want to run this as a system service: 
   
@@ -269,9 +301,12 @@ In a production environment you can run the application behind a nginx+uwsgi (or
    - Start the service:   
      ```sudo systemctl caesar-rest.service start```    
 
+   Alternatively, you can use the Docker container `sriggi/caesar-rest:devel` (see https://hub.docker.com/r/sriggi/caesar-rest) and deploy it with DockerCompose or Kubernetes (see the configuration files under the repository ```config``` directory. All application command line options described in the previous section can be configured from container env variables.        
+
 * Start the nginx service:
 
   - Create a `/etc/nginx/conf.d/nginx.conf` configuration file (see example file provided in the `config/nginx` directory):      
+
     ```
     server {   
       listen 8080;   
@@ -280,13 +315,35 @@ In a production environment you can run the application behind a nginx+uwsgi (or
       keepalive_timeout 0;   
       location / {   
         include uwsgi_params;    
-        #uwsgi_pass flask:5000;   
         uwsgi_pass unix:/opt/caesar-rest/run/caesar-rest.sock;   
       }       
     }    
     ```
   
-    With this sample configuration the nginx server will listen at port 8080 and call the caesar-rest application via socket.    
+    With this sample configuration the nginx server will listen at port 8080 and call the caesar-rest application via socket. An alternative configuration could be:    
+    
+    ```
+    upstream backend {
+      least_conn;  # load balancing strategy
+      server [HOST1]:[PORT];
+      server [HOST1]:[PORT];
+      keepalive 64;
+    }
+
+    server {
+      listen 8080;
+      client_max_body_size 1000M;
+      large_client_header_buffers 4 32k;
+      sendfile on;
+      keepalive_timeout 0;
+      location / {
+        include uwsgi_params;
+        uwsgi_pass backend;
+      }
+    }
+    ```
+    
+    with nginx load balancing incoming requests, sending them to 2 caesar-rest http applications listening at `HOST1` and `HOST2` on port `PORT`.    
    
   - Create a `/etc/systemd/system/nginx.service` systemd file, e.g. see the example provided in the `config/nginx` directory:   
   
@@ -312,6 +369,50 @@ In a production environment you can run the application behind a nginx+uwsgi (or
 
     ```sudo systemctl start nginx.service```
 
+  Alternatively you can use the Docker container `sriggi/caesar-rest-lb:latest` (see https://hub.docker.com/r/sriggi/caesar-rest-lb) and deploy it with DockerCompose. In Kubernetes this functionality is provided by ingresses (see sample configuration files).   
+
+### **Run job monitoring service**   
+The job monitoring service periodically monitors user jobs, updating their status on the DB. It can be started as:    
+
+```$INSTALL_DIR/bin/run_jobmonitor.py --[ARGS]```    
+
+where supported `ARGS` are:   
+
+   * `job_monitoring_period=[PERIOD]`: Job monitoring poll period in seconds (default=30)     
+   * `job_scheduler=[SCHEDULER]`:  Job scheduler to be used. Options are: {celery,kubernetes,slurm} (default=celery)     
+   * `dbname=[DBNAME]`: Name of MongoDB database (default=caesardb)   
+   * `dbhost=[DBHOST]`: Host of MongoDB database (default=localhost)    
+   * `dbport=[DBPORT]`: Port of MongoDB database (default=27017)      
+   * `kube_config=[FILE_PATH]`: Kube configuration file path (default=search in standard path)   
+   * `kube_cafile=[FILE_PATH]`: Kube certificate authority file path    
+   * `kube_keyfile=[FILE_PATH]`: Kube private key file path    
+   * `kube_certfile=[FILE_PATH]`: Kube certificate file path   
+   * `slurm_keyfile=[FILE_PATH]`: Slurm rest service private key file path    
+   * `slurm_user=[SLURM_USER]`: Username enabled to run in Slurm cluster (default=cirasa)   
+   * `slurm_host=[SLURM_HOST]`: Slurm cluster host/ipaddress (default=localhost)   
+   * `slurm_port=[SLURM_PORT]`: Slurm rest service port (default=6820)  
+
+Alternatively, you can use the Docker container `sriggi/caesar-rest-jobmonitor:latest` (see https://hub.docker.com/r/sriggi/caesar-rest-jobmonitor) and deploy it with DockerCompose or Kubernetes (see sample configuration files).    
+   
+### **Run accounting service**   
+The accounting service periodically monitors user data and job info, storing aggregated stats in the DB. It can be started as:    
+
+```$INSTALL_DIR/bin/run_accounter.py --[ARGS]```    
+
+where supported `ARGS` are:   
+
+   * `datadir=[DATADIR]`: Directory where to store uploaded data (default: /opt/caesar-rest/data)   
+   * `jobdir=[JOBDIR]`: Top directory where to store job data (default: /opt/caesar-rest/jobs)     
+   * `job_monitoring_period=[PERIOD]`: Job info monitoring poll period in seconds (default=30) 
+   * `dbname=[DBNAME]`: Name of MongoDB database (default=caesardb)   
+   * `dbhost=[DBHOST]`: Host of MongoDB database (default=localhost)    
+   * `dbport=[DBPORT]`: Port of MongoDB database (default=27017)      
+   * `mount_rclone_volume`: Enable mounting of Nextcloud volume through rclone in container jobs (default=no)  
+   * `mount_volume_path=[PATH]`: Mount volume path for container jobs (default=/mnt/storage)  
+   * `rclone_storage_name=[NAME]`: rclone remote storage name (default=neanias-nextcloud)   
+   * `rclone_storage_path=[PATH]`: rclone remote storage path (default=.)   
+
+Alternatively, you can use the Docker container `sriggi/caesar-rest-accounter:latest` (see https://hub.docker.com/r/sriggi/caesar-rest-accounter) and deploy it with DockerCompose or Kubernetes (see sample configuration files).    
 
 ## **Usage**  
 caesar-rest provides the following REST endpoints:   
@@ -498,5 +599,11 @@ curl -X GET \
 The response is a tar.gz file containing all job directory files (logs, output data, run scripts, etc).  
 
 ### **Cancel job**
+* URL:```http://server-address:port/caesar/api/v1.0/job/[job_id]/cancel```   
+* Request methods: POST   
+* Request header: None  
 
-WRITE ME
+### **Get job ids**
+* URL:```http://server-address:port/caesar/api/v1.0/jobs```   
+* Request methods: GET   
+* Request header: None  
