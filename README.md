@@ -112,9 +112,9 @@ If you have chosen MongoDB as task store, you are already running the service (s
 Docker container is still to be produced.   
    
 #### **Run celery workers**   
-Run celery worker with desired concurrency level (e.g. 2):  
+Run celery worker with desired concurrency level (e.g. 2), message queue (e.g. celery), broker and result backend urls:  
    
-```celery -A caesar_rest worker --loglevel=INFO --concurrency=2```   
+```celery --broker=[BROKER_URL] --result-backend=[RESULT_BACKEND_URL] --app=caesar_rest worker --loglevel=INFO --concurrency=2 -Q celery```   
    
 In production you may want to run this as a system service:   
        
@@ -176,7 +176,7 @@ In production you may want to run this as a system service:
   
      ```sudo systemctl caesar-workers.service start```    
      
-Alternatively, you can use the Docker container ```sriggi/caesar-rest-worker:latest``` (https://hub.docker.com/r/sriggi/caesar-rest-worker) and deploy it with DockerCompose or Kubernetes (see the configuration files under the repository ```config``` directory.    
+Alternatively, you can use the Docker container ```sriggi/caesar-rest-worker:latest``` (https://hub.docker.com/r/sriggi/caesar-rest-worker) and deploy it with DockerCompose or Kubernetes (see the configuration files under the repository ```config``` directory.      
    
 ### **Run the application in development mode**   
 To run caesar-rest in development mode, e.g. for debug or testing purposes:   
