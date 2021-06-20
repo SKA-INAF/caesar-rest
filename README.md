@@ -176,6 +176,13 @@ where supported `ARGS` are:
    * `dbname=[DBNAME]`: Name of MongoDB database (default=caesardb)   
    * `dbhost=[DBHOST]`: Host of MongoDB database (default=localhost)    
    * `dbport=[DBPORT]`: Port of MongoDB database (default=27017)   
+
+   LOGGING OPTIONS
+   * `loglevel=[LEVEL]`: Log level to be used (default=INFO)   
+   * `logtofile`: Enable logging to file (default=no)   
+   * `logdir`: Directory where to store logs (default=/opt/caesar-rest/logs)   
+   * `logfile`: Name of json log file (default=app_logs.json)   
+   * `logfile_maxsize`: Max file size in MB (default=5)    
   
    CELERY OPTIONS       
    * `result_backend_host=[BACKEND_HOST]`: Host of Celery result backend service (default=localhost) 
