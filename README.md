@@ -67,7 +67,7 @@ To use package scripts:
 
 ## **Run the application**  
 
-In the following we describe the steps done to deploy and run the application and the auxiliary services. Three possible options are described below for the deployment, depending of whether the job management is done with celery, Kubernetes, or with Slurm.     
+In the following we describe the steps done to deploy and run the application and the auxiliary services. Three possible options are described below for the deployment, depending of whether the job management is done with celery, Kubernetes, or with Slurm. To ease the deployment we provide Docker containers and configuration files for Docker Compose or Kubernetes.       
 
 ### **Preliminary setup**
 Before running the application you must do some preparatory stuff:   
@@ -84,6 +84,8 @@ Before running the application you must do some preparatory stuff:
 caesar-rest requires a MongoDB service where to store user data and job information. To start the DB service:    
 
 ```systemctl start mongodb.service```   
+
+Alternatively you can use the Docker container ```sriggi/caesar-rest-db:latest``` (see https://hub.docker.com/r/sriggi/caesar-rest-db) and deploy it with DockerCompose or Kubernetes (see the configuration files under the repository ```config``` directory.   
 
 ### **Run Filebeat service**   
 caesar-rest uses filebeat to forward file logs to an ElasticSearch service. To start the service:   
