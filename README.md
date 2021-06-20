@@ -43,6 +43,10 @@ To enable OpenID Connect based authentication you need to install:
 
 * flask-oidc-ex python module [https://pypi.org/project/flask-oidc-ex/] 
 
+To enable log forwarding to a LogStash/ElasticSearch service, you need to install the filebeat service:    
+
+* filebeat [https://www.elastic.co/guide/en/beats/filebeat/index.html]    
+
 ### **Package installation**
 To build and install the package:    
 
@@ -82,7 +86,9 @@ caesar-rest requires a MongoDB service where to store user data and job informat
 ```systemctl start mongodb.service```   
 
 ### **Run Filebeat service**   
-WRITE ME
+caesar-rest uses filebeat to forward file logs to an ElasticSearch service. To start the service:   
+
+```systemctl start filebeat.service```
 
 ### **Run Celery services (OPTIONAL)**
 If you want to manage jobs with Celery, you must run a message broker service (i.e. rabbitmq), a task store service (i.e. redis or mongdb) and one or more Celery worker services:
