@@ -95,19 +95,26 @@ caesar-rest uses filebeat to forward file logs to an ElasticSearch service. To s
 Alternatively, you can use the Docker container for the application ```sriggi/caesar-rest:latest``` (see https://hub.docker.com/r/sriggi/caesar-rest) setting the container option ```FORWARD_LOGS=1```. This will start the filebeat service in the web application container.   
 
 ### **Run Celery services (OPTIONAL)**
-If you want to manage jobs with Celery, you must run a message broker service (i.e. rabbitmq), a task store service (i.e. redis or mongdb) and one or more Celery worker services:
+If you want to manage jobs with Celery, you must run a message broker service (i.e. rabbitmq), a task store service (i.e. redis or mongdb) and one or more Celery worker services.   
 
-* Run rabbitmq message broker service:  
-   ```systemctl start rabbitmq-server.service```   
-* Run task store service:    
-   ```systemctl start redis.service``` or      
-   ```systemctl start mongodb.service```   
-* Run celery worker with desired concurrency level (e.g. 2):  
-   ```celery -A caesar_rest worker --loglevel=INFO --concurrency=2```   
+#### **Run broker service**   
+To run the rabbimq message broker service:   
    
-   In production you may want to run this as a system service:   
+```systemctl start rabbitmq-server.service```   
+   
+#### **Run task store service**   
+If you have chosen MongoDB as task store, you are already running the service (see previous section `Run DB service`). However, if you want to use Redis as task store, run it as follows:       
+  
+```systemctl start redis.service```    
+   
+#### **Run celery workers**   
+Run celery worker with desired concurrency level (e.g. 2):  
+   
+```celery -A caesar_rest worker --loglevel=INFO --concurrency=2```   
+   
+In production you may want to run this as a system service:   
        
-   - Create a `/etc/default/caesar-workers` configuration file (e.g. see the example in the `config/celery` directory):  
+* Create a `/etc/default/caesar-workers` configuration file (e.g. see the example in the `config/celery` directory):  
    
      ```
      # The names of the workers. Only one here. 
@@ -133,7 +140,7 @@ If you want to manage jobs with Celery, you must run a message broker service (i
      CELERY_BIN=/usr/local/bin/celery    
      ```
      
-   - Create a `/etc/systemd/system/caesar-workers.service` systemd service file:    
+* Create a `/etc/systemd/system/caesar-workers.service` systemd service file:    
    
      ```
      [Unit]    
@@ -161,7 +168,8 @@ If you want to manage jobs with Celery, you must run a message broker service (i
      WantedBy=multi-user.target   
      ```
   
-  - Start the service:   
+* Start the service:   
+  
      ```sudo systemctl caesar-workers.service start```    
    
 ### **Run the application in development mode**   
