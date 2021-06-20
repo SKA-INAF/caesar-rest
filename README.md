@@ -47,6 +47,8 @@ To enable log forwarding to a LogStash/ElasticSearch service, you need to instal
 
 * filebeat [https://www.elastic.co/guide/en/beats/filebeat/index.html]    
 
+Alternatively, you can use the Docker container for the application ```sriggi/caesar-rest:latest``` (see https://hub.docker.com/r/sriggi/caesar-rest) setting the container option ```FORWARD_LOGS=1```. This will start the filebeat service in the web application container.   
+
 ### **Package installation**
 To build and install the package:    
 
