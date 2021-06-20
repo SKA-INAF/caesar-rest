@@ -23,8 +23,8 @@ from caesar_rest import mongo
 from caesar_rest import utils
 
 # Get logger
-logger = logging.getLogger(__name__)
-
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 ##############################
 #   APP CONFIGURATOR
@@ -77,6 +77,7 @@ class AppConfigurator(object):
 		""" Constructor"""
 
 		self.job_inputs= ''
+		self.data_inputs= ''
 		self.cmd= ''
 		self.cmd_args= []
 		self.cmd_mode= ''
@@ -85,6 +86,10 @@ class AppConfigurator(object):
 		self.options= []
 		self.option_value_transformer= {}
 		self.batch_processing_support= False
+		self.run_options= {
+			"ncores": 1,
+			"nproc": 1
+		}
 
 	def describe_dict(self):
 		""" Return a dictionary describing valid options """
@@ -108,6 +113,16 @@ class AppConfigurator(object):
 		json_str= self.describe_str()
 		return json.loads(json_str)
 
+	def set_ncores_from_options(self):
+		""" Set the number of cores from parsed options (to be overridden) """
+		
+		self.run_options["ncores"]= 1
+
+	def set_nproc_from_options(self):
+		""" Set the number of MPI proc from parsed options (to be overridden) """
+		
+		self.run_options["nproc"]= 1
+
 
 	def get_transformed_option_value(self, opt_name, opt_value):
 		""" Returns same option value or transformed option value (if a transformed function is defined in the dictionary) """
@@ -118,17 +133,31 @@ class AppConfigurator(object):
 			return opt_value
 		return self.option_value_transformer[opt_name](opt_value)
 
-	
-	def validate(self, job_inputs):
+
+	def set_data_input_option_value(self):
+		""" Set app input option value (to be overridden in derived classes) """
+			
+		# Left empty as to be overridden in derived classes
+		
+
+	def validate(self, job_inputs, data_inputs):
 		""" Validate job input """
 
-		logger.info("Validating given inputs ...")
+		logger.info("Validating given inputs ...", action="submitjob")
 
 		# - Check if job inputs are empty
 		if not job_inputs:		
 			self.validation_status= 'Empty job inputs given!'
-			logger.warn(self.validation_status)
+			logger.warn(self.validation_status, action="submitjob")
 			return False
+
+		# - Check data inputs
+		if not data_inputs or data_inputs is None:
+			self.validation_status= 'Empty or null data input given!'
+			logger.warn(self.validation_status, action="submitjob")
+			return False
+
+		self.data_inputs= data_inputs
 
 		# - Convert json string to dictionary
 		#print("type(job_inputs)")
@@ -137,7 +166,7 @@ class AppConfigurator(object):
 
 		if not isinstance(job_inputs,dict):
 			self.validation_status= 'Given job inputs data is not a dictionary!'
-			logger.warn(self.validation_status)
+			logger.warn(self.validation_status, action="submitjob")
 			return False
 
 		try:
@@ -145,7 +174,7 @@ class AppConfigurator(object):
 
 		except ValueError:
 			self.validation_status= 'Failed to parse job inputs as json dictionary!'
-			logger.warn(self.validation_status)
+			logger.warn(self.validation_status, action="submitjob")
 			return False
 
 		#print("type(self.job_inputs)")
@@ -156,6 +185,15 @@ class AppConfigurator(object):
 		valid= self.validate_options()
 		print("--> %s args" % self.cmd)
 		print(self.cmd_args)
+
+		# - Set input data option
+		self.set_data_input_option_value()
+
+		# - Set ncores option
+		self.set_ncores_from_options()
+
+		# - Set nproc option
+		self.set_nproc_from_options()
 
 		
 		return valid
@@ -172,7 +210,7 @@ class AppConfigurator(object):
 			mandatory= option.mandatory
 			if mandatory and not option_given:
 				self.validation_status= ''.join(["Mandatory option ",opt_name," not present!"])
-				logger.warn(self.validation_status)
+				logger.warn(self.validation_status, action="submitjob")
 				return False
 	
 			# - Skip if not given
@@ -188,14 +226,14 @@ class AppConfigurator(object):
 				parsed_value_type= type(parsed_value)
 				if not isinstance(parsed_value,expected_val_type):
 					self.validation_status= ''.join(["Option ",opt_name," expects a ",str(expected_val_type)," value type and not a ",str(parsed_value_type)," !"])
-					logger.warn(self.validation_status)
+					logger.warn(self.validation_status, action="submitjob")
 					return False
 
 				# - Return option value transformed (if transform function is defined in derived classes) or the same option value
 				opt_value_str= str(parsed_value)
 				transf_opt_value_str= self.get_transformed_option_value(opt_name,opt_value_str)
 				if transf_opt_value_str=='':
-					logger.warn("Transformed option value is empty string, failed validation, check logs!")
+					logger.warn("Transformed option value is empty string, failed validation, check logs!", action="submitjob")
 					return False
 
 				# - Add option

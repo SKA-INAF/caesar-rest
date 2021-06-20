@@ -40,8 +40,8 @@ from caesar_rest.decorators import custom_require_login
 from caesar_rest import mongo
 
 # Get logger
-logger = logging.getLogger(__name__)
-
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 ##############################
 #   CREATE BLUEPRINTS

@@ -45,7 +45,8 @@ from pymongo import MongoClient
 
 
 # Get logger
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 ##############################
 #   WORKERS
@@ -64,41 +65,41 @@ def accounter_task(self):
 	DATA_DIR= os.environ.get('CAESAR_REST_DATADIR')
 	
 	if DB_NAME is None or DB_NAME=="":
-		logger.warn("Env var CAESAR_REST_DBNAME not defined, please set it to backend DB name...")
+		logger.warn("Env var CAESAR_REST_DBNAME not defined, please set it to backend DB name...", action="accounter")
 		return
 	if DB_HOST is None or DB_HOST=="":
-		logger.warn("Env var CAESAR_REST_DBHOST not defined, please set it to backend DB hostname...")
+		logger.warn("Env var CAESAR_REST_DBHOST not defined, please set it to backend DB hostname...", action="accounter")
 		return	
 	if DB_PORT is None or DB_PORT=="":
-		logger.warn("Env var CAESAR_REST_DBPORT not defined, please set it to backend DB port...")
+		logger.warn("Env var CAESAR_REST_DBPORT not defined, please set it to backend DB port...", action="accounter")
 		return	
 	if JOB_DIR is None or JOB_DIR=="":
-		logger.warn("Env var CAESAR_REST_JOBDIR not defined, please set it to job top dir name ...")
+		logger.warn("Env var CAESAR_REST_JOBDIR not defined, please set it to job top dir name ...", action="accounter")
 		return
 	if DATA_DIR is None or DATA_DIR=="":
-		logger.warn("Env var CAESAR_REST_DATADIR not defined, please set it to data top dir name ...")
+		logger.warn("Env var CAESAR_REST_DATADIR not defined, please set it to data top dir name ...", action="accounter")
 		return
 
 	# - Connect to mongoDB	
-	logger.info("Connecting to DB (dbhost=%s, dbname=%s, dbport=%s) ..." % (DB_PORT,DB_NAME,DB_PORT))
+	logger.info("Connecting to DB (dbhost=%s, dbname=%s, dbport=%s) ..." % (DB_PORT,DB_NAME,DB_PORT), action="accounter")
 	client= None
 	DB_PORT_INT= int(DB_PORT)
 	try:
 		client= MongoClient(DB_HOST, DB_PORT_INT)
 	except Exception as e:
 		errmsg= 'Exception caught when connecting to DB server (err=' + str(e) + ')!' 
-		logger.error(errmsg)
+		logger.error(errmsg, action="accounter")
 		return
 		
 	if client and client is not None:
-		logger.info("Connected to db %s..." % DB_NAME)
+		logger.info("Connected to db %s..." % DB_NAME, action="accounter")
 	else:
 		errmsg= 'Cannot connect to DB server' 
-		logger.error(errmsg)
+		logger.error(errmsg, action="accounter")
 		return
 
 	# - Init DB data structure
-	logger.info("Creating data file object ...")
+	logger.info("Creating data file object ...", action="accounter")
 	now= datetime.datetime.utcnow()
 	account_data= {}
 
@@ -108,17 +109,17 @@ def accounter_task(self):
 		users= [name for name in os.listdir(JOB_DIR) if os.path.isdir(os.path.join(JOB_DIR,name))]
 	except:
 		errmsg= 'Cannot retrieve job directory ' + str(JOB_DIR) + " (please check if existing on storage)!"
-		logger.error(errmsg)
+		logger.error(errmsg, action="accounter")
 		return
 
 	if users:
-		logger.info("Found these users under job dir %s " % JOB_DIR)
+		logger.info("Found these users under job dir %s " % JOB_DIR, action="accounter")
 		print(users)
 
 		for user in users:
 			userdir= os.path.join(JOB_DIR,user)
 			dirsize= utils.get_dir_size(userdir)
-			logger.info("User %s data dir size=%f" % (userdir,dirsize))
+			logger.info("User %s data dir size=%f" % (userdir,dirsize), action="accounter", user=user)
 
 			if user in account_data:
 				account_data[user]["jobsize"]= dirsize
@@ -134,17 +135,17 @@ def accounter_task(self):
 		users= [name for name in os.listdir(DATA_DIR) if os.path.isdir(os.path.join(DATA_DIR,name))]
 	except:
 		errmsg= 'Cannot retrieve data directory ' + str(DATA_DIR) + " (please check if existing on storage)!"
-		logger.error(errmsg)
+		logger.error(errmsg, action="accounter")
 		return
 
 	if users:
-		logger.info("Found these users under data dir %s " % DATA_DIR)
+		logger.info("Found these users under data dir %s " % DATA_DIR, action="accounter")
 		print(users)
 
 		for user in users:
 			userdir= os.path.join(DATA_DIR,user)
 			dirsize= utils.get_dir_size(userdir)
-			logger.info("User %s job dir size=%f" % (userdir,dirsize))
+			logger.info("User %s job dir size=%f" % (userdir,dirsize), action="accounter", user=user)
 
 			if user in account_data:
 				account_data[user]["datasize"]= dirsize
@@ -154,7 +155,7 @@ def accounter_task(self):
 				account_data[user]["datasize"]= dirsize
 	
 	# - Query job DB and derive job information for all users
-	logger.info("Query job DB and compute job stats for all users ...")
+	logger.info("Query job DB and compute job stats for all users ...", action="accounter")
 
 	for username in account_data:
 		collection_name= username + '.jobs'
@@ -167,7 +168,7 @@ def accounter_task(self):
 
 		except Exception as e:
 			errmsg= 'Failed to get jobs from DB for user ' + username + ' (err=' + str(e) + ')'
-			logger.error(errmsg)
+			logger.error(errmsg, action="accounter", user=username)
 			continue
 		
 		# - Compute some job stats
@@ -287,7 +288,7 @@ def accounter_task(self):
 		app_data["avg_completed_job_runtime"]= app_data["job_completed_runtime"]/float(app_data["njobs_completed"])
 
 	# - Dump accounting info to DB
-	logger.info("Dumping accounting info to DB ...")
+	logger.info("Dumping accounting info to DB ...", action="accounter")
 	for username in account_data:
 		data= account_data[username]
 		collection_name= username + '.accounting'
@@ -301,11 +302,11 @@ def accounter_task(self):
 				coll.update_one({'_id':item['_id']},{'$set':data},upsert=False)
 		except Exception as e:
 			errmsg= 'Exception caught when updating account data for user '+  username + ' in DB (err=' + str(e) + ')!'
-			logger.error(errmsg)
+			logger.error(errmsg, action="accounter", user=username)
 			continue
 
 	# - Dump app stats info to DB
-	logger.info("Dumping app stats into to DB ...")
+	logger.info("Dumping app stats into to DB ...", action="accounter")
 	collection_name= 'appstats'
 	try:
 		coll= client[DB_NAME][collection_name]
@@ -316,7 +317,7 @@ def accounter_task(self):
 			coll.update_one({'_id':item['_id']},{'$set':app_data},upsert=False)
 	except Exception as e:
 		errmsg= 'Exception caught when updating app stats info data in DB (err=' + str(e) + ')!'
-		logger.error(errmsg)
+		logger.error(errmsg, action="accounter")
 
 	
 
@@ -333,17 +334,17 @@ def update_account_info(DB, JOB_DIR, DATA_DIR):
 
 	# - Check inputs
 	if DB is None:
-		logger.warn("Env var CAESAR_REST_DBNAME not defined, please set it to backend DB name...")
+		logger.warn("Env var CAESAR_REST_DBNAME not defined, please set it to backend DB name...", action="accounter")
 		return -1
 	if JOB_DIR is None or JOB_DIR=="":
-		logger.warn("Env var CAESAR_REST_JOBDIR not defined, please set it to job top dir name ...")
+		logger.warn("Env var CAESAR_REST_JOBDIR not defined, please set it to job top dir name ...", action="accounter")
 		return -1
 	if DATA_DIR is None or DATA_DIR=="":
-		logger.warn("Env var CAESAR_REST_DATADIR not defined, please set it to data top dir name ...")
+		logger.warn("Env var CAESAR_REST_DATADIR not defined, please set it to data top dir name ...", action="accounter")
 		return -1
 
 	# - Init DB data structure
-	logger.info("Creating data file object ...")
+	logger.info("Creating data file object ...", action="accounter")
 	now= datetime.datetime.utcnow()
 	account_data= {}
 
@@ -353,17 +354,17 @@ def update_account_info(DB, JOB_DIR, DATA_DIR):
 		users= [name for name in os.listdir(JOB_DIR) if os.path.isdir(os.path.join(JOB_DIR,name))]
 	except:
 		errmsg= 'Cannot retrieve job directory ' + str(JOB_DIR) + " (please check if existing on storage)!"
-		logger.error(errmsg)
+		logger.error(errmsg, action="accounter")
 		return
 
 	if users:
-		logger.info("Found these users under job dir %s " % JOB_DIR)
+		logger.info("Found these users under job dir %s " % JOB_DIR, action="accounter")
 		print(users)
 
 		for user in users:
 			userdir= os.path.join(JOB_DIR,user)
 			dirsize= utils.get_dir_size(userdir)
-			logger.info("User %s data dir size=%f" % (userdir,dirsize))
+			logger.info("User %s data dir size=%f" % (userdir,dirsize), action="accounter", user=user)
 
 			if user in account_data:
 				account_data[user]["jobsize"]= dirsize
@@ -379,17 +380,17 @@ def update_account_info(DB, JOB_DIR, DATA_DIR):
 		users= [name for name in os.listdir(DATA_DIR) if os.path.isdir(os.path.join(DATA_DIR,name))]
 	except:
 		errmsg= 'Cannot retrieve data directory ' + str(DATA_DIR) + " (please check if existing on storage)!"
-		logger.error(errmsg)
+		logger.error(errmsg, action="accounter")
 		return
 
 	if users:
-		logger.info("Found these users under data dir %s " % DATA_DIR)
+		logger.info("Found these users under data dir %s " % DATA_DIR, action="accounter")
 		print(users)
 
 		for user in users:
 			userdir= os.path.join(DATA_DIR,user)
 			dirsize= utils.get_dir_size(userdir)
-			logger.info("User %s job dir size=%f" % (userdir,dirsize))
+			logger.info("User %s job dir size=%f" % (userdir,dirsize), action="accounter", user=user)
 
 			if user in account_data:
 				account_data[user]["datasize"]= dirsize
@@ -399,7 +400,7 @@ def update_account_info(DB, JOB_DIR, DATA_DIR):
 				account_data[user]["datasize"]= dirsize
 	
 	# - Query job DB and derive job information for all users
-	logger.info("Query job DB and compute job stats for all users ...")
+	logger.info("Query job DB and compute job stats for all users ...", action="accounter")
 
 	for username in account_data:
 		collection_name= username + '.jobs'
@@ -412,7 +413,7 @@ def update_account_info(DB, JOB_DIR, DATA_DIR):
 
 		except Exception as e:
 			errmsg= 'Failed to get jobs from DB for user ' + username + ' (err=' + str(e) + ')'
-			logger.error(errmsg)
+			logger.error(errmsg, action="accounter", user=username)
 			continue
 		
 		# - Compute some job stats
@@ -531,7 +532,7 @@ def update_account_info(DB, JOB_DIR, DATA_DIR):
 		app_data["avg_completed_job_runtime"]= app_data["job_completed_runtime"]/float(app_data["njobs_completed"])
 
 	# - Dump accounting info to DB
-	logger.info("Dumping accounting info to DB ...")
+	logger.info("Dumping accounting info to DB ...", action="accounter")
 	for username in account_data:
 		data= account_data[username]
 		collection_name= username + '.accounting'
@@ -545,11 +546,11 @@ def update_account_info(DB, JOB_DIR, DATA_DIR):
 				coll.update_one({'_id':item['_id']},{'$set':data},upsert=False)
 		except Exception as e:
 			errmsg= 'Exception caught when updating account data for user '+  username + ' in DB (err=' + str(e) + ')!'
-			logger.error(errmsg)
+			logger.error(errmsg, action="accounter", user=username)
 			continue
 
 	# - Dump app stats info to DB
-	logger.info("Dumping app stats into to DB ...")
+	logger.info("Dumping app stats into to DB ...", action="accounter")
 	collection_name= 'appstats'
 	try:
 		coll= DB[collection_name]
@@ -560,7 +561,7 @@ def update_account_info(DB, JOB_DIR, DATA_DIR):
 			coll.update_one({'_id':item['_id']},{'$set':app_data},upsert=False)
 	except Exception as e:
 		errmsg= 'Exception caught when updating app stats info data in DB (err=' + str(e) + ')!'
-		logger.error(errmsg)
+		logger.error(errmsg, action="accounter")
 
 	return 0
 

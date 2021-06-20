@@ -44,7 +44,8 @@ from pymongo import MongoClient
 
 
 # Get logger
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 ##############################
 #      WORKERS
@@ -620,14 +621,14 @@ def update_job_status_in_db(client, db_name, task_id, task_info, username='anony
 def do_post_actions(job_dir,app_name,cmd,cmd_args):
 	""" Execute job post actions """
 
-	if app_name=='sfinder':
-		return do_sfinder_post_actions(job_dir,app_name,cmd,cmd_args)	
+	#if app_name=='caesar':
+	#	return do_caesar_post_actions(job_dir,app_name,cmd,cmd_args)	
 	# ... Add others
 
 	return 0
 
-def do_sfinder_post_actions(job_dir,app_name,cmd,cmd_args):
-	""" Execute sfinder post actions """
+def do_caesar_post_actions(job_dir,app_name,cmd,cmd_args):
+	""" Execute caesar post actions """
 	
 	# - Parse options and get input filename
 	cmd_args_list= cmd_args.split()

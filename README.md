@@ -1,5 +1,10 @@
+<p align="left">
+  <img src="share/CAESAR-REST_Architecture.png" alt="Software architecture"/ width="500" height="500">
+</p>
+
 # caesar-rest
-caesar-rest provides a rest interface for caesar [https://github.com/SKA-INAF/caesar] source finding applications, based on Flask python web framework. Celery task queue is used to execute caesar application jobs asynchronously. In this application Celery is configured by default to use a RabbitMQ broker for message exchange and Redis as task result store. In a production environment caesar rest service can be run behind nginx+uwsgi http server. 
+caesar-rest is a REST-ful web service for astronomical source extraction and classification with the caesar source extractor [https://github.com/SKA-INAF/caesar]. The software is developed in python and consists of a few containerized microservices, deployable on standalone servers or on a distributed cloud infrastructure. The core component is the REST web application, based on the Flask framework and running behind a nginx+uwsgi http server, and providing APIs for managing the input data (e.g. data upload/download/removal) and source finding jobs (e.g. submit, get status, get outputs) with different job management systems (Kubernetes, Slurm, Celery). Additional services (AAI, user DB, log storage, job monitor, accounting) enable the user authentication, the storage and retrieval of user data and job information, the monitoring of submitted jobs, and the aggregation of service logs and user data/job stats.
+Besides caesar, we also foresee to integrate other tools widely used in the radio community (e.g. Aegean, PyBDSF) and newly developed source finders based on deep learning models.    
 
 ## **Status**
 This software is under development. Tested originally with python 2.7 but switched to python 3.6 later on (some apps are only available for python 3). 
@@ -13,20 +18,30 @@ This software is distributed with GPLv3 license. If you use caesar-rest for your
 To run caesar rest service you need to install the following tools:  
 
 * Flask [https://palletsprojects.com/p/flask/]     
-* rabbitmq [https://www.rabbitmq.com/]    
-* redis [https://redis.io/]  
-* celery [http://www.celeryproject.org/] 
 * uwsgi [https://uwsgi-docs.readthedocs.io/en/latest/index.html]   
 * nginx [https://nginx.org/]   
-
-To enable registration of uploaded files in a DB (MongoDB in this case) you need to install:   
-
 * mongodb [https://www.mongodb.com/]   
-* Flask-PyMongo python module [https://flask-pymongo.readthedocs.io/en/latest/]   
+* flask-pymongo python module [https://flask-pymongo.readthedocs.io/en/latest/]  
+* structlog python module [https://www.structlog.org/en/stable/]     
+
+For the Celery-based job management, you need to install celery, a broker and a result backend service:   
+
+* celery [http://www.celeryproject.org/]   
+* broker: rabbitmq [https://www.rabbitmq.com/]    
+* result backend: redis [https://redis.io/] or mongodb [https://www.mongodb.com/]     
+
+For the Kubernetes-based job management, you need to install the Kubernetes python client library:    
+
+* kubernetes [https://pypi.org/project/kubernetes/]
+
+For the Slurm-based job management, you need to install these python modules:    
+
+* requests [https://docs.python-requests.org/en/master/]    
+* jwt [https://pypi.org/project/jwt/]     
 
 To enable OpenID Connect based authentication you need to install:    
 
-* Flask-OIDC python module [https://flask-oidc.readthedocs.io/en/latest/]    
+* flask-oidc-ex python module [https://pypi.org/project/flask-oidc-ex/] 
 
 ### **Package installation**
 To build and install the package:    
@@ -46,25 +61,37 @@ To use package scripts:
 * Add binary directory to your ```PATH``` environment variable:   
   ``` export PATH=$PATH:$INSTALL_DIR/bin ```    
 
-## **How to run?**  
+## **Run the application**  
+
+In the following we describe the steps done to deploy and run the application and the auxiliary services. Three possible options are described below for the deployment, depending of whether the job management is done with celery, Kubernetes, or with Slurm.     
 
 ### **Preliminary setup**
 Before running the application you must do some preparatory stuff:   
 
-* Create the application working dir (by default `/opt/caesar-rest`)   
+* (OPTIONAL) Create a dedicated user & group (e.g. `caesar`) allowed to run the application and services and give it ownership to the directories created below    * Create the application working dir (by default `/opt/caesar-rest`)   
+* (OPTIONAL) Mount an external storage in the application working dir, for example using rclone: `/usr/bin/rclone mount --daemon [--uid=[UID] --gid=[UID]] --umask 000 --allow-other --file-perms 0777 --dir-cache-time 0m5s --vfs-cache-mode full [RCLONE_REMOTE_STORAGE]:[RCLONE_REMOTE_STORAGE_PATH] /opt/caesar-rest -vvv` where `UID` is the Linux user id of the user previously created.     
 * Create the top directory for data upload (by default `/opt/caesar-rest/data`)   
 * Create the top directory for jobs (by default `/opt/caesar-rest/jobs`)   
 * (OPTIONAL) Create the log directory for system services (see below), e.g. `/opt/caesar-rest/logs` 
 * (OPTIONAL) Create the run directory for system services (see below), e.g. `/opt/caesar-rest/run` 
-* (OPTIONAL) Create a dedicated user & group (e.g. `caesar`) allowed to run the application and services and give it ownership of the directories previously created     
 
-### **Run backend services**
-To run caesar-rest you must first run the message broker, the task store and worker services:
+
+### **Run DB service**
+caesar-rest requires a MongoDB service where to store user data and job information. To start the DB service:    
+
+```systemctl start mongodb.service```   
+
+### **Run Filebeat service**   
+WRITE ME
+
+### **Run Celery services (OPTIONAL)**
+If you want to manage jobs with Celery, you must run a message broker service (i.e. rabbitmq), a task store service (i.e. redis or mongdb) and one or more Celery worker services:
 
 * Run rabbitmq message broker service:  
    ```systemctl start rabbitmq-server.service```   
-* Run redis store service:    
-   ```systemctl start redis.service```   
+* Run task store service:    
+   ```systemctl start redis.service``` or      
+   ```systemctl start mongodb.service```   
 * Run celery worker with desired concurrency level (e.g. 2):  
    ```celery -A caesar_rest worker --loglevel=INFO --concurrency=2```   
    
@@ -134,17 +161,62 @@ To run caesar-rest in development mode, e.g. for debug or testing purposes:
 
 where supported `ARGS` are:    
 
+   MAIN OPTIONS       
    * `datadir=[DATADIR]`: Directory where to store uploaded data (default: /opt/caesar-rest/data)   
-   * `jobdir=[JOBDIR]`: Top directory where to store job data (default: /opt/caesar-rest/data)
+   * `jobdir=[JOBDIR]`: Top directory where to store job data (default: /opt/caesar-rest/jobs)     
+   * `job_scheduler=[SCHEDULER]`:  Job scheduler to be used. Options are: {celery,kubernetes,slurm} (default=celery)     
    * `debug`: Run Flask application in debug mode if given   
+   * `ssl`: To enable run of Flask application over HTTPS     
+
+   AAI OPTIONS
    * `aai`: Enable service authentication    
    * `secretfile=[SECRETFILE]`: File (.json) with OpenID Connect client auth credentials    
-   * `openid_realm=[OPENID_REALM]`: OpenID realm used (default=neanias-development)    
-   * `ssl`: To enable run of Flask application over HTTPS     
-   * `db`: To enable registration of uploaded files in MongoDB. If disabled, files are registered in a python dict (NB: dict works only for apps with 1 process) (default=disabled)     
-   * `dbhost=[DBHOST]`: Host of MongoDB database (default=localhost)    
+   
+   DB OPTIONS       
    * `dbname=[DBNAME]`: Name of MongoDB database (default=caesardb)   
-   * `sfindernn_weights=[PATH]`: File (.h5) with network weights used in sfindernn app     
+   * `dbhost=[DBHOST]`: Host of MongoDB database (default=localhost)    
+   * `dbport=[DBPORT]`: Port of MongoDB database (default=27017)   
+
+   LOGGING OPTIONS
+   * `loglevel=[LEVEL]`: Log level to be used (default=INFO)   
+   * `logtofile`: Enable logging to file (default=no)   
+   * `logdir`: Directory where to store logs (default=/opt/caesar-rest/logs)   
+   * `logfile`: Name of json log file (default=app_logs.json)   
+   * `logfile_maxsize`: Max file size in MB (default=5)    
+  
+   CELERY OPTIONS       
+   * `result_backend_host=[BACKEND_HOST]`: Host of Celery result backend service (default=localhost) 
+   * `result_backend_port=[BACKEND_PORT]`: Port of Celery result backend service (default=6379)   
+   * `result_backend_proto=[BACKEND_PROTO]`: Celery result backend type. Options are: {mongodb,redis} (default=redis)   
+   * `result_backend_dbname=[BACKEND_DBNAME]`: Celery result backend database name (default=0)   
+   * `broker_host=[BROKER_HOST]`: Host of Celery broker service (default=localhost)    
+   * `broker_port=[BROKER_PORT]`: Port of Celery broker service (default=5672)    
+   * `broker_proto=[BROKER_PROTO]`: Protocol of Celery broker. Options are: {amqp,redis} (default=amqp)    
+   * `broker_user=[BROKER_USER]`: Username used in Celery broker (default=guest)   
+   * `broker_pass=[BROKER_PASS]`: Password used in Celery broker (default=guest)   
+  
+   KUBERNETES OPTIONS   
+   * `kube_config=[FILE_PATH]`: Kube configuration file path (default=search in standard path)   
+   * `kube_cafile=[FILE_PATH]`: Kube certificate authority file path    
+   * `kube_keyfile=[FILE_PATH]`: Kube private key file path    
+   * `kube_certfile=[FILE_PATH]`: Kube certificate file path   
+
+   SLURM OPTIONS   
+   * `slurm_keyfile=[FILE_PATH]`: Slurm rest service private key file path    
+   * `slurm_user=[SLURM_USER]`: Username enabled to run in Slurm cluster (default=cirasa)   
+   * `slurm_host=[SLURM_HOST]`: Slurm cluster host/ipaddress (default=localhost)   
+   * `slurm_port=[SLURM_PORT]`: Slurm rest service port (default=6820)  
+   * `slurm_batch_workdir=[SLURM_BATCH_WORKDIR]`: Cluster directory where to place Slurm batch logs (must be writable by slurm_user) (default=/opt/slurm/batchlogs/caesar-rest)    
+   * `slurm_queue=[SLURM_QUEUE]`: Slurm cluster queue for submitting jobs (default=normal)   
+   * `slurm_jobdir=[SLURM_JOBDIR]`: Path at which the job directory is mounted in Slurm cluster (default=/mnt/storage/jobs)    
+   * `slurm_datadir=[SLURM_DATADIR]`: Path at which the data directory is mounted in Slurm cluster (default=/mnt/storage/data)   
+   * `slurm_max_cores_per_job=[SLURM_MAX_CORES_PER_JOB]`: Slurm maximum number of cores reserved for a job (default=4)   
+    
+   VOLUME MOUNT OPTIONS   
+   * `mount_rclone_volume`: Enable mounting of Nextcloud volume through rclone in container jobs (default=no)  
+   * `mount_volume_path=[PATH]`: Mount volume path for container jobs (default=/mnt/storage)  
+   * `rclone_storage_name=[NAME]`: rclone remote storage name (default=neanias-nextcloud)   
+   * `rclone_storage_path=[PATH]`: rclone remote storage path (default=.)    	
   
 Flask default options are defined in the `config.py`. Celery options are defined in the `celery_config.py`. Other options may be defined in the future to override default Flask and Celery options.   
 
@@ -326,7 +398,8 @@ Server response contains a list of valid apps that can be queried for further de
 ```
 {
   "apps": [
-    "sfinder"
+    "caesar",
+    "mrcnn"
   ]
 }
 ```
@@ -353,17 +426,17 @@ A sample curl request would be:
 ```
 curl -X POST \   
   -H 'Content-Type: application/json' \   
-  -d '{"app":"sfinder","job_inputs":{"inputfile":"/opt/caesar-rest/data/67a49bf7555b41739095681bf52a1f99.fits","run":true,"no-logredir":true,"envfile":"/home/riggi/Software/setvars.sh","no-mpi":true,"no-nestedsearch":true,"no-extendedsearch":true}}' \   
+  -d '{"app":"caesar","job_inputs":{"inputfile":"/opt/caesar-rest/data/67a49bf7555b41739095681bf52a1f99.fits","run":true,"no-logredir":true,"envfile":"/home/riggi/Software/setvars.sh","no-mpi":true,"no-nestedsearch":true,"no-extendedsearch":true}}' \   
   --url 'http://localhost:8080/caesar/api/v1.0/job'   
 ```
 
-Job data must contain a valid app name (in this case `sfinder`) and desired job inputs, e.g. a dictionary with app valid options. Valid options for `sfinder` app are named as in `caesar` and can be retrieved using app description url described above.   
+Job data must contain a valid app name (in this case `caesar`) and desired job inputs, e.g. a dictionary with app valid options. Valid options for `caesar` app are named as in `caesar` and can be retrieved using app description url described above.   
 
 Server response is:   
 
 ```
 {
-  "app": "sfinder",
+  "app": "caesar",
   "job_id": "69ca62d7-5098-4fe7-a675-63895a2d06b1",
   "job_inputs": {
     "envfile": "/home/riggi/Software/setvars.sh",

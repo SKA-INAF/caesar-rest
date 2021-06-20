@@ -25,8 +25,8 @@ from caesar_rest.base_app_configurator import AppConfigurator
 from caesar_rest.base_app_configurator import Option, ValueOption
 
 # Get logger
-logger = logging.getLogger(__name__)
-
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 
 #######################################
@@ -48,7 +48,7 @@ class CaesarAppConfigurator(AppConfigurator):
 		# - Define dictionary with allowed options
 		self.valid_options= {
 			# == INPUT OPTIONS ==
-			'inputfile' : ValueOption('inputfile','',str,True),
+			#'inputfile' : ValueOption('inputfile','',str,True),
 			#'filelist' : ValueOption('filelist','',True),
 		
 			# == OUTPUT OPTIONS ==
@@ -237,52 +237,96 @@ class CaesarAppConfigurator(AppConfigurator):
 			'wtscalemax' : ValueOption('wtscalemax','',int, description='Maximum Wavelet Transform scale for extended source search (default=6)'),
 
 			# == RUN OPTIONS ==
-			'run' : Option('run', description='Run the generated run script on the local shell. If disabled only run script will be generated for later run'),
-			'envfile' : ValueOption('envfile','',str, description='File (.sh) with list of environment variables to be loaded by each processing node'),
+			#'run' : Option('run', description='Run the generated run script on the local shell. If disabled only run script will be generated for later run'),
+			#'envfile' : ValueOption('envfile','',str, description='File (.sh) with list of environment variables to be loaded by each processing node'),
 			'loglevel' : ValueOption('loglevel','',str, description='Logging level string {INFO, DEBUG, WARN, ERROR, OFF} (default=INFO)'),
-			'maxfiles' : ValueOption('maxfiles','',int, description='Maximum number of input files processed in filelist (default=-1=all files)'),
-			'addrunindex' : Option('addrunindex', description='Append a run index to submission script (in case of list execution) (default=no)'),
-			'jobdir' : ValueOption('jobdir','',str, description='Job directory where to run (default=pwd)'),			
-			'outdir' : ValueOption('outdir','',str, description='Output directory where to put run output file (default=pwd)'),
+			#'maxfiles' : ValueOption('maxfiles','',int, description='Maximum number of input files processed in filelist (default=-1=all files)'),
+			#'addrunindex' : Option('addrunindex', description='Append a run index to submission script (in case of list execution) (default=no)'),
+			#'jobdir' : ValueOption('jobdir','',str, description='Job directory where to run (default=pwd)'),			
+			#'outdir' : ValueOption('outdir','',str, description='Output directory where to put run output file (default=pwd)'),
 			'no-logredir' : Option('no-logredir', description='Do not redirect logs to output file in script'),
 			'no-mpi' : Option('no-mpi', description='Disable MPI run (even with 1 proc) (default=enabled)'),
-			'mpioptions' : ValueOption('mpioptions','',str, description='Options to be passed to MPI (e.g. --bind-to {none,hwthread, core, l1cache, l2cache, l3cache, socket, numa, board}) (default=none)'),
+			#'mpioptions' : ValueOption('mpioptions','',str, description='Options to be passed to MPI (e.g. --bind-to {none,hwthread, core, l1cache, l2cache, l3cache, socket, numa, board}) (default=none)'),
 			'nproc' : ValueOption('nproc','',int, description='Number of MPI processors per node used (NB: mpi tot nproc=nproc x nnodes) (default=1)'),
 			'nthreads' : ValueOption('nthreads','',int, description='Number of threads to be used in OpenMP (default=-1=all available in node)'),
-			'hostfile' : ValueOption('hostfile','',str, description='Ascii file with list of hosts used by MPI (default=no hostfile used)'),
-			'containerrun' : Option('containerrun', description='Run inside Caesar container'),
-			'containerimg' : ValueOption('containerimg','',str, description='Singularity container image file (.simg) with CAESAR installed software'),
-			'containeroptions' : ValueOption('containeroptions','',str, description='Options to be passed to container run (e.g. -B /home/user:/home/user) (default=none)'),
+			#'hostfile' : ValueOption('hostfile','',str, description='Ascii file with list of hosts used by MPI (default=no hostfile used)'),
+			#'containerrun' : Option('containerrun', description='Run inside Caesar container'),
+			#'containerimg' : ValueOption('containerimg','',str, description='Singularity container image file (.simg) with CAESAR installed software'),
+			#'containeroptions' : ValueOption('containeroptions','',str, description='Options to be passed to container run (e.g. -B /home/user:/home/user) (default=none)'),
 
 			# == SFINDER SUBMISSION OPTIONS ==
-			'submit' : Option('submit', description='Submit the script to the batch system using queue specified. Takes precedence over local run.'),
-			'batchsystem' : ValueOption('batchsystem','',str, description='Name of batch system. Valid choices are {PBS,SLURM} (default=PBS)'),
-			'queue' : ValueOption('queue','',str, description='Name of queue in batch system'),
-			'jobwalltime' : ValueOption('jobwalltime','',str, description='Job wall time in batch system (default=96:00:00)'),
-			'jobcpus' : ValueOption('jobcpus','',int, description='Number of cpu per node requested for the job (default=1)'),
-			'jobnodes' : ValueOption('jobnodes','',int, description='Number of nodes requested for the job (default=1)'),
-			'jobmemory' : ValueOption('jobmemory','',float, description='Memory in GB required for the job (default=4)'),
-			'jobusergroup' : ValueOption('jobusergroup','',str, description='Name of job user group batch system (default=empty)'),
+			#'submit' : Option('submit', description='Submit the script to the batch system using queue specified. Takes precedence over local run.'),
+			#'batchsystem' : ValueOption('batchsystem','',str, description='Name of batch system. Valid choices are {PBS,SLURM} (default=PBS)'),
+			#'queue' : ValueOption('queue','',str, description='Name of queue in batch system'),
+			#'jobwalltime' : ValueOption('jobwalltime','',str, description='Job wall time in batch system (default=96:00:00)'),
+			#'jobcpus' : ValueOption('jobcpus','',int, description='Number of cpu per node requested for the job (default=1)'),
+			#'jobnodes' : ValueOption('jobnodes','',int, description='Number of nodes requested for the job (default=1)'),
+			#'jobmemory' : ValueOption('jobmemory','',float, description='Memory in GB required for the job (default=4)'),
+			#'jobusergroup' : ValueOption('jobusergroup','',str, description='Name of job user group batch system (default=empty)'),
 
 		} # close dict
 
 		# - Define option value transformers
-		self.option_value_transformer= {
-			'inputfile': self.transform_inputfile
-		}
+		#self.option_value_transformer= {
+		#	'inputfile': self.transform_inputfile
+		#}
 
 		# - Fill some default cmd args
-		use_slurm= current_app.config['USE_SLURM']
-		if use_slurm:
-			logger.info("Adding Slurm options by default ...")
-			queue_opt= '--queue=' + current_app.config['SLURM_QUEUE']
-			self.cmd_args.append("--batchsystem=SLURM")
-			self.cmd_args.append(queue_opt)
-		else:
-			logger.info("Adding --run option by default ...")
-			self.cmd_args.append("--run")
+		logger.debug("Adding some options by default ...", action="submitjob")
+		self.cmd_args.append("--run")
+		self.cmd_args.append("--save-summaryplot")
+		self.cmd_args.append("--save-regions ")
 
 	
+	def set_data_input_option_value(self):
+		""" Set app input option value """
+
+		input_opt= "".join("--inputfile=%s" % self.data_inputs)
+		self.cmd_args.append(input_opt)
+
+
+	def set_ncores_from_options(self):
+		""" Returns the number of cores from parsed options (to be overridden) """
+		
+		# - Search if --nthreads option was given and extract value
+		matching= [s for s in self.cmd_args if "--nthreads" in s]
+		self.run_options["ncores"]= 1
+		if matching:
+			parsed_option_vals= matching[0].split('=')
+			if len(parsed_option_vals)==2:
+				try:
+					nthreads= int(parsed_option_vals[1])
+					if nthreads>0:						
+						self.run_options["ncores"]= nthreads
+						logger.info("Set job ncores to %d ..." % self.run_options["ncores"], action="submitjob")
+					else:
+						logger.warn("Parsed nthreads value (%d) is <=0, setting ncores=1 ..." % nthreads, action="submitjob")
+				except:
+					logger.warn("Failed to parse nthreads option, setting ncores=1 ...", action="submitjob")			
+			else:
+				logger.warn("Expected 2 fields when parsing nthreads option, setting ncores=1 ...", action="submitjob")
+
+	def set_nproc_from_options(self):
+		""" Returns the number of MPI proc from parsed options (to be overridden) """
+		
+		# - Search if --nproc option was given and extract value
+		matching= [s for s in self.cmd_args if "--nproc" in s]
+		self.run_options["nproc"]= 1
+		if matching:
+			parsed_option_vals= matching[0].split('=')
+			if len(parsed_option_vals)==2:
+				try:
+					nproc= int(parsed_option_vals[1])
+					if nproc>0:						
+						self.run_options["nproc"]= nproc
+						logger.info("Set job MPI proc to %d ..." % self.run_options["nproc"], action="submitjob")
+					else:
+						logger.warn("Parsed nproc value (%d) is <=0, setting nproc=1 ..." % nproc, action="submitjob")
+				except:
+					logger.warn("Failed to parse nproc option, setting nproc=1 ...", action="submitjob")			
+			else:
+				logger.warn("Expected 2 fields when parsing nproc option, setting nproc=1 ...", action="submitjob")
+
 
 	def transform_inputfile(self,file_uuid):
 		""" Transform input file from uuid to actual path """		
@@ -294,7 +338,7 @@ class CaesarAppConfigurator(AppConfigurator):
 			username= utils.sanitize_username(email)
 
 		# - Inspect inputfile (expect it is a uuid, so convert to filename)
-		logger.info("Finding inputfile uuid %s ..." % file_uuid)
+		logger.info("Finding inputfile uuid %s ..." % file_uuid, action="submitjob")
 		collection_name= username + '.files'
 
 		file_path= ''
@@ -304,17 +348,17 @@ class CaesarAppConfigurator(AppConfigurator):
 			if item and item is not None:
 				file_path= item['filepath']
 			else:
-				logger.warn("File with uuid=%s not found in DB!" % file_uuid)
+				logger.warn("File with uuid=%s not found in DB!" % file_uuid, action="submitjob")
 				file_path= ''
 		except Exception as e:
-			logger.error("Exception (err=%s) catch when searching file in DB!" % str(e))
+			logger.error("Exception (err=%s) catch when searching file in DB!" % str(e), action="submitjob")
 			return ''
 		
 		if not file_path or file_path=='':
-			logger.warn("inputfile uuid %s is empty or not found in the system!" % file_uuid)
+			logger.warn("inputfile uuid %s is empty or not found in the system!" % file_uuid, action="submitjob")
 			return ''
 
-		logger.info("inputfile uuid %s converted in %s ..." % (file_uuid,file_path))
+		logger.info("inputfile uuid %s converted in %s ..." % (file_uuid,file_path), action="submitjob")
 
 		return file_path
 		

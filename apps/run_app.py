@@ -12,6 +12,9 @@ import datetime
 import numpy as np
 import argparse
 
+import structlog
+import logging
+
 # - caesar_rest modules
 import caesar_rest
 from caesar_rest import __version__, __date__
@@ -24,7 +27,7 @@ from caesar_rest import oidc
 from caesar_rest import mongo
 from caesar_rest import celery
 from caesar_rest import jobmgr_kube
-
+from caesar_rest import jobmgr_slurm
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
@@ -45,9 +48,21 @@ def get_args():
 	# - Specify cmd options
 	parser.add_argument('-datadir','--datadir', dest='datadir', default='/opt/caesar-rest/data', required=False, type=str, help='Directory where to store uploaded data') 
 	parser.add_argument('-jobdir','--jobdir', dest='jobdir', default='/opt/caesar-rest/jobs', required=False, type=str, help='Directory where to store jobs') 
+	parser.add_argument('-job_scheduler','--job_scheduler', dest='job_scheduler', default='celery', required=False, type=str, help='Job scheduler to be used. Options are: {celery,kubernetes,slurm} (default=celery)')
 	parser.add_argument('-job_monitoring_period','--job_monitoring_period', dest='job_monitoring_period', default=5, required=False, type=int, help='Job monitoring poll period in seconds') 
 	parser.add_argument('--debug', dest='debug', action='store_true')	
-	parser.set_defaults(debug=True)	
+	parser.set_defaults(debug=True)
+
+	# - Log options
+	parser.add_argument('-loglevel','--loglevel', dest='loglevel', default='INFO', required=False, type=str, help='Log level to be used (default=INFO)')
+	parser.add_argument('--logtofile', dest='logtofile', action='store_true')	
+	parser.set_defaults(logtofile=False)
+	parser.add_argument('-logdir','--logdir', dest='logdir', default='/opt/caesar-rest/logs', required=False, type=str, help='Directory where to store logs')
+	parser.add_argument('-logfile','--logfile', dest='logfile', default='app_logs.json', required=False, type=str, help='Name of json log file')
+	parser.add_argument('-logfile_maxsize','--logfile_maxsize', dest='logfile_maxsize', default=5.0, required=False, type=float, help='Max file size in MB (default=5)')
+
+
+	# - AAI options
 	parser.add_argument('--aai', dest='aai', action='store_true')	
 	parser.set_defaults(aai=False)	
 	parser.add_argument('-secretfile','--secretfile', dest='secretfile', default='config/client_secrets.json', required=False, type=str, help='File (.json) with client credentials for AAI')
@@ -55,14 +70,18 @@ def get_args():
 	parser.add_argument('--ssl', dest='ssl', action='store_true')	
 	parser.set_defaults(ssl=False)
 	
+	# - Algorithm options
 	parser.add_argument('-mrcnn_weights','--mrcnn_weights', dest='mrcnn_weights', default='/opt/Software/MaskR-CNN/install/share/mrcnn_weights.h5', required=False, type=str, help='File (.h5) with network weights used in Mask-RCNN app')
 
+	# - DB options
+	parser.add_argument('--no-db', dest='db', action='store_false')
 	parser.add_argument('--db', dest='db', action='store_true')	
-	parser.set_defaults(db=False)
+	parser.set_defaults(db=True)
 	parser.add_argument('-dbhost','--dbhost', dest='dbhost', default='localhost', required=False, type=str, help='Host of MongoDB database (default=localhost)')
 	parser.add_argument('-dbname','--dbname', dest='dbname', default='caesardb', required=False, type=str, help='Name of MongoDB database (default=caesardb)')
 	parser.add_argument('-dbport','--dbport', dest='dbport', default=27017, required=False, type=int, help='Port of MongoDB database (default=27017)')
 
+	# - Celery options
 	parser.add_argument('-result_backend_host','--result_backend_host', dest='result_backend_host', default='localhost', required=False, type=str, help='Host of Celery result backend (default=localhost)')
 	parser.add_argument('-result_backend_port','--result_backend_port', dest='result_backend_port', default=6379, required=False, type=int, help='Port of Celery result backend (default=6379)')
 	parser.add_argument('-result_backend_proto','--result_backend_proto', dest='result_backend_proto', default='redis', required=False, type=str, help='Celery result backend type (default=redis)')
@@ -76,8 +95,6 @@ def get_args():
 	parser.add_argument('-broker_user','--broker_user', dest='broker_user', default='guest', required=False, type=str, help='Username used in Celery broker (default=guest)')
 	parser.add_argument('-broker_pass','--broker_pass', dest='broker_pass', default='guest', required=False, type=str, help='Password used in Celery broker (default=guest)')
 
-	parser.add_argument('-job_scheduler','--job_scheduler', dest='job_scheduler', default='celery', required=False, type=str, help='Job scheduler to be used. Options are: {celery,kubernetes,slurm} (default=celery)')
-
 	# - Kubernetes scheduler options
 	parser.add_argument('--kube_incluster', dest='kube_incluster', action='store_true')	
 	parser.set_defaults(kube_incluster=False)
@@ -87,7 +104,16 @@ def get_args():
 	parser.add_argument('-kube_certfile','--kube_certfile', dest='kube_certfile', default='', required=False, type=str, help='Kube certificate file path')
 	
 	# - Slurm scheduler options
-	# ...
+	parser.add_argument('-slurm_keyfile','--slurm_keyfile', dest='slurm_keyfile', default='', required=False, type=str, help='Slurm rest service private key file path')
+	parser.add_argument('-slurm_user','--slurm_user', dest='slurm_user', default='cirasa', required=False, type=str, help='Username enabled to run in Slurm cluster')
+	parser.add_argument('-slurm_host','--slurm_host', dest='slurm_host', default='SLURM_HOST', required=False, type=str, help='Slurm cluster host/ipaddress')
+	parser.add_argument('-slurm_port','--slurm_port', dest='slurm_port', default=6820, required=False, type=int, help='Slurm rest service port')
+	parser.add_argument('-slurm_batch_workdir','--slurm_batch_workdir', dest='slurm_batch_workdir', default='', required=False, type=str, help='Cluster directory where to place Slurm batch logs (must be writable by slurm_user)')
+	parser.add_argument('-slurm_queue','--slurm_queue', dest='slurm_queue', default='normal', required=False, type=str, help='Slurm cluster host/ipaddress')
+	parser.add_argument('-slurm_jobdir','--slurm_jobdir', dest='slurm_jobdir', default='/mnt/storage/jobs', required=False, type=str, help='Path at which the job directory is mounted in Slurm cluster')	
+	parser.add_argument('-slurm_datadir','--slurm_datadir', dest='slurm_datadir', default='/mnt/storage/data', required=False, type=str, help='Path at which the data directory is mounted in Slurm cluster')	
+	parser.add_argument('-slurm_max_cores_per_job','--slurm_max_cores_per_job', dest='slurm_max_cores_per_job', default=4, required=False, type=int, help='Slurm maximum number of cores reserved for a job (default=4)')
+	
 
 	# - Volume mount options
 	parser.add_argument('--mount_rclone_volume', dest='mount_rclone_volume', action='store_true')	
@@ -116,6 +142,39 @@ datadir= args.datadir
 jobdir= args.jobdir
 debug= args.debug
 
+# - Log level options
+loglevel= args.loglevel
+logtofile= args.logtofile
+logdir= args.logdir
+logfile= args.logfile
+logfilepath= os.path.join(logdir,logfile)
+logfile_maxsize= args.logfile_maxsize
+
+if logtofile:
+	logger.info("Enabling logging to file %s ..." % logfilepath)
+	
+	formatter_file= structlog.stdlib.ProcessorFormatter(
+		processor=structlog.processors.JSONRenderer(),
+	)
+
+	try:
+		handler_file= logging.handlers.RotatingFileHandler(
+			logfilepath, 
+			maxBytes=logfile_maxsize*1024*1024,
+			backupCount=2 
+		)
+	except Exception as e:
+		logger.error("Failed to initialize file logger (err=%s)!" % str(e))
+		sys.exit(1)
+
+	handler_file.setFormatter(formatter_file)
+	logger.addHandler(handler_file)
+
+logger.info("Setting log level to %s ..." % loglevel)
+logger.setLevel(loglevel)
+
+
+
 # - AAI options
 use_aai= args.aai
 secret_file= args.secretfile
@@ -126,10 +185,24 @@ ssl= args.ssl
 job_monitoring_period= args.job_monitoring_period
 mrcnn_weights= args.mrcnn_weights
 
+# - Scheduler options
+job_scheduler= args.job_scheduler
+if job_scheduler!='celery' and job_scheduler!='kubernetes' and job_scheduler!='slurm':
+	logger.error("Unsupported job scheduler (hint: supported are {celery,kubernetes,slurm})!")
+	sys.exit(1)
+
+if job_scheduler=='kubernetes' and jobmgr_kube is None:
+	logger.error("Chosen scheduler is Kubernetes but kube client failed to be instantiated (see previous logs)!")
+	sys.exit(1)
+
 # - DB & celery result backend options
 use_db= args.db
 dbhost= 'mongodb://' + args.dbhost + ':' + str(args.dbport) + '/' + args.dbname
-logger.info("Using dbhost: %s" % dbhost)
+
+if use_db:
+	logger.info("Using db url: %s" % dbhost)
+else:
+	logger.warn("DB usage is disabled...")
 
 result_backend_host= args.result_backend_host
 result_backend_port= args.result_backend_port
@@ -146,7 +219,9 @@ elif result_backend_proto=='mongodb':
 else:
 	logger.error("Unsupported result backend (hint: supported are {redis,mongodb})!")
 	sys.exit(1)
-logger.info("Using result_backend: %s" % result_backend)
+
+if job_scheduler=='celery':
+	logger.info("Using result_backend: %s" % result_backend)
 
 
 # - Celery broker options
@@ -156,20 +231,10 @@ broker_proto= args.broker_proto
 broker_user= args.broker_user
 broker_pass= args.broker_pass 
 broker_url= broker_proto + '://' + broker_user + ':' + broker_pass + '@' + broker_host + ':' + str(broker_port) + '/'
-logger.info("Using broker_url: %s" % broker_url)
 
-# - Celery beat options
-# ...
+if job_scheduler=='celery':
+	logger.info("Using broker_url: %s" % broker_url)
 
-# - Scheduler options
-job_scheduler= args.job_scheduler
-if job_scheduler!='celery' and job_scheduler!='kubernetes' and job_scheduler!='slurm':
-	logger.error("Unsupported job scheduler (hint: supported are {celery,kubernetes,slurm})!")
-	sys.exit(1)
-
-if job_scheduler=='kubernetes' and jobmgr_kube is None:
-	logger.error("Chosen scheduler is Kubernetes but kube client failed to be instantiated (see previous logs)!")
-	sys.exit(1)
 
 # - Kubernetes options
 kube_incluster= args.kube_incluster
@@ -178,7 +243,17 @@ kube_certfile= args.kube_certfile
 kube_keyfile= args.kube_keyfile
 kube_cafile= args.kube_cafile
 
-
+# - Slurm options
+slurm_keyfile= args.slurm_keyfile
+slurm_user= args.slurm_user
+slurm_host= args.slurm_host
+slurm_port= args.slurm_port
+slurm_batch_workdir= args.slurm_batch_workdir
+slurm_queue= args.slurm_queue
+slurm_jobdir= args.slurm_jobdir
+slurm_datadir= args.slurm_datadir
+slurm_max_cores_per_job= args.slurm_max_cores_per_job
+	
 #===============================
 #==   INIT
 #===============================
@@ -214,12 +289,25 @@ config.KUBE_CERTFILE= kube_certfile
 config.KUBE_KEYFILE= kube_keyfile
 config.KUBE_CERTAUTHFILE= kube_cafile
 
+config.SLURM_KEYFILE= slurm_keyfile
+config.SLURM_QUEUE= slurm_queue
+config.SLURM_USER= slurm_user
+config.SLURM_HOST= slurm_host
+config.SLURM_BATCH_WORKDIR= slurm_batch_workdir
+config.SLURM_PORT= slurm_port
+config.SLURM_JOB_DIR= slurm_jobdir
+config.SLURM_DATA_DIR= slurm_datadir
+config.SLURM_MAX_CORE_PER_JOB= slurm_max_cores_per_job
 
 config.MOUNT_RCLONE_VOLUME= args.mount_rclone_volume
 config.MOUNT_VOLUME_PATH= args.mount_volume_path
 config.RCLONE_REMOTE_STORAGE= args.rclone_storage_name
 config.RCLONE_REMOTE_STORAGE_PATH= args.rclone_storage_path
 
+config.LOG_TO_FILE= logtofile
+config.LOG_LEVEL= loglevel
+config.LOG_DIR= logdir
+config.LOG_FILE= logfile
 
 # - Create data manager (DEPRECATED BY MONGO)
 ##logger.info("Creating data manager ...")
@@ -231,13 +319,8 @@ logger.info("Creating job configurator ...")
 jobcfg= JobConfigurator()
 
 # - Update celery configs
-logger.info("Updating celery configuration (broker_url=%s, result_backend=%s) ..." % (broker_url, result_backend))
 celery.conf.result_backend= result_backend
 celery.conf.broker_url= broker_url
-
-#celery.conf.beat_schedule['accounter_beat']['args'][0]= args.dbhost
-#celery.conf.beat_schedule['accounter_beat']['args'][1]= args.dbport
-#celery.conf.beat_schedule['accounter_beat']['args'][2]= args.dbname
 
 #===============================
 #==   CREATE APP
@@ -291,6 +374,35 @@ if job_scheduler=='kubernetes' and jobmgr_kube is not None:
 	except Exception as e:
 		logger.error("Failed to initialize Kube job manager (err=%s)!" % str(e))
 		sys.exit(1)
+
+#============================================
+#==   INIT SLURM CLIENT (if enabled)
+#============================================
+if job_scheduler=='slurm' and jobmgr_slurm is not None:
+
+	# - Setting options
+	jobmgr_slurm.host= config.SLURM_HOST
+	jobmgr_slurm.port= config.SLURM_PORT	
+	jobmgr_slurm.cluster_queue= config.SLURM_QUEUE
+	jobmgr_slurm.keyfile= config.SLURM_KEYFILE
+	jobmgr_slurm.username= config.SLURM_USER
+	jobmgr_slurm.cluster_batch_workdir= config.SLURM_BATCH_WORKDIR
+	jobmgr_slurm.cluster_jobdir= config.SLURM_JOB_DIR
+	jobmgr_slurm.cluster_datadir= config.SLURM_DATA_DIR
+	jobmgr_slurm.app_jobdir= config.JOB_DIR
+	jobmgr_slurm.app_datadir= config.UPLOAD_FOLDER
+	jobmgr_slurm.max_cores= config.SLURM_MAX_CORE_PER_JOB
+
+	# - Initialize client
+	logger.info("Initializing Slurm job manager ...")
+	try:
+		if jobmgr_slurm.initialize()<0:
+			logger.error("Failed to initialize Slurm job manager, see logs!")
+			sys.exit(1)
+	except Exception as e:
+		logger.error("Failed to initialize Slurm job manager (err=%s)!" % str(e))
+		sys.exit(1)
+
 
 ###################
 ##   MAIN EXEC   ##

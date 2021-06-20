@@ -26,7 +26,8 @@ from kubernetes.client.rest import ApiException
 from caesar_rest import utils
 
 # - Get logger
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 ##############################
 #      CLASSES
@@ -288,7 +289,7 @@ class KubeJobManager(object):
 			#pprint(submitted_job)
 
 		except ApiException as e:
-			logger.warn("Exception when calling BatchV1Api->read_namespaced_job_status: %s" % e) 
+			logger.warn("Exception when calling BatchV1Api->read_namespaced_job_status: %s" % str(e), action="jobstatus") 
 			raise e
 
 		# - Compute job status
@@ -357,7 +358,7 @@ class KubeJobManager(object):
 	def delete_job(self, job_name):
 		""" Delete job and relative pod (TBD) """
 		
-		logger.info("Cleaning up job %s ..." % job_name)
+		logger.info("Cleaning up job %s ..." % job_name, action="canceljob")
 		try: 
 			# - Setting Grace Period to 0 means delete ASAP.
 			#   Propagation policy makes the Garbage cleaning Async
@@ -371,7 +372,7 @@ class KubeJobManager(object):
 			print(res)
             
 		except ApiException as e:
-			logger.warn("Exception when calling BatchV1Api->delete_namespaced_job: %s" % e)
+			logger.warn("Exception when calling BatchV1Api->delete_namespaced_job: %s" % str(e), action="canceljob")
 			return -1
 
 		return 0
@@ -404,7 +405,7 @@ class KubeJobManager(object):
 				volume_mounts=vol_mounts
 			)
 		except:
-			logger.warn("Failed to create job container object!")
+			logger.warn("Failed to create job container object!", action="submitjob")
 			return None
 
 		# - Create and configurate pod spec section
@@ -420,7 +421,7 @@ class KubeJobManager(object):
 				)
 			)
 		except:
-			logger.warn("Failed to create the job template object!")
+			logger.warn("Failed to create the job template object!", action="submitjob")
 			return None
 
 		# - Create the specification of deployment
@@ -432,7 +433,7 @@ class KubeJobManager(object):
 				ttl_seconds_after_finished=ttl
 			)
 		except:
-			logger("Failed to create the job spec object!")
+			logger("Failed to create the job spec object!", action="submitjob")
 			return None
 
 		# - Instantiate the job object
@@ -445,7 +446,7 @@ class KubeJobManager(object):
 				spec=spec
 			)
 		except:
-			logger.warn("Failed to create job object!")
+			logger.warn("Failed to create job object!", action="submitjob")
 			return None
 			
 		return job
@@ -459,7 +460,7 @@ class KubeJobManager(object):
 
 		# - Check job options
 		if job_args=="":
-			logger.warn("Empty job args!")
+			logger.warn("Empty job args!", action="submitjob")
 			return None
 
 		#############################
@@ -531,7 +532,7 @@ class KubeJobManager(object):
 			)
 			
 		except ApiException as e:
-			logger.warn("Exception when calling BatchV1Api->create_namespaced_job: %s" % e)
+			logger.warn("Exception when calling BatchV1Api->create_namespaced_job: %s" % str(e), action="submitjob")
 			return None
 	
 		return jobout

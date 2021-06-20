@@ -27,8 +27,8 @@ from caesar_rest.mrcnn_app_configurator import MaskRCNNAppConfigurator
 
 
 # Get logger
-logger = logging.getLogger(__name__)
-
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 ##############################
 #   JOB CONFIGURATOR
@@ -40,29 +40,28 @@ class JobConfigurator(object):
 		""" Return a job configurator class """
 
 		self.app_configurators= {
-			'sfinder': CaesarAppConfigurator,
-			#'caesar': CaesarAppConfigurator,
+			'caesar': CaesarAppConfigurator,
 			'mrcnn': MaskRCNNAppConfigurator
 		}
 		
 		
-	def validate(self,app_name, job_inputs):
+	def validate(self,app_name, job_inputs, data_inputs):
 		""" Validate job inputs """
 
 		# - Validate if job inputs are valid for app
 		#   Delegate validation to app configurator
 		if app_name not in self.app_configurators:
 			msg= 'App ' + app_name + ' not known or supported'
-			logger.warn(msg)
+			logger.warn(msg, action="submitjob")
 			return (None,None,msg)
 
 		# - Create an instance of app configurator
 		configurator= self.app_configurators[app_name]()
 		
-		status= configurator.validate(job_inputs)
+		status= configurator.validate(job_inputs, data_inputs)
 		if not status:
 			status_msg= configurator.validation_status
-			logger.warn("Given inputs for app %s failed to be validated!" % app_name)
+			logger.warn("Given inputs for app %s failed to be validated!" % app_name, action="submitjob")
 			return (None,None,status_msg)
 
 		# - Set app cmd & cmd args
@@ -71,8 +70,9 @@ class JobConfigurator(object):
 		if configurator.cmd_mode!="":
 			cmd_args.append(configurator.cmd_mode)
 		status_msg= configurator.validation_status
-		
-		return (cmd,cmd_args,status_msg)
+		run_opts= configurator.run_options		
+
+		return (cmd,cmd_args,status_msg,run_opts)
 
 	def get_app_description(self,app_name):
 		""" Return a json dict describing given app """
@@ -80,7 +80,7 @@ class JobConfigurator(object):
 		# - Check app name if found
 		if app_name not in self.app_configurators:
 			msg= 'App ' + app_name + ' not known or supported'
-			logger.warn(msg)
+			logger.warn(msg, action="submitjob")
 			return None
 
 		# - Create an instance of app configurator
@@ -110,7 +110,7 @@ class JobConfigurator(object):
 		# - Check app name if found
 		if app_name not in self.app_configurators:
 			msg= 'App ' + app_name + ' not known or supported'
-			logger.warn(msg)
+			logger.warn(msg, action="submitjob")
 			return None
 
 		# - Create an instance of app configurator
@@ -120,6 +120,5 @@ class JobConfigurator(object):
 		flag= configurator.batch_processing_support
 
 		return flag
-
 
 

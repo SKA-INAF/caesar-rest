@@ -20,6 +20,7 @@ import caesar_rest
 from caesar_rest import __version__, __date__
 from caesar_rest import logger
 from caesar_rest import jobmgr_kube
+from caesar_rest import jobmgr_slurm
 from caesar_rest import job_monitor
 from caesar_rest.job_monitor import monitor_jobs
 
@@ -56,9 +57,11 @@ def get_args():
 	parser.add_argument('-kube_certfile','--kube_certfile', dest='kube_certfile', default='', required=False, type=str, help='Kube certificate file path')
 	
 	# - Slurm scheduler options
-	# ...
-
-
+	parser.add_argument('-slurm_keyfile','--slurm_keyfile', dest='slurm_keyfile', default='', required=False, type=str, help='Slurm rest service private key file path')
+	parser.add_argument('-slurm_user','--slurm_user', dest='slurm_user', default='cirasa', required=False, type=str, help='Username enabled to run in Slurm cluster')
+	parser.add_argument('-slurm_host','--slurm_host', dest='slurm_host', default='SLURM_HOST', required=False, type=str, help='Slurm cluster host/ipaddress')
+	parser.add_argument('-slurm_port','--slurm_port', dest='slurm_port', default=6820, required=False, type=int, help='Slurm rest service port')
+	
 	args = parser.parse_args()	
 
 	return args
@@ -140,6 +143,27 @@ def main():
 				sys.exit(1)
 		except Exception as e:
 			logger.error("Failed to initialize Kube job manager (err=%s)!" % str(e))
+			sys.exit(1)
+
+	#============================================
+	#==   INIT SLURM CLIENT (if enabled)
+	#============================================
+	if job_scheduler=='slurm' and jobmgr_slurm is not None:
+
+		# - Setting options
+		jobmgr_slurm.host= args.slurm_host
+		jobmgr_slurm.port= args.slurm_port
+		jobmgr_slurm.keyfile= args.slurm_keyfile
+		jobmgr_slurm.username= args.slurm_user
+		
+		# - Initialize client
+		logger.info("Initializing Slurm job manager ...")
+		try:
+			if jobmgr_slurm.initialize()<0:
+				logger.error("Failed to initialize Slurm job manager, see logs!")
+				sys.exit(1)
+		except Exception as e:
+			logger.error("Failed to initialize Slurm job manager (err=%s)!" % str(e))
 			sys.exit(1)
 
 	#============================================

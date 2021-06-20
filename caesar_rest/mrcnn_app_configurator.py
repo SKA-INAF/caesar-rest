@@ -25,8 +25,8 @@ from caesar_rest.base_app_configurator import AppConfigurator
 from caesar_rest.base_app_configurator import Option, ValueOption
 
 # Get logger
-logger = logging.getLogger(__name__)
-
+#logger = logging.getLogger(__name__)
+from caesar_rest import logger
 
 
 ##############################
@@ -49,7 +49,7 @@ class MaskRCNNAppConfigurator(AppConfigurator):
 
 		# - Define dictionary with allowed options
 		self.valid_options= {
-			'image' : ValueOption('image','',str,True, description='Path to input image (.fits) to be given to classifier (default=empty)'),
+			#'image' : ValueOption('image','',str,True, description='Path to input image (.fits) to be given to classifier (default=empty)'),
 			#'weight' : ValueOption('weight','',str, description=''),
 			#'classdict' : ValueOption('classdict','',str, description=''),
 			'scoreThr' : ValueOption('scoreThr','',float, description='Detected object score threshold to select as final object (default=0.7)'),
@@ -58,9 +58,16 @@ class MaskRCNNAppConfigurator(AppConfigurator):
 		} # close dict
 	
 		# - Define option value transformers
-		self.option_value_transformer= {
-			'image': self.transform_imgname
-		}
+		#self.option_value_transformer= {
+		#	'image': self.transform_imgname
+		#}
+
+	def set_data_input_option_value(self):
+		""" Set app input option value """
+
+		input_opt= "".join("--image=%s" % self.data_inputs)
+		self.cmd_args.append(input_opt)
+
 
 	def transform_imgname(self, file_uuid):
 		""" Transform input file from uuid to actual path """		
@@ -72,7 +79,7 @@ class MaskRCNNAppConfigurator(AppConfigurator):
 			username= utils.sanitize_username(email)
 
 		# - Inspect inputfile (expect it is a uuid, so convert to filename)
-		logger.info("Finding inputfile uuid %s ..." % file_uuid)
+		logger.info("Finding inputfile uuid %s ..." % file_uuid, action="submitjob")
 		collection_name= username + '.files'
 
 		file_path= ''
@@ -82,14 +89,14 @@ class MaskRCNNAppConfigurator(AppConfigurator):
 			if item and item is not None:
 				file_path= item['filepath']
 			else:
-				logger.warn("File with uuid=%s not found in DB!" % file_uuid)
+				logger.warn("File with uuid=%s not found in DB!" % file_uuid, action="submitjob")
 				file_path= ''
 		except Exception as e:
-			logger.error("Exception (err=%s) catch when searching file in DB!" % str(e))
+			logger.error("Exception (err=%s) catch when searching file in DB!" % str(e), action="submitjob")
 			return ''
 		
 		if not file_path or file_path=='':
-			logger.warn("imgname uuid %s is empty or not found in the system!" % file_uuid)
+			logger.warn("imgname uuid %s is empty or not found in the system!" % file_uuid, action="submitjob")
 			return ''
 
 		return file_path
