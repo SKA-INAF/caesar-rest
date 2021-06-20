@@ -600,4 +600,12 @@ The response is a tar.gz file containing all job directory files (logs, output d
 
 ### **Cancel job**
 
-WRITE ME
+* URL:```http://server-address:port/caesar/api/v1.0/job/[job_id]/cancel```   
+* Request methods: POST   
+* Request header: None   
+
+### **Get job ids**
+
+* URL:```http://server-address:port/caesar/api/v1.0/jobs```   
+* Request methods: GET   
+* Request header: None  
