@@ -68,17 +68,21 @@ In the following we describe the steps done to deploy and run the application an
 ### **Preliminary setup**
 Before running the application you must do some preparatory stuff:   
 
-* Create the application working dir (by default `/opt/caesar-rest`)   
+* (OPTIONAL) Create a dedicated user & group (e.g. `caesar`) allowed to run the application and services and give it ownership to the directories created below    * Create the application working dir (by default `/opt/caesar-rest`)   
+* (OPTIONAL) Mount an external storage in the application working dir, for example using rclone: `/usr/bin/rclone mount --daemon [--uid=[UID] --gid=[UID]] --umask 000 --allow-other --file-perms 0777 --dir-cache-time 0m5s --vfs-cache-mode full [RCLONE_REMOTE_STORAGE]:[RCLONE_REMOTE_STORAGE_PATH] /opt/caesar-rest -vvv` where `UID` is the Linux user id of the user previously created.     
 * Create the top directory for data upload (by default `/opt/caesar-rest/data`)   
 * Create the top directory for jobs (by default `/opt/caesar-rest/jobs`)   
 * (OPTIONAL) Create the log directory for system services (see below), e.g. `/opt/caesar-rest/logs` 
 * (OPTIONAL) Create the run directory for system services (see below), e.g. `/opt/caesar-rest/run` 
-* (OPTIONAL) Create a dedicated user & group (e.g. `caesar`) allowed to run the application and services and give it ownership of the directories previously created     
+
 
 ### **Run DB service**
 caesar-rest requires a MongoDB service where to store user data and job information. To start the DB service:    
 
-```systemctl start mongodb.service```
+```systemctl start mongodb.service```   
+
+### **Run Filebeat service**   
+WRITE ME
 
 ### **Run Celery services (OPTIONAL)**
 If you want to manage jobs with Celery, you must run a message broker service (i.e. rabbitmq), a task store service (i.e. redis or mongdb) and one or more Celery worker services:
