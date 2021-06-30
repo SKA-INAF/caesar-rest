@@ -40,7 +40,9 @@ class Option(object):
 		self.description= description
 		self.advanced= advanced	
 		self.category= category
-		self.subcategory= subcategory
+		self.subcategory= subcategory	
+		self.enum= False
+		self.allowed_values= []
 
 	def to_argopt(self):
 		""" Convert option to cmdline format """
@@ -56,19 +58,35 @@ class Option(object):
 		""" Convert option to dictionary """
 		
 		if self.value_required:
-			d= {
-				self.name: {
-					"mandatory": self.mandatory,
-					"type": self.value_type.__name__,
-					"description": self.description,
-					"advanced": int(self.advanced),
-					"category": self.category,
-					"subcategory": self.subcategory,
-					"default": self.default_value,
-					"min": self.min_value,
-					"max": self.max_value
+			if self.enum:
+				d= {
+					self.name: {
+						"mandatory": self.mandatory,
+						"type": self.value_type.__name__,
+						"description": self.description,
+						"advanced": int(self.advanced),
+						"category": self.category,
+						"subcategory": self.subcategory,
+						"default": self.default_value,
+						"allowed_values": self.allowed_values,
+						"enum": self.enum
+					}
 				}
-			}
+			else:
+				d= {
+					self.name: {
+						"mandatory": self.mandatory,
+						"type": self.value_type.__name__,
+						"description": self.description,
+						"advanced": int(self.advanced),
+						"category": self.category,
+						"subcategory": self.subcategory,
+						"default": self.default_value,
+						"min": self.min_value,
+						"max": self.max_value,
+						"enum": self.enum
+					}
+				}
 		else:
 			d= {
 				self.name: {
@@ -77,7 +95,8 @@ class Option(object):
 					"description": self.description,
 					"advanced": int(self.advanced),
 					"category": self.category,
-					"subcategory": self.subcategory
+					"subcategory": self.subcategory,
+					"enum": self.enum
 				}
 			}			
 			
@@ -95,6 +114,19 @@ class ValueOption(Option):
 		self.default_value= default_value
 		self.min_value= min_value
 		self.max_value= max_value
+		self.enum= False
+
+class EnumValueOption(Option):
+
+	def __init__(self, name, value, value_type, allowed_values, mandatory=False, description='', category='', subcategory='', advanced=False, default_value=''):
+		""" Return value option """
+		Option.__init__(self,name,mandatory,description,category,subcategory,advanced)
+		self.value= value
+		self.value_required= True
+		self.value_type= value_type
+		self.default_value= default_value
+		self.enum= True
+		self.allowed_values= allowed_values
 
 
 class AppConfigurator(object):
@@ -256,6 +288,13 @@ class AppConfigurator(object):
 					logger.warn(self.validation_status, action="submitjob")
 					return False
 
+				# - Check if value is among allowed values for enum
+				if option.enum:
+					if parsed_value not in option.allowed_values:
+						self.validation_status= ''.join(["Option ",opt_name," value ",str(parsed_value)," is not among valid enumerations!"])
+						logger.warn(self.validation_status, action="submitjob")
+						return False
+
 				# - Return option value transformed (if transform function is defined in derived classes) or the same option value
 				opt_value_str= str(parsed_value)
 				transf_opt_value_str= self.get_transformed_option_value(opt_name,opt_value_str)
@@ -264,19 +303,33 @@ class AppConfigurator(object):
 					return False
 
 				# - Add option
-				value_option= ValueOption(
-					opt_name,
-					transf_opt_value_str,
-					expected_val_type,
-					mandatory,
-					option.description,
-					option.category,
-					option.subcategory,
-					option.advanced,
-					option.default_value,
-					option.min_value,
-					option.max_value
-				)
+				if option.enum:
+					value_option= EnumValueOption(
+						opt_name,
+						transf_opt_value_str,
+						expected_val_type,	
+						option.allowed_values,
+						mandatory,
+						option.description,
+						option.category,
+						option.subcategory,
+						option.advanced,
+						option.default_value
+					)
+				else:
+					value_option= ValueOption(
+						opt_name,
+						transf_opt_value_str,
+						expected_val_type,
+						mandatory,
+						option.description,
+						option.category,
+						option.subcategory,
+						option.advanced,
+						option.default_value,
+						option.min_value,
+						option.max_value
+					)
 				self.options.append(value_option)
 
 				# - Convert to cmd arg format

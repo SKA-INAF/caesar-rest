@@ -22,7 +22,7 @@ from caesar_rest import oidc
 from caesar_rest import mongo
 from caesar_rest import utils
 from caesar_rest.base_app_configurator import AppConfigurator
-from caesar_rest.base_app_configurator import Option, ValueOption
+from caesar_rest.base_app_configurator import Option, ValueOption, EnumValueOption
 
 # Get logger
 #logger = logging.getLogger(__name__)
@@ -103,16 +103,26 @@ class CaesarAppConfigurator(AppConfigurator):
 				category='OUTPUT', 
 				advanced=True
 			),
-			'regionwcs' : ValueOption(
+			#'regionwcs' : ValueOption(
+			#	name='regionwcs',
+			#	value='',
+			#	value_type=int, 
+			#	description='DS9 region WCS output format (0=J2000,1=B1950,2=GALACTIC) (default=0)', 
+			#	category='OUTPUT', 
+			#	advanced=True,
+			#	default_value=0,
+			#	min_value=0,
+			#	max_value=2
+			#),
+			'regionwcs' : EnumValueOption(
 				name='regionwcs',
 				value='',
-				value_type=int, 
-				description='DS9 region WCS output format (0=J2000,1=B1950,2=GALACTIC) (default=0)', 
+				value_type=str, 
+				description='DS9 region WCS output format {J2000,B1950,GALACTIC} (default=J2000)', 
 				category='OUTPUT', 
 				advanced=True,
-				default_value=0,
-				min_value=0,
-				max_value=2
+				default_value='J2000',
+				allowed_values=['J2000', 'B1950', 'GALACTIC']
 			),
 
 			
@@ -216,15 +226,24 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='Use global bkg (default=use local bkg)',
 				category='IMGBKG'	
 			),
-			'bkgestimator' : ValueOption(
+			#'bkgestimator' : ValueOption(
+			#	name='bkgestimator',
+			#	value='',
+			#	value_type=int, 
+			#	description='Stat estimator used for bkg (1=Mean,2=Median,3=BiWeight,4=ClippedMedian) (default=2)',
+			#	category='IMGBKG',
+			#	default_value=2,
+			#	min_value=1,
+			#	max_value=4
+			#),
+			'bkgestimator' : EnumValueOption(
 				name='bkgestimator',
 				value='',
-				value_type=int, 
-				description='Stat estimator used for bkg (1=Mean,2=Median,3=BiWeight,4=ClippedMedian) (default=2)',
+				value_type=str, 
+				description='Stat estimator used for bkg',
 				category='IMGBKG',
-				default_value=2,
-				min_value=1,
-				max_value=4
+				default_value="Median",
+				allowed_values=["Mean", "Median", "BiWeight", "ClippedMedian"]
 			),
 			'bkgboxpix': Option(
 				name='bkgboxpix', 
@@ -468,17 +487,28 @@ class CaesarAppConfigurator(AppConfigurator):
 				category='COMPACT-SOURCES',
 				subcategory='NESTED-SOURCES'
 			),
-			'blobmaskmethod' : ValueOption(
+			#'blobmaskmethod' : ValueOption(
+			#	name='blobmaskmethod',
+			#	value='',
+			#	value_type=int, 
+			#	description='Blob mask method (1=gaus smooth+Laplacian,2=multi-scale LoG) (default=2)',
+			#	category='COMPACT-SOURCES',
+			#	subcategory='NESTED-SOURCES',
+			#	default_value=2,
+			#	min_value=1,
+			#	max_value=2
+			#),
+			'blobmaskmethod' : EnumValueOption(
 				name='blobmaskmethod',
 				value='',
-				value_type=int, 
-				description='Blob mask method (1=gaus smooth+Laplacian,2=multi-scale LoG) (default=2)',
+				value_type=str, 
+				description='Blob mask method',
 				category='COMPACT-SOURCES',
 				subcategory='NESTED-SOURCES',
-				default_value=2,
-				min_value=1,
-				max_value=2
+				default_value='MultiScaleLoG',
+				allowed_values=['GausLaplacian', 'MultiScaleLoG']
 			),
+
 			'nested-sourcetobeamthr' : ValueOption(
 				name='nested-sourcetobeamthr',
 				value='',
@@ -608,19 +638,42 @@ class CaesarAppConfigurator(AppConfigurator):
 				subcategory='FITTING',
 				advanced=True
 			),
-			'fit-minimizer' : ValueOption(
+			#'fit-minimizer' : ValueOption(
+			#	name='fit-minimizer',
+			#	value='',
+			#	value_type=str, 
+			#	description='Fit minimizer {Minuit,Minuit2} (default=Minuit2)',
+			#	category='COMPACT-SOURCES',
+			#	subcategory='FITTING',
+			#	advanced=True,
+			#	default_value='Minuit2',
+			#	min_value='',
+			#	max_value=''
+			#),
+			'fit-minimizer' : EnumValueOption(
 				name='fit-minimizer',
 				value='',
 				value_type=str, 
-				description='Fit minimizer {Minuit,Minuit2} (default=Minuit2)',
+				description='Fit minimizer',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
 				advanced=True,
 				default_value='Minuit2',
-				min_value='',
-				max_value=''
+				allowed_values=['Minuit','Minuit2']
 			),
-			'fit-minimizeralgo' : ValueOption(
+			#'fit-minimizeralgo' : ValueOption(
+			#	name='fit-minimizeralgo',
+			#	value='',
+			#	value_type=str, 
+			#	description='Fit minimizer algo {migrad,simplex,minimize,scan,fumili (Minuit2)} (default=minimize)',
+			#	category='COMPACT-SOURCES',
+			##	subcategory='FITTING',
+			#	advanced=True,
+			#	default_value='minimize',
+			#	min_value='',
+			#	max_value=''
+			#),
+			'fit-minimizeralgo' : EnumValueOption(
 				name='fit-minimizeralgo',
 				value='',
 				value_type=str, 
@@ -629,9 +682,9 @@ class CaesarAppConfigurator(AppConfigurator):
 				subcategory='FITTING',
 				advanced=True,
 				default_value='minimize',
-				min_value='',
-				max_value=''
+				allowed_values=['migrad','simplex','minimize','scan','fumili']
 			),
+
 			'fit-printlevel' : ValueOption(
 				name='fit-printlevel',
 				value='',
@@ -1030,25 +1083,43 @@ class CaesarAppConfigurator(AppConfigurator):
 				min_value=1,
 				max_value=1001
 			),
-			'res-removedsourcetype' : ValueOption(
+			#'res-removedsourcetype' : ValueOption(
+			#	name='res-removedsourcetype',
+			#	value='',
+			#	value_type=int, 
+			#	description='Type of source dilated from the input image (-1=ALL,1=COMPACT,2=POINT-LIKE,3=EXTENDED) (default=2)',
+			#	category='IMGRES',
+			#	default_value=2,
+			#	min_value=-1,
+			#	max_value=3
+			#),
+			'res-removedsourcetype' : EnumValueOption(
 				name='res-removedsourcetype',
 				value='',
-				value_type=int, 
-				description='Type of source dilated from the input image (-1=ALL,1=COMPACT,2=POINT-LIKE,3=EXTENDED) (default=2)',
+				value_type=str, 
+				description='Type of source dilated from the input image',
 				category='IMGRES',
-				default_value=2,
-				min_value=-1,
-				max_value=3
+				default_value='POINT-LIKE',
+				allowed_values=['ALL','COMPACT','POINT-LIKE','EXTENDED']
 			),
-			'res-pssubtractionmethod' : ValueOption(
+			#'res-pssubtractionmethod' : ValueOption(
+			#	name='res-pssubtractionmethod',
+			#	value='',
+			#	value_type=int, 
+			#	description='Method used to subtract point-sources in residual map (1=DILATION, 2=FIT MODEL REMOVAL)',
+			#	category='IMGRES',
+			#	default_value=1,
+			#	min_value=1,
+			#	max_value=2
+			#),
+			'res-pssubtractionmethod' : EnumValueOption(
 				name='res-pssubtractionmethod',
 				value='',
-				value_type=int, 
-				description='Method used to subtract point-sources in residual map (1=DILATION, 2=FIT MODEL REMOVAL)',
+				value_type=str, 
+				description='Method used to subtract point-sources in residual map',
 				category='IMGRES',
-				default_value=1,
-				min_value=1,
-				max_value=2
+				default_value='DILATION',
+				allowed_values=['DILATION','FITMODEL']
 			),
 			'res-bkgaroundsource': Option(
 				name='res-bkgaroundsource', 
@@ -1062,15 +1133,24 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='Do not smooth input/residual map before extended source search (default=yes)',
 				category='IMGSMOOTH'
 			),
-			'smoothfilter' : ValueOption(
+			#'smoothfilter' : ValueOption(
+			#	name='smoothfilter',
+			#	value='',
+			#	value_type=int, 
+			#	description='Smoothing filter to be used (1=gaussian, 2=guided filter) (default=2)',
+			#	category='IMGSMOOTH',
+			#	default_value=2,
+			#	min_value=1,
+			#	max_value=2
+			#),
+			'smoothfilter' : EnumValueOption(
 				name='smoothfilter',
 				value='',
-				value_type=int, 
-				description='Smoothing filter to be used (1=gaussian, 2=guided filter) (default=2)',
+				value_type=str, 
+				description='Smoothing filter to be used',
 				category='IMGSMOOTH',
-				default_value=2,
-				min_value=1,
-				max_value=2
+				default_value='GUIDED',
+				allowed_values=['GAUSSIAN','GUIDED']
 			),
 			'guidedfilter-radius' : ValueOption(
 				name='guidedfilter-radius',	
@@ -1099,25 +1179,43 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='Do not search extended sources',
 				category='EXTENDED-SOURCES'
 			),
-			'extsfinder' : ValueOption(
+			#'extsfinder' : ValueOption(
+			#	name='extsfinder',
+			#	value='',
+			#	value_type=int, 
+			#	description='Extended source search method {1=WT-thresholding,2=SPSegmentation,3=ActiveContour,4=Saliency thresholding} (default=4)',	
+			#	category='EXTENDED-SOURCES',
+			#	default_value=4,
+			#	min_value=1,
+			#	max_value=4
+			#),
+			'extsfinder' : EnumValueOption(
 				name='extsfinder',
 				value='',
-				value_type=int, 
-				description='Extended source search method {1=WT-thresholding,2=SPSegmentation,3=ActiveContour,4=Saliency thresholding} (default=4)',	
+				value_type=str, 
+				description='Extended source search method',	
 				category='EXTENDED-SOURCES',
-				default_value=4,
-				min_value=1,
-				max_value=4
+				default_value='SALIENCY-THRESH',
+				allowed_values=['WT-THRESH','SP-HIERCLUST','ACTIVE-CONTOUR','SALIENCY-THRESH']
 			),
-			'activecontour' : ValueOption(
+			#'activecontour' : ValueOption(
+			#	name='activecontour',
+			#	value='',
+			#	value_type=int, 
+			#	description='Active contour method {1=Chanvese, 2=LRAC} (default=1)',
+			#	category='EXTENDED-SOURCES',
+			#	default_value=1,
+			#	min_value=1,
+			#	max_value=2
+			#),
+			'activecontour' : EnumValueOption(
 				name='activecontour',
 				value='',
-				value_type=int, 
-				description='Active contour method {1=Chanvese, 2=LRAC} (default=1)',
+				value_type=str, 
+				description='Active contour method',
 				category='EXTENDED-SOURCES',
-				default_value=1,
-				min_value=1,
-				max_value=2
+				default_value='CHANVESE',
+				allowed_values=['CHANVESE','LRAC']
 			),
 
 			# == SALIENCY FILTER OPTIONS ==
@@ -1249,16 +1347,26 @@ class CaesarAppConfigurator(AppConfigurator):
 				min_value=1,
 				max_value=100000
 			),
-			'ac-levelset' : ValueOption(
+			#'ac-levelset' : ValueOption(
+			#	name='ac-levelset',
+			#	value='',
+			#	value_type=int,
+			#	description='Init level set method in active-contour algorithms (1=circle,2=checkerboard,3=saliency) (default=1)',
+			#	category='EXTENDED-SOURCES',
+			#	subcategory='ACTIVE-CONTOUR',
+			#	default_value=1,
+			#	min_value=1,
+			#	max_value=3
+			#),
+			'ac-levelset' : EnumValueOption(
 				name='ac-levelset',
 				value='',
-				value_type=int,
-				description='Init level set method in active-contour algorithms (1=circle,2=checkerboard,3=saliency) (default=1)',
+				value_type=str,
+				description='Init level set method in active-contour algorithms',
 				category='EXTENDED-SOURCES',
 				subcategory='ACTIVE-CONTOUR',
-				default_value=1,
-				min_value=1,
-				max_value=3
+				default_value='CIRCLE',
+				allowed_values=['CIRCLE','CHECKERBOARD','SALIENCY']
 			),
 			'ac-levelsetsize' : ValueOption(
 				name='ac-levelsetsize',
@@ -1423,15 +1531,24 @@ class CaesarAppConfigurator(AppConfigurator):
 			#'containerimg' : ValueOption('containerimg','',str, description='Singularity container image file (.simg) with CAESAR installed software',category='RUN'),
 			#'containeroptions' : ValueOption('containeroptions','',str, description='Options to be passed to container run (e.g. -B /home/user:/home/user) (default=none)',category='RUN'),
 
-			'loglevel' : ValueOption(
+			#'loglevel' : ValueOption(
+			#	name='loglevel',
+			#	value='',
+			#	value_type=str, 
+			#	description='Logging level string {INFO, DEBUG, WARN, ERROR, OFF} (default=INFO)',
+			#	category='RUN',
+			#	default_value='INFO',
+			#	min_value='',
+			#	max_value=''
+			#),
+			'loglevel' : EnumValueOption(
 				name='loglevel',
 				value='',
 				value_type=str, 
-				description='Logging level string {INFO, DEBUG, WARN, ERROR, OFF} (default=INFO)',
+				description='Logging level value',
 				category='RUN',
 				default_value='INFO',
-				min_value='',
-				max_value=''
+				allowed_values=['INFO', 'DEBUG', 'WARN', 'ERROR', 'OFF']
 			),
 			'no-logredir' : Option(
 				name='no-logredir', 
@@ -1510,9 +1627,18 @@ class CaesarAppConfigurator(AppConfigurator):
 		} # close dict
 
 		# - Define option value transformers
-		#self.option_value_transformer= {
-		#	'inputfile': self.transform_inputfile
-		#}
+		self.option_value_transformer= {
+			#	'inputfile': self.transform_inputfile
+			'regionwcs': self.transform_regionwcs,
+			'bkgestimator': self.transform_bkgestimator,
+			'blobmaskmethod': self.transform_blobmaskmethod,
+			'res-removedsourcetype': self.transform_resremovedsourcetype,
+			'res-pssubtractionmethod': self.transform_respssubtractionmethod,
+			'smoothfilter': self.transform_smoothfilter,
+			'extsfinder': self.transform_extsfinder,
+			'activecontour': self.transform_activecontour,
+			'ac-levelset': self.transform_aclevelset
+		}
 
 		# - Fill some default cmd args
 		logger.debug("Adding some options by default ...", action="submitjob")
@@ -1569,6 +1695,99 @@ class CaesarAppConfigurator(AppConfigurator):
 					logger.warn("Failed to parse nproc option, setting nproc=1 ...", action="submitjob")			
 			else:
 				logger.warn("Expected 2 fields when parsing nproc option, setting nproc=1 ...", action="submitjob")
+
+	def transform_regionwcs(self,regionwcs_str):
+		""" Transform regionwcs from enum to code """	
+
+		regionwcs_map= {
+			"J2000": "0",
+			"B1950": "1",
+			"GALACTIC": "2"
+		}
+		return regionwcs_map[regionwcs_str]
+
+
+	def transform_bkgestimator(self,bkgestimator_str):
+		""" Transform bkgestimator from enum to code """	
+
+		bkgestimator_map= {
+			"Mean": "1",
+			"Median": "2",
+			"BiWeight": "3",
+			"ClippedMedian": "4"
+		}
+		return bkgestimator_map[bkgestimator_str]
+	
+		
+	def transform_blobmaskmethod(self,blobmaskmethod_str):
+		""" Transform blobmaskmethod from enum to code """	
+
+		blobmaskmethod_map= {
+			"GausLaplacian": "1",
+			"MultiScaleLoG": "2",
+		}
+		return blobmaskmethod_map[blobmaskmethod_str]
+
+
+	def transform_resremovedsourcetype(self,resremovedsourcetype_str):
+		""" Transform resremovedsourcetype from enum to code """	
+
+		resremovedsourcetype_map= {
+			"ALL": "-1",
+			"COMPACT": "1",
+			"POINT-LIKE": "2",
+			"EXTENDED": "3",
+		}
+		return resremovedsourcetype_map[resremovedsourcetype_str]
+
+	def transform_respssubtractionmethod(self,respssubtractionmethod_str):
+		""" Transform respssubtractionmethod from enum to code """	
+
+		respssubtractionmethod_map= {
+			"DILATION": "1",
+			"FITMODEL": "2"
+		}
+		return respssubtractionmethod_map[respssubtractionmethod_str]
+
+	def transform_smoothfilter(self,smoothfilter_str):
+		""" Transform smoothfilter from enum to code """	
+
+		smoothfilter_map= {
+			"GAUSSIAN": "1",
+			"GUIDED": "2"
+		}
+		return smoothfilter_map[smoothfilter_str]
+
+	def transform_extsfinder(self,extsfinder_str):
+		""" Transform extsfinder from enum to code """	
+
+		extsfinder_map= {
+			"WT-THRESH": "1",
+			"SP-HIERCLUST": "2",
+			"ACTIVE-CONTOUR": "3",
+			"SALIENCY-THRESH": "4"
+		}
+		return extsfinder_map[extsfinder_str]
+
+	def transform_activecontour(self,activecontour_str):
+		""" Transform activecontour from enum to code """	
+
+		activecontour_map= {
+			"CHANVESE": "1",
+			"LRAC": "2",
+		}
+		return activecontour_map[activecontour_str]
+
+	def transform_aclevelset(self,aclevelset_str):
+		""" Transform aclevelset from enum to code """	
+
+		aclevelset_map= {
+			"CIRCLE": "1",
+			"CHECKERBOARD": "2",
+			"SALIENCY": "3"
+		}
+		return aclevelset_map[aclevelset_str]
+
 
 
 	def transform_inputfile(self,file_uuid):
