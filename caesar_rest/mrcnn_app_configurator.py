@@ -52,8 +52,26 @@ class MaskRCNNAppConfigurator(AppConfigurator):
 			#'image' : ValueOption('image','',str,True, description='Path to input image (.fits) to be given to classifier (default=empty)'),
 			#'weight' : ValueOption('weight','',str, description=''),
 			#'classdict' : ValueOption('classdict','',str, description=''),
-			'scoreThr' : ValueOption('scoreThr','',float, description='Detected object score threshold to select as final object (default=0.7)'),
-			'iouThr' : ValueOption('iouThr','',float, description='IOU threshold between detected and ground truth bboxes to consider the object as detected (default=0.6)'),
+			'scoreThr' : ValueOption(
+				name='scoreThr',
+				value='',
+				value_type=float, 
+				description='Detected object score threshold to select as final object (default=0.7)',
+				category='DETECT',
+				default_value=0.7,
+				min_value=0.,
+				max_value=1.
+			),
+			'iouThr' : ValueOption(
+				name='iouThr',
+				value='',
+				value_type=float, 
+				description='IOU threshold between detected and ground truth bboxes to consider the object as detected (default=0.6)',
+				category='DETECT',
+				default_value=0.6,
+				min_value=0.,
+				max_value=1.
+			),
 		
 		} # close dict
 	
