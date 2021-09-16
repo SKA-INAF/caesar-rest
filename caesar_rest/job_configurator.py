@@ -45,7 +45,7 @@ class JobConfigurator(object):
 		}
 		
 		
-	def validate(self,app_name, job_inputs, data_inputs):
+	def validate(self, app_name, job_inputs, data_inputs):
 		""" Validate job inputs """
 
 		# - Validate if job inputs are valid for app
@@ -53,7 +53,7 @@ class JobConfigurator(object):
 		if app_name not in self.app_configurators:
 			msg= 'App ' + app_name + ' not known or supported'
 			logger.warn(msg, action="submitjob")
-			return (None,None,msg)
+			return (None,None,msg,None)
 
 		# - Create an instance of app configurator
 		configurator= self.app_configurators[app_name]()
@@ -62,7 +62,7 @@ class JobConfigurator(object):
 		if not status:
 			status_msg= configurator.validation_status
 			logger.warn("Given inputs for app %s failed to be validated!" % app_name, action="submitjob")
-			return (None,None,status_msg)
+			return (None,None,status_msg,None)
 
 		# - Set app cmd & cmd args
 		cmd= configurator.cmd
