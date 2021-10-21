@@ -1645,7 +1645,7 @@ class CaesarAppConfigurator(AppConfigurator):
 		self.cmd_args.append("--run")
 		self.cmd_args.append("--save-summaryplot")
 		self.cmd_args.append("--save-regions ")
-		self.cmd_args.appeend("--save-catalog-to-json ")
+		self.cmd_args.append("--save-catalog-to-json ")
 
 
 
