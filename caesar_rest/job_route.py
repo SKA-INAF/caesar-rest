@@ -298,6 +298,10 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
 		image= current_app.config['MASKRCNN_JOB_IMAGE']
 		job_label= 'mrcnn-job'
 
+	elif app_name=="aegean":
+		image= current_app.config['AEGEAN_JOB_IMAGE']
+		job_label= 'aegean-job'
+
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)
 		return None
@@ -377,6 +381,9 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_o
 
 	elif app_name=="mrcnn":
 		image= current_app.config['SLURM_MASKRCNN_JOB_IMAGE']
+
+	elif app_name=="aegean":
+		image= current_app.config['SLURM_AEGEAN_JOB_IMAGE']
 	
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)

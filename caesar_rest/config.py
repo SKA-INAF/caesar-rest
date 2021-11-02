@@ -60,6 +60,7 @@ class Config(object):
 	SLURM_DATA_DIR= '/mnt/storage/data' # Path at which the data directory is mounted in Slurm cluster
 	SLURM_CAESAR_JOB_IMAGE= '/opt/containers/caesar/caesar-job_latest.sif'
 	SLURM_MASKRCNN_JOB_IMAGE= '/opt/containers/mrcnn/mrcnn-detect_latest.sif'
+	SLURM_AEGEAN_JOB_IMAGE= '/opt/containers/caesar/aegean-job_latest.sif'
 	SLURM_MAX_CORE_PER_JOB= 4 # Maximum number of cores reserved for a job
 	
 	# - AAI options
@@ -82,7 +83,9 @@ class Config(object):
 	MASKRCNN_JOB_IMAGE= 'sriggi/mrcnn-detect:latest'
 	MASKRCNN_WEIGHTS= '/opt/Software/MaskR-CNN/install/share/mrcnn_weights.h5'
 
-
+	# - AEGEAN app options
+	AEGEAN_JOB_IMAGE= 'sriggi/aegean-job:latest'
+	
 	# - Logging configuration
 	LOG_TO_FILE= False
 	LOG_DIR= '/opt/caesar-rest/logs'
