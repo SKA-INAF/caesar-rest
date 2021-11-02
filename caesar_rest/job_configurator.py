@@ -24,11 +24,9 @@ from caesar_rest import utils
 from caesar_rest.base_app_configurator import AppConfigurator
 from caesar_rest.caesar_app_configurator import CaesarAppConfigurator
 from caesar_rest.mrcnn_app_configurator import MaskRCNNAppConfigurator
-from caesar_rest.mrcnn_app_configurator import AegeanAppConfigurator
-
+from caesar_rest.aegean_app_configurator import AegeanAppConfigurator
 
 # Get logger
-#logger = logging.getLogger(__name__)
 from caesar_rest import logger
 
 ##############################
