@@ -201,8 +201,12 @@ def submit_job():
 		job_collection= mongo.db[collection_name]
 
 		logger.info("Adding job obj to collection ...", action="submitjob", user=username)
-		item_id= job_collection.insert(job_obj)
-		
+		try:
+			item_id= job_collection.insert(job_obj)
+		except Exception as ex:
+			logger.warn("MongoDB insert() method failed with err (%s), trying with insert_one() ..." % str(ex), action="submitjob", user=username)		
+			item_id= job_collection.insert_one(job_obj)
+	
 	except Exception as e:
 		logger.warn("Failed to create and register job in DB (err=%s)!" % str(e), action="submitjob", user=username)
 		flash('Job submitted but failed to be registered in DB!')

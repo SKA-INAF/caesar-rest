@@ -170,8 +170,12 @@ def upload_file():
 		data_collection= mongo.db[collection_name]
 
 		logger.info("Adding data file obj to collection ...", action="upload", user=username)
-		item_id= data_collection.insert(data_fileobj)
-		
+		try:
+			item_id= data_collection.insert(data_fileobj)
+		except Exception as ex:
+			logger.warn("MongoDB insert() method failed with err (%s), trying with insert_one() ..." % str(ex), action="upload", user=username)		
+			item_id= data_collection.insert_one(data_fileobj)
+
 	except Exception as e:
 		errmsg= "File " + filename_dest_fullpath + " uploaded but failed to be registered in DB (err=" + str(e) + ")!"
 		logger.warn(errmsg, action="upload", user=username)
