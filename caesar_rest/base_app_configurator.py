@@ -283,10 +283,19 @@ class AppConfigurator(object):
 				expected_val_type= option.value_type
 				parsed_value= self.job_inputs[opt_name]
 				parsed_value_type= type(parsed_value)
-				if not isinstance(parsed_value,expected_val_type):
-					self.validation_status= ''.join(["Option ",opt_name," expects a ",str(expected_val_type)," value type and not a ",str(parsed_value_type)," !"])
+				if not isinstance(parsed_value, expected_val_type):
+					#self.validation_status= ''.join(["Option ",opt_name," expects a ",str(expected_val_type)," value type and not a ",str(parsed_value_type)," !"])
+					#logger.warn(self.validation_status, action="submitjob")
+					#return False
+					self.validation_status= ''.join(["Option ",opt_name," expects a ",str(expected_val_type)," value type and not a ",str(parsed_value_type),", casting it..."])
 					logger.warn(self.validation_status, action="submitjob")
-					return False
+					try:
+						parsed_value_casted= expected_val_type(parsed_value)
+						parsed_value= parsed_value_casted
+					except:
+						self.validation_status= ''.join(["Failed to cast option ",opt_name," to type ",str(expected_val_type)," !"])
+						logger.warn(self.validation_status, action="submitjob")
+						return False
 
 				# - Check if value is among allowed values for enum
 				if option.enum:
