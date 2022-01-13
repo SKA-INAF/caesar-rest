@@ -25,6 +25,7 @@ from caesar_rest.base_app_configurator import AppConfigurator
 from caesar_rest.caesar_app_configurator import CaesarAppConfigurator
 from caesar_rest.mrcnn_app_configurator import MaskRCNNAppConfigurator
 from caesar_rest.aegean_app_configurator import AegeanAppConfigurator
+from caesar_rest.cutex_app_configurator import CutexAppConfigurator
 
 # Get logger
 from caesar_rest import logger
@@ -41,7 +42,8 @@ class JobConfigurator(object):
 		self.app_configurators= {
 			'caesar': CaesarAppConfigurator,
 			'mrcnn': MaskRCNNAppConfigurator,
-			'aegean': AegeanAppConfigurator
+			'aegean': AegeanAppConfigurator,
+			'cutex': CutexAppConfigurator
 		}
 		
 		

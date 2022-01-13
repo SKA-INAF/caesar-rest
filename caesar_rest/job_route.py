@@ -306,6 +306,10 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
 		image= current_app.config['AEGEAN_JOB_IMAGE']
 		job_label= 'aegean-job'
 
+	elif app_name=="cutex":
+		image= current_app.config['CUTEX_JOB_IMAGE']
+		job_label= 'cutex-job'
+
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)
 		return None
@@ -388,6 +392,9 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_o
 
 	elif app_name=="aegean":
 		image= current_app.config['SLURM_AEGEAN_JOB_IMAGE']
+	
+	elif app_name=="cutex":
+		image= current_app.config['SLURM_CUTEX_JOB_IMAGE']
 	
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)

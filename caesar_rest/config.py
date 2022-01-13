@@ -61,6 +61,7 @@ class Config(object):
 	SLURM_CAESAR_JOB_IMAGE= '/opt/containers/caesar/caesar-job_latest.sif'
 	SLURM_MASKRCNN_JOB_IMAGE= '/opt/containers/mrcnn/mrcnn-detect_latest.sif'
 	SLURM_AEGEAN_JOB_IMAGE= '/opt/containers/aegean/aegean-job_latest.sif'
+	SLURM_CUTEX_JOB_IMAGE= '/opt/containers/cutex/cutex-job_latest.sif'	
 	SLURM_MAX_CORE_PER_JOB= 4 # Maximum number of cores reserved for a job
 	
 	# - AAI options
@@ -85,6 +86,9 @@ class Config(object):
 
 	# - AEGEAN app options
 	AEGEAN_JOB_IMAGE= 'sriggi/aegean-job:latest'
+
+	# - CUTEX app options
+	CUTEX_JOB_IMAGE= 'sriggi/cutex-job:latest'
 	
 	# - Logging configuration
 	LOG_TO_FILE= False
