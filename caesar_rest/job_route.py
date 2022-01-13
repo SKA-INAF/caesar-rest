@@ -201,8 +201,12 @@ def submit_job():
 		job_collection= mongo.db[collection_name]
 
 		logger.info("Adding job obj to collection ...", action="submitjob", user=username)
-		item_id= job_collection.insert(job_obj)
-		
+		try:
+			item_id= job_collection.insert(job_obj)
+		except Exception as ex:
+			logger.warn("MongoDB insert() method failed with err (%s), trying with insert_one() ..." % str(ex), action="submitjob", user=username)		
+			item_id= job_collection.insert_one(job_obj)
+	
 	except Exception as e:
 		logger.warn("Failed to create and register job in DB (err=%s)!" % str(e), action="submitjob", user=username)
 		flash('Job submitted but failed to be registered in DB!')
@@ -298,6 +302,14 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
 		image= current_app.config['MASKRCNN_JOB_IMAGE']
 		job_label= 'mrcnn-job'
 
+	elif app_name=="aegean":
+		image= current_app.config['AEGEAN_JOB_IMAGE']
+		job_label= 'aegean-job'
+
+	elif app_name=="cutex":
+		image= current_app.config['CUTEX_JOB_IMAGE']
+		job_label= 'cutex-job'
+
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)
 		return None
@@ -377,6 +389,12 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_o
 
 	elif app_name=="mrcnn":
 		image= current_app.config['SLURM_MASKRCNN_JOB_IMAGE']
+
+	elif app_name=="aegean":
+		image= current_app.config['SLURM_AEGEAN_JOB_IMAGE']
+	
+	elif app_name=="cutex":
+		image= current_app.config['SLURM_CUTEX_JOB_IMAGE']
 	
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)
