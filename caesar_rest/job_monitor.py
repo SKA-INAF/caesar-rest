@@ -321,7 +321,7 @@ def monitor_kubernetes_job(job_obj, job_collection):
 	elapsed_time= res['elapsed_time']
 
 	# - Create tar file with job output if job completed
-	if state=='SUCCESS' or state=='FAILURE':
+	if state=='SUCCESS' or state=='FAILURE' or state=='CLEARED':
 		if job_dir_existing and tar_file!="":
 			if tar_file_existing:
 				logger.info("Job %s output tar file %s already existing, won't create it again ..." % (job_id, tar_file), action="jobmonitor")
