@@ -346,6 +346,20 @@ class AppConfigurator(object):
 				self.cmd_args.append(argopt)
 			
 			else: # No value required
+
+				# - Check boolean value given
+				parsed_value= self.job_inputs[opt_name]
+				parsed_value_type= type(parsed_value)
+				if not isinstance(parsed_value, bool):
+					self.validation_status= ''.join(["Failed to parse bool option ",opt_name," (parsed value type is not a boolean)!"])
+					logger.warn(self.validation_status, action="submitjob")
+					return False
+
+				# - Add option only if parsed flag is True, if not skip
+				if not parsed_value:
+					continue
+
+				# - Add option
 				bool_option= Option(
 					opt_name,
 					mandatory,
