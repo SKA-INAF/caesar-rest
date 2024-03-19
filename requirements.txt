@@ -1,0 +1,15 @@
+wheel
+numpy
+MarkupSafe
+jinja2
+werkzeug
+flask
+uwsgi
+pyyaml
+pymongo
+flask-pymongo
+flask_oidc_ex
+extension-helpers
+astropy
+regions
+structlog
