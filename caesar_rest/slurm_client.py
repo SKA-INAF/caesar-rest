@@ -456,7 +456,10 @@ class SlurmJobManager(object):
 		env_vars+= "".join("--env JOB_OUTDIR=%s " % job_outdir)
 
 		# - Set singularity run options
-		run_opts= "--containall "
+		#   NB: Added --no-home because if container is run as caesar user the home is automatically mounter
+		#       and replace container home where the run_job.sh script resides. In this case the job fail because the run_job.sh is not found.
+		#       This does not happen if the container is run by other users.
+		run_opts= "--containall --no-home "
 
 		# - Set singularity volume mount options
 		vol_opts= ""

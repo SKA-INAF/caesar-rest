@@ -127,6 +127,11 @@ class CaesarAppConfigurator(AppConfigurator):
 
 			
 			# == IMG READ OPTIONS ==
+			'read-subimg' : Option(
+				name='read-subimg', 
+				description='Read sub-image of input image in [xmin,xmax] [ymin,ymax] range (default=read full image)',
+				category='IMGREAD'
+			),
 			'xmin' : ValueOption(
 				name='xmin',
 				value='',
@@ -1592,6 +1597,11 @@ class CaesarAppConfigurator(AppConfigurator):
 			#'jobusergroup' : ValueOption('jobusergroup','',str, description='Name of job user group batch system (default=empty)',category='RUN'),
 
 			# == PARALLEL PROCESSING OPTIONS ==
+			'tilesplit' : Option(
+				name='tilesplit', 
+				description='Partition input image in tiles and perform distributed processing (default=no tile split)',
+				category='RUN'
+			),
 			'tilesize' : ValueOption(
 				name='tilesize',
 				value='',
