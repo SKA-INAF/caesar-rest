@@ -468,10 +468,11 @@ class SlurmJobManager(object):
 		#vol_opts+= "".join("-B %s " % inputfile)	
 		if job_outdir_cluster!="":
 			vol_opts+= "".join("-B %s:%s " % (job_outdir_cluster, job_outdir))
-		vol_opts+= "".join("-B %s:%s " % (inputfile_cluster, inputfile))
+		###vol_opts+= "".join("-B %s:%s " % (inputfile_cluster, inputfile)) ## ORIGINAL CODE (BUG?)
+		vol_opts+= "".join("-B %s:%s " % (inputfile, inputfile_cluster)) ## TEST
 		vol_opts+= "".join("-B %s:%s " % (self.cluster_datadir, self.app_datadir)) # bind also data volume
 
-		logger.info("Binding host %s to container %s ..." % (inputfile_cluster, inputfile))
+		logger.info("Binding host %s to container %s ..." % (inputfile, inputfile_cluster))
 		logger.info("Binding host %s to container %s ..." % (self.app_datadir, self.cluster_datadir))
 
 
