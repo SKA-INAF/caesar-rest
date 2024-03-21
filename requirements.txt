@@ -1,5 +1,6 @@
 wheel
 numpy
+matplotlib
 MarkupSafe
 jinja2
 werkzeug
@@ -15,5 +16,6 @@ regions
 structlog
 jwt
 requests
-celery
+celery<5.0.0
+kubernetes
 
