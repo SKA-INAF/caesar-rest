@@ -182,3 +182,9 @@ class CNNClassifierAppConfigurator(AppConfigurator):
 		logger.debug("Adding some options by default ...", action="submitjob")
 		self.cmd_args.append("--run")
 		
+	def set_data_input_option_value(self):
+		""" Set app input option value """
+
+		input_opt= "".join("--inputfile=%s" % self.data_inputs)
+		self.cmd_args.append(input_opt)
+		
