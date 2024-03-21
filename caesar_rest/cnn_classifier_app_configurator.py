@@ -167,6 +167,12 @@ class CNNClassifierAppConfigurator(AppConfigurator):
 				default_value='1'
 			),
 			
+			# == RUN OPTIONS ==
+			'no-logredir' : Option(
+				name='no-logredir', 
+				description='Do not redirect logs to output file in script',
+				category='RUN'
+			),
 			
 		
 		} ## close valid options
