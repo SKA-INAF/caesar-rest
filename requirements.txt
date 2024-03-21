@@ -13,3 +13,7 @@ extension-helpers
 astropy
 regions
 structlog
+jwt
+requests
+celery
+

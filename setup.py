@@ -52,6 +52,9 @@ reqs.append('astropy')
 reqs.append('regions')
 
 reqs.append('structlog')
+reqs.append('jwt')
+reqs.append('requests')
+reqs.append('celery')
 
 setup(
 	name="caesar_rest",
