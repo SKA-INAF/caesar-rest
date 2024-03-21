@@ -130,16 +130,33 @@ def submit_job():
 		res['status']= 'No data inputs field found in request!'
 		return make_response(jsonify(res),400)
 
+	# - Convert job inpout data UID to path
+	#   NB: Allow to pass input files that are already an absolute path, even if they are not registered in the database
+	#       Add an option to handle that
+	convert_uid_to_path= True
+	if 'is_data_inputs_uid' in req_data:
+		convert_uid_to_path= req_data['is_data_inputs_uid']
+		
 	inputfile_uid= req_data['data_inputs']
-	inputfile= get_filepath_from_uuid(inputfile_uid, username)
+	if convert_uid_to_path:
+		inputfile= get_filepath_from_uuid(inputfile_uid, username)
+		if inputfile=='':
+			logger.warn("Cannot find file for user %s corresponding to uid=%s!" % (username, inputfile_uid), action="submitjob", user=username)	
+			res['state']= 'ABORTED'	
+			res['status']= 'Cannot find file corresponding to given data input uid!'
+			return make_response(jsonify(res),400)
+		
+	else:
+		inputfile= inputfile_uid # this is already intended to be an absolute path
+		
 	if inputfile=='':
-		logger.warn("Cannot find file for user %s corresponding to uid=%s!" % (username,inputfile_uid), action="submitjob", user=username)	
+		logger.warn("Empty inputfile for user %s!" % (username), action="submitjob", user=username)	
 		res['state']= 'ABORTED'	
-		res['status']= 'Cannot find file corresponding to given data input uid!'
+		res['status']= 'Empty inputfile!'
 		return make_response(jsonify(res),400)
-
+	
 	# - Validate job inputs
-	(cmd,cmd_arg_list,val_status,run_opts)= current_app.config['jobcfg'].validate(app_name,job_inputs,inputfile)
+	(cmd, cmd_arg_list, val_status, run_opts)= current_app.config['jobcfg'].validate(app_name, job_inputs, inputfile)
 	if cmd is None or cmd_arg_list is None: 
 		logger.warn("Job input validation failed!", action="submitjob", user=username)
 		res['state']= 'ABORTED'	
@@ -309,6 +326,10 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
 	elif app_name=="cutex":
 		image= current_app.config['CUTEX_JOB_IMAGE']
 		job_label= 'cutex-job'
+		
+	elif app_name=="cnn_classifier":
+		image= current_app.config['CNN_CLASSIFIER_JOB_IMAGE']
+		job_label= 'cnn_classifier-job'
 
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)
@@ -395,6 +416,9 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_o
 	
 	elif app_name=="cutex":
 		image= current_app.config['SLURM_CUTEX_JOB_IMAGE']
+	
+	elif app_name=="cnn_classifier":
+		image= current_app.config['SLURM_CNN_CLASSIFIER_JOB_IMAGE']
 	
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)
