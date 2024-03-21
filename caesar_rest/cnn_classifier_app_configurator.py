@@ -68,13 +68,13 @@ class CNNClassifierAppConfigurator(AppConfigurator):
 				min_value=16,
 				max_value=1024
 			),
-			'normalize_minmax' : Option(
+			'normalize' : Option(
 				name='normalize_minmax', 
 				description='Normalize each channel in range', 
 				category='OUTPUT'
 			),
-			'norm_min' : ValueOption(
-				name='norm_min',
+			'normmin' : ValueOption(
+				name='normmin',
 				value='',
 				value_type=float, 
 				description='Normalization min value (default=0)',
@@ -83,8 +83,8 @@ class CNNClassifierAppConfigurator(AppConfigurator):
 				min_value=-1.0,
 				max_value=0.0
 			),
-			'norm_max' : ValueOption(
-				name='norm_max',
+			'normmax' : ValueOption(
+				name='normmax',
 				value='',
 				value_type=float, 
 				description='Normalization max value (default=1)',
@@ -93,52 +93,52 @@ class CNNClassifierAppConfigurator(AppConfigurator):
 				min_value=1.0,
 				max_value=255.0
 			),
-			'scale_to_abs_max' : Option(
-				name='scale_to_abs_max', 
+			'scale-absmax' : Option(
+				name='scale-absmax', 
 				description='Scale to global max across all channels', 
 				category='PREPROCESSING'
 			),
-			'scale_to_max' : Option(
-				name='scale_to_max', 
+			'scale-max' : Option(
+				name='scale-max', 
 				description='Scale to max not to min-max range', 
 				category='PREPROCESSING'
 			),
-			'zscale_stretch' : Option(
-				name='zscale_stretch', 
+			'zscale' : Option(
+				name='zscale', 
 				description='Apply z-scale transform to each channel with given contrasts', 
 				category='PREPROCESSING'
 			),
-			'zscale_contrasts' : ValueOption(
-				name='zscale_contrasts',
+			'zscale-contrasts' : ValueOption(
+				name='zscale-contrasts',
 				value='',
 				value_type=str, 
 				description='zscale contrasts applied to all channels, separated by commas',
 				category='PREPROCESSING',
 				default_value='0.25'
 			),
-			'clip_data' : Option(
-				name='clip_data', 
+			'sigmaclip' : Option(
+				name='sigmaclip', 
 				description='Apply sigma clipping to all channels', 
 				category='PREPROCESSING'
 			),
-			'sigma_clip_low' : ValueOption(
-				name='sigma_clip_low',
+			'sigmaclip-low' : ValueOption(
+				name='sigmaclip-low',
 				value='',
 				value_type=float, 
 				description='Lower sigma threshold to be used for clipping pixels below (mean-sigma_low*stddev) (default=5)',
 				category='PREPROCESSING',
 				default_value=5.0
 			),
-			'sigma_clip_up' : ValueOption(
-				name='sigma_clip_up',
+			'sigmaclip-up' : ValueOption(
+				name='sigmaclip-up',
 				value='',
 				value_type=float, 
 				description='Upper sigma threshold to be used for clipping pixels above (mean+sigma_up*stddev) (default=30)',
 				category='PREPROCESSING',
 				default_value=30.0
 			),
-			'clip_chid' : ValueOption(
-				name='clip_chid',
+			'sigmaclip-chid' : ValueOption(
+				name='sigmaclip-chid',
 				value='',
 				value_type=int, 
 				description='Channel to clip data (-1=all) (default=-1)',
@@ -150,16 +150,16 @@ class CNNClassifierAppConfigurator(AppConfigurator):
 				description='Apply standardization to images', 
 				category='PREPROCESSING'
 			),
-			'img_means' : ValueOption(
-				name='img_means',
+			'means' : ValueOption(
+				name='means',
 				value='',
 				value_type=str, 
 				description='Image means (separated by commas) to be used in standardization (default=0)',
 				category='PREPROCESSING',
 				default_value='0'
 			),
-			'img_sigmas' : ValueOption(
-				name='img_sigmas',
+			'sigmas' : ValueOption(
+				name='sigmas',
 				value='',
 				value_type=str, 
 				description='Image sigmas (separated by commas) to be used in standardization (default=1)',
