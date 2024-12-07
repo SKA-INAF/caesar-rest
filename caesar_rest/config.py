@@ -94,6 +94,9 @@ class Config(object):
 	# - IMAGE CLASSIFIER app options
 	CNN_CLASSIFIER_JOB_IMAGE= 'sriggi/cnn-classifier:latest'
 	
+	# - UMAP all options
+	UMAP_JOB_IMAGE= 'sriggi/umap:latest'
+	
 	# - Logging configuration
 	LOG_TO_FILE= False
 	LOG_DIR= '/opt/caesar-rest/logs'
