@@ -127,6 +127,7 @@ def get_args():
 	parser.add_argument('-cutex_container','--cutex_container', dest='cutex_container', default='/opt/containers/cutex/cutex-job_latest.sif', required=False, type=str, help='Path to cutex job Singularity container (default=/opt/containers/cutex/cutex-job_latest.sif)')
 	parser.add_argument('-mrcnn_container','--mrcnn_container', dest='mrcnn_container', default='/opt/containers/mrcnn/mrcnn-detect_latest.sif', required=False, type=str, help='Path to caesar-mrcnn job Singularity container (default=/opt/containers/mrcnn/mrcnn-detect_latest.sif)')
 	parser.add_argument('-cnn_classifier_container','--cnn_classifier_container', dest='cnn_classifier_container', default='/opt/containers/sclassifier/cnn-classifier_latest.sif', required=False, type=str, help='Path to CNN classifier Singularity container (default=/opt/containers/sclassifier/cnn-classifier_latest.sif)')
+	parser.add_argument('-umap_container','--umap_container', dest='umap_container', default='/opt/containers/sclassifier/umap_latest.sif', required=False, type=str, help='Path to UMAP Singularity container (default=/opt/containers/sclassifier/umap_latest.sif)')
 	
 	args = parser.parse_args()	
 
@@ -266,6 +267,7 @@ aegean_container= args.aegean_container
 cutex_container= args.cutex_container
 mrcnn_container= args.mrcnn_container
 cnn_classifier_container= args.cnn_classifier_container	
+umap_container= args.umap_container
 	
 #===============================
 #==   INIT
@@ -327,6 +329,7 @@ config.SLURM_AEGEAN_JOB_IMAGE= aegean_container
 config.SLURM_CUTEX_JOB_IMAGE= cutex_container
 config.SLURM_MASKRCNN_JOB_IMAGE= mrcnn_container
 config.SLURM_CNN_CLASSIFIER_JOB_IMAGE= cnn_classifier_container
+config.SLURM_UMAP_JOB_IMAGE= umap_container
 
 # - Create data manager (DEPRECATED BY MONGO)
 ##logger.info("Creating data manager ...")
