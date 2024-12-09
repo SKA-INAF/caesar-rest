@@ -152,7 +152,7 @@ def submit_job():
 		# - This is already intended to be an absolute path
 		inputfile= req_data['data_inputs']
 		 
-	elif data_inputs_format=="":
+	elif data_inputs_format=="dataset":
 		# - Set input to dataset path (if defined)
 		dataset_id= req_data['data_inputs']
 		if dataset_id not in datasets:
