@@ -175,6 +175,8 @@ def submit_job():
 		res['status']= 'Invalid data_inputs_format option value!'
 		return make_response(jsonify(res),400)		
 
+	logger.info("inputfile: %s" % (inputfile))
+
 	# - Convert job input data UID to path
 	#   NB: Allow to pass input files that are already an absolute path, even if they are not registered in the database
 	#convert_uid_to_path= True
