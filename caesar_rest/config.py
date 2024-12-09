@@ -95,8 +95,33 @@ class Config(object):
 	# - IMAGE CLASSIFIER app options
 	CNN_CLASSIFIER_JOB_IMAGE= 'sriggi/cnn-classifier:latest'
 	
-	# - UMAP all options
+	# - UMAP app options
 	UMAP_JOB_IMAGE= 'sriggi/umap:latest'
+	
+	# - DATASET app options
+	#   NB: paths are to be configured at app deployment phase.
+	DATASETS= {
+		"smgps": {
+			"path": "",
+			"description": "A collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
+		},
+		"emu-pilot": {
+			"path": "",
+			"description": "A collection of 55,773 image cutouts of size 256x256 pixels extracted from the ASKAP EMU pilot survey (Norris+2021)."
+		},
+		"emu": {
+			"path": "",
+			"description": "A collection of XXX image cutouts of size 256x256 pixels extracted from the ASKAP EMU main survey (Hopkins+2024)."
+		},
+		"emu-scorpio-pilot": {
+			"path": "",
+			"description": "A collection of 12,757 image cutouts of size 256x256 pixels extracted from the ASKAP EMU SCORPIO pilot survey (phase 1) (Umana+2021)."
+		},
+		"emu-gp-pilot": {
+			"path": "",
+			"description": "A collection of 38,998 image cutouts of size 256x256 pixels extracted from the ASKAP EMU Galactic Plane pilot observations (phase 2)."
+		},
+	} # close datasets
 	
 	# - Logging configuration
 	LOG_TO_FILE= False

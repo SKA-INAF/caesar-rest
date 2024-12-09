@@ -91,7 +91,7 @@ def submit_job():
 
 	# - Get other options
 	job_scheduler= current_app.config['JOB_SCHEDULER']
-	
+	datasets= current_app.config['DATASETS']
 
 	# - Get request data
 	req_data = request.get_json(silent=True)
@@ -130,24 +130,68 @@ def submit_job():
 		res['status']= 'No data inputs field found in request!'
 		return make_response(jsonify(res),400)
 
-	# - Convert job inpout data UID to path
-	#   NB: Allow to pass input files that are already an absolute path, even if they are not registered in the database
-	#       Add an option to handle that
-	convert_uid_to_path= True
-	if 'is_data_inputs_uid' in req_data:
-		convert_uid_to_path= req_data['is_data_inputs_uid']
+	# - Handle different data input formats
+	#   1) uid: Convert job input data UID to path
+	#   2) abspath: Allow to pass input files that are already an absolute path, even if they are not registered in the database
+	#   3) dataset: Use a pre-configured dataset. NB: App must define data path for this dataset. 
+	data_inputs_format= 'uid'
+	if 'data_inputs_format' in req_data:
+		data_inputs_format= req_data['data_inputs_format']
 		
-	inputfile_uid= req_data['data_inputs']
-	if convert_uid_to_path:
+	if data_inputs_format=="uid": 
+		# - Convert job input data UID to path
+		inputfile_uid= req_data['data_inputs']
 		inputfile= get_filepath_from_uuid(inputfile_uid, username)
 		if inputfile=='':
 			logger.warn("Cannot find file for user %s corresponding to uid=%s!" % (username, inputfile_uid), action="submitjob", user=username)	
 			res['state']= 'ABORTED'	
 			res['status']= 'Cannot find file corresponding to given data input uid!'
 			return make_response(jsonify(res),400)
+			
+	elif data_inputs_format=="abspath":
+		# - This is already intended to be an absolute path
+		inputfile= req_data['data_inputs']
+		 
+	elif data_inputs_format=="":
+		# - Set input to dataset path (if defined)
+		dataset_id= req_data['data_inputs']
+		if dataset_id not in datasets:
+			logger.warn("Dataset id %s given by user %s not found among configured datasets!" % (dataset_id, username), action="submitjob", user=username)	
+			res['state']= 'ABORTED'	
+			res['status']= 'Dataset id not found among configured datasets!'
+			return make_response(jsonify(res),400)
+	
+		if datasets[dataset_id]["path"]=="":
+			logger.warn("Dataset id %s required by user %s existing but its path was not configured when the app was deployed" % (dataset_id, username), action="submitjob", user=username)	
+			res['state']= 'ABORTED'	
+			res['status']= 'Dataset id existing but its path not configured when the app was deployed'
+			return make_response(jsonify(res),400)
+		
+		inputfile= datasets[dataset_id]["path"]
 		
 	else:
-		inputfile= inputfile_uid # this is already intended to be an absolute path
+		logger.warn("Invalid data_inputs_format option value given by user %s!" % (username), action="submitjob", user=username)	
+		res['state']= 'ABORTED'	
+		res['status']= 'Invalid data_inputs_format option value!'
+		return make_response(jsonify(res),400)		
+
+	# - Convert job input data UID to path
+	#   NB: Allow to pass input files that are already an absolute path, even if they are not registered in the database
+	#convert_uid_to_path= True
+	#if 'is_data_inputs_uid' in req_data:
+	#	convert_uid_to_path= req_data['is_data_inputs_uid']
+		
+	#inputfile_uid= req_data['data_inputs']
+	#if convert_uid_to_path:
+	#	inputfile= get_filepath_from_uuid(inputfile_uid, username)
+	#	if inputfile=='':
+	#		logger.warn("Cannot find file for user %s corresponding to uid=%s!" % (username, inputfile_uid), action="submitjob", user=username)	
+	#		res['state']= 'ABORTED'	
+	#		res['status']= 'Cannot find file corresponding to given data input uid!'
+	#		return make_response(jsonify(res),400)
+		
+	#else:
+	#	inputfile= inputfile_uid # this is already intended to be an absolute path
 		
 	if inputfile=='':
 		logger.warn("Empty inputfile for user %s!" % (username), action="submitjob", user=username)	
@@ -420,6 +464,9 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_o
 	elif app_name=="cnn_classifier":
 		image= current_app.config['SLURM_CNN_CLASSIFIER_JOB_IMAGE']
 	
+	elif app_name=="umap":
+		image= current_app.config['SLURM_UMAP_JOB_IMAGE']
+		
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)
 		return None

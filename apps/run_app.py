@@ -129,6 +129,13 @@ def get_args():
 	parser.add_argument('-cnn_classifier_container','--cnn_classifier_container', dest='cnn_classifier_container', default='/opt/containers/sclassifier/cnn-classifier_latest.sif', required=False, type=str, help='Path to CNN classifier Singularity container (default=/opt/containers/sclassifier/cnn-classifier_latest.sif)')
 	parser.add_argument('-umap_container','--umap_container', dest='umap_container', default='/opt/containers/sclassifier/umap_latest.sif', required=False, type=str, help='Path to UMAP Singularity container (default=/opt/containers/sclassifier/umap_latest.sif)')
 	
+	# - Dataset options
+	parser.add_argument('-dataset_smgps','--dataset_smgps', dest='dataset_smgps', default='', required=False, type=str, help='Path to smgps dataset json filelist')
+	parser.add_argument('-dataset_emu_pilot','--dataset_emu_pilot', dest='dataset_emu_pilot', default='', required=False, type=str, help='Path to emu-pilot dataset json filelist')
+	parser.add_argument('-dataset_emu','--dataset_emu', dest='dataset_emu', default='', required=False, type=str, help='Path to emu dataset json filelist')
+	parser.add_argument('-dataset_emu_scorpio_pilot','--dataset_emu_scorpio_pilot', dest='dataset_emu_scorpio_pilot', default='', required=False, type=str, help='Path to emu-scorpio-pilot dataset json filelist')
+	parser.add_argument('-dataset_emu_gp_pilot','--dataset_emu_gp_pilot', dest='dataset_emu_gp_pilot', default='', required=False, type=str, help='Path to emu-gp-pilot dataset json filelist')
+	
 	args = parser.parse_args()	
 
 	return args
@@ -268,7 +275,14 @@ cutex_container= args.cutex_container
 mrcnn_container= args.mrcnn_container
 cnn_classifier_container= args.cnn_classifier_container	
 umap_container= args.umap_container
-	
+
+# - Dataset options
+dataset_smgps= args.dataset_smgps
+dataset_emu_pilot= args.dataset_emu_pilot
+dataset_emu= args.dataset_emu
+dataset_emu_scorpio_pilot= args.dataset_emu_scorpio_pilot
+dataset_emu_gp_pilot= args.dataset_emu_gp_pilot
+
 #===============================
 #==   INIT
 #===============================
@@ -343,6 +357,13 @@ jobcfg= JobConfigurator()
 # - Update celery configs
 celery.conf.result_backend= result_backend
 celery.conf.broker_url= broker_url
+
+# - Set dataset configs
+config.DATASETS["smgps"]["path"]= dataset_smgps
+config.DATASETS["emu-pilot"]["path"]= dataset_emu_pilot
+config.DATASETS["emu"]["path"]= dataset_emu
+config.DATASETS["emu-scorpio-pilot"]["path"]= dataset_emu_scorpio_pilot
+config.DATASETS["emu-gp-pilot"]["path"]= dataset_emu_gp_pilot
 
 #===============================
 #==   CREATE APP
