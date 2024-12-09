@@ -50,17 +50,34 @@ from caesar_rest import logger
 ##############################
 #   CREATE BLUEPRINTS
 ##############################
-job_bp = Blueprint('job', __name__,url_prefix='/caesar/api/v1.0')
-job_status_bp = Blueprint('job_status', __name__,url_prefix='/caesar/api/v1.0')
-job_output_bp = Blueprint('job_output', __name__,url_prefix='/caesar/api/v1.0')
-job_cancel_bp = Blueprint('job_cancel', __name__,url_prefix='/caesar/api/v1.0')
-job_catalog_bp = Blueprint('job_catalog', __name__,url_prefix='/caesar/api/v1.0')
-job_catalog_file_bp = Blueprint('job_catalog_file', __name__,url_prefix='/caesar/api/v1.0')
-job_component_catalog_bp = Blueprint('job_component_catalog', __name__,url_prefix='/caesar/api/v1.0')
-job_component_catalog_file_bp = Blueprint('job_component_catalog_file', __name__,url_prefix='/caesar/api/v1.0')
-job_preview_bp = Blueprint('job_preview', __name__,url_prefix='/caesar/api/v1.0')
-job_preview_file_bp = Blueprint('job_preview_file', __name__,url_prefix='/caesar/api/v1.0')
+job_bp = Blueprint('job', __name__, url_prefix='/caesar/api/v1.0')
+job_status_bp = Blueprint('job_status', __name__, url_prefix='/caesar/api/v1.0')
+job_output_bp = Blueprint('job_output', __name__, url_prefix='/caesar/api/v1.0')
+job_cancel_bp = Blueprint('job_cancel', __name__, url_prefix='/caesar/api/v1.0')
+job_catalog_bp = Blueprint('job_catalog', __name__, url_prefix='/caesar/api/v1.0')
+job_catalog_file_bp = Blueprint('job_catalog_file', __name__, url_prefix='/caesar/api/v1.0')
+job_component_catalog_bp = Blueprint('job_component_catalog', __name__, url_prefix='/caesar/api/v1.0')
+job_component_catalog_file_bp = Blueprint('job_component_catalog_file', __name__, url_prefix='/caesar/api/v1.0')
+job_preview_bp = Blueprint('job_preview', __name__, url_prefix='/caesar/api/v1.0')
+job_preview_file_bp = Blueprint('job_preview_file', __name__, url_prefix='/caesar/api/v1.0')
+dataset_names_bp = Blueprint('dataset_names', __name__, url_prefix='/caesar/api/v1.0')
 
+#=================================
+#===      DATASETS
+#=================================
+@job_bp.route('/datasets',methods=['GET'])
+@custom_require_login
+def get_dataset_names():
+	""" Get supported datasets (with paths not empty) """
+
+	datasets= current_app.config['DATASETS']
+	dataset_names= {}
+	for key, value in datasets.items():
+		if value["path"]=="":
+			continue
+		dataset_names[key]= value
+	
+	return make_response(jsonify(dataset_names), 200)
 
 #=================================
 #===      JOB SUBMIT 
