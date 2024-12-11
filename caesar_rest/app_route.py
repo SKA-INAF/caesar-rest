@@ -38,7 +38,6 @@ from caesar_rest import logger
 app_names_bp = Blueprint('app_names', __name__,url_prefix='/caesar/api/v1.0')
 app_describe_bp = Blueprint('app_describe', __name__,url_prefix='/caesar/api/v1.0')
 
-
 @app_names_bp.route('/apps',methods=['GET'])
 @custom_require_login
 def get_app_names():
@@ -61,4 +60,5 @@ def get_app_description(app_name):
 		return make_response(jsonify(res),400)
 
 	return make_response(jsonify(app_description),200)
+	
 

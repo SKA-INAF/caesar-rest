@@ -76,6 +76,8 @@ def get_dataset_names():
 		if value["path"]=="":
 			continue
 		dataset_names[key]= value
+		if "path" in dataset_names[key]:
+			del dataset_names[key]["path"]
 	
 	return make_response(jsonify(dataset_names), 200)
 
