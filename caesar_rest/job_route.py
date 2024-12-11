@@ -75,7 +75,7 @@ def get_dataset_names():
 	for key, value in datasets.items():
 		if value["path"]=="":
 			continue
-		dataset_names[key]= value
+		dataset_names[key]= value.copy()
 		del dataset_names[key]["path"]
 	
 	return make_response(jsonify(dataset_names), 200)
