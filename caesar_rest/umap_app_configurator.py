@@ -73,7 +73,7 @@ class UMAPAppConfigurator(AppConfigurator):
 				value_type=float, 
 				description=' Min dist UMAP parameter (default=0.1)',
 				category='PREPROCESSING',
-				default_value=0.0,
+				default_value=0.1,
 				min_value=0.0,
 				max_value=1.0
 			),
