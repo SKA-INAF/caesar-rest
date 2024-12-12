@@ -99,12 +99,17 @@ class UMAPAppConfigurator(AppConfigurator):
 			'no-save-ascii' : Option(
 				name='no-save-ascii', 
 				description='Do not save output in ascii format', 
-				category='PREPROCESSING'
+				category='OUTPUT'
 			),
 			'no-save-json' : Option(
 				name='no-save-json', 
 				description='Do not save output in json format', 
-				category='PREPROCESSING'
+				category='OUTPUT'
+			),
+			'no-save-model' : Option(
+				name='no-save-model', 
+				description='Do not save model', 
+				category='OUTPUT'
 			),
 			'outfile-sup' : ValueOption(
 				name='outfile-sup',
