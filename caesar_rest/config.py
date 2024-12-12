@@ -105,6 +105,18 @@ class Config(object):
 			"path": "",
 			"description": "A collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
 		},
+		"smgps-feats-simclr": {
+			"path": "",
+			"description": "Feature data (#512 features) obtained with a SimCLR self-supervised pre-trained model from a collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
+		},
+		"smgps-feats-siglip": {
+			"path": "",
+			"description": "Feature data (#512 features) obtained with a SigLIP Vit14 pre-trained model from a collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
+		},
+		"smgps-feats-dinov2": {
+			"path": "",
+			"description": "Feature data (#1024 features) obtained with a DINOv2 vitl14 pre-trained model from a collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
+		},
 		"emu-pilot": {
 			"path": "",
 			"description": "A collection of 55,773 image cutouts of size 256x256 pixels extracted from the ASKAP EMU pilot survey (Norris+2021)."

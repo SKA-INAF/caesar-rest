@@ -131,6 +131,9 @@ def get_args():
 	
 	# - Dataset options
 	parser.add_argument('-dataset_smgps','--dataset_smgps', dest='dataset_smgps', default='', required=False, type=str, help='Path to smgps dataset json filelist')
+	parser.add_argument('-dataset_smgps_feats_simclr','--dataset_smgps_feats_simclr', dest='dataset_smgps_feats_simclr', default='', required=False, type=str, help='Path to smgps_feats_simclr dataset json filelist')
+	parser.add_argument('-dataset_smgps_feats_siglip','--dataset_smgps_feats_siglip', dest='dataset_smgps_feats_siglip', default='', required=False, type=str, help='Path to smgps_feats_siglip dataset json filelist')
+	parser.add_argument('-dataset_smgps_feats_dinov2','--dataset_smgps_feats_dinov2', dest='dataset_smgps_feats_dinov2', default='', required=False, type=str, help='Path to smgps_feats_dinov2 dataset json filelist')
 	parser.add_argument('-dataset_emu_pilot','--dataset_emu_pilot', dest='dataset_emu_pilot', default='', required=False, type=str, help='Path to emu-pilot dataset json filelist')
 	parser.add_argument('-dataset_emu','--dataset_emu', dest='dataset_emu', default='', required=False, type=str, help='Path to emu dataset json filelist')
 	parser.add_argument('-dataset_emu_scorpio_pilot','--dataset_emu_scorpio_pilot', dest='dataset_emu_scorpio_pilot', default='', required=False, type=str, help='Path to emu-scorpio-pilot dataset json filelist')
@@ -278,6 +281,9 @@ umap_container= args.umap_container
 
 # - Dataset options
 dataset_smgps= args.dataset_smgps
+dataset_smgps_feats_simclr= args.dataset_smgps_feats_simclr
+dataset_smgps_feats_siglip= args.dataset_smgps_feats_siglip
+dataset_smgps_feats_dinov2= args.dataset_smgps_feats_dinov2
 dataset_emu_pilot= args.dataset_emu_pilot
 dataset_emu= args.dataset_emu
 dataset_emu_scorpio_pilot= args.dataset_emu_scorpio_pilot
@@ -360,6 +366,9 @@ celery.conf.broker_url= broker_url
 
 # - Set dataset configs
 config.DATASETS["smgps"]["path"]= dataset_smgps
+config.DATASETS["smgps-feats-simclr"]["path"]= dataset_smgps_feats_simclr
+config.DATASETS["smgps-feats-siglip"]["path"]= dataset_smgps_feats_siglip
+config.DATASETS["smgps-feats-dinov2"]["path"]= dataset_smgps_feats_dinov2
 config.DATASETS["emu-pilot"]["path"]= dataset_emu_pilot
 config.DATASETS["emu"]["path"]= dataset_emu
 config.DATASETS["emu-scorpio-pilot"]["path"]= dataset_emu_scorpio_pilot
