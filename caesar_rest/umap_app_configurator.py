@@ -96,19 +96,50 @@ class UMAPAppConfigurator(AppConfigurator):
 			),
 			
 			# == SAVE OPTIONS ==
+			'no-save-ascii' : Option(
+				name='no-save-ascii', 
+				description='Do not save output in ascii format', 
+				category='PREPROCESSING'
+			),
+			'no-save-json' : Option(
+				name='no-save-json', 
+				description='Do not save output in json format', 
+				category='PREPROCESSING'
+			),
+			'outfile-sup' : ValueOption(
+				name='outfile-sup',
+				value='',
+				value_type=str, 
+				description='Name of UMAP encoded data output file for supervised run in ascii format (default=featdata_umap_sup.dat)',
+				category='OUTPUT',
+				default_value='featdata_umap_sup.dat'
+			),
+			'outfile-unsup' : ValueOption(
+				name='outfile-unsup',
+				value='',
+				value_type=str, 
+				description='Name of UMAP encoded data output file in ascii format (default=featdata_umap.dat)',
+				category='OUTPUT',
+				default_value='featdata_umap.dat'
+			),
 			'outfile-unsup-json' : ValueOption(
 				name='outfile-unsup-json',
 				value='',
 				value_type=str, 
-				description='Name of UMAP encoded data output file in json format (default=latent_data_umap_unsupervised.json)',
+				description='Name of UMAP encoded data output file in json format (default=featdata_umap.json)',
 				category='OUTPUT',
-				default_value='latent_data_umap_unsupervised.json'
+				default_value='featdata_umap.json'
 			),
 			
 			# == RUN OPTIONS ==
 			'no-logredir' : Option(
 				name='no-logredir', 
 				description='Do not redirect logs to output file in script',
+				category='RUN'
+			),
+			'run-supervised' : Option(
+				name='run-supervised', 
+				description='Run UMAP also on labelled data alone (if available)',
 				category='RUN'
 			),
 			

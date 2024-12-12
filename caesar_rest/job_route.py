@@ -159,6 +159,7 @@ def submit_job():
 	if data_inputs_format=="uid": 
 		# - Convert job input data UID to path
 		inputfile_uid= req_data['data_inputs']
+		inputfile_for_response= inputfile_uid
 		inputfile= get_filepath_from_uuid(inputfile_uid, username)
 		if inputfile=='':
 			logger.warn("Cannot find file for user %s corresponding to uid=%s!" % (username, inputfile_uid), action="submitjob", user=username)	
@@ -169,10 +170,12 @@ def submit_job():
 	elif data_inputs_format=="abspath":
 		# - This is already intended to be an absolute path
 		inputfile= req_data['data_inputs']
+		inputfile_for_response= inputfile
 		 
 	elif data_inputs_format=="dataset":
 		# - Set input to dataset path (if defined)
 		dataset_id= req_data['data_inputs']
+		
 		if dataset_id not in datasets:
 			logger.warn("Dataset id %s given by user %s not found among configured datasets!" % (dataset_id, username), action="submitjob", user=username)	
 			res['state']= 'ABORTED'	
@@ -186,6 +189,7 @@ def submit_job():
 			return make_response(jsonify(res),400)
 		
 		inputfile= datasets[dataset_id]["path"]
+		inputfile_for_response= dataset_id
 		
 	else:
 		logger.warn("Invalid data_inputs_format option value given by user %s!" % (username), action="submitjob", user=username)	
@@ -302,7 +306,7 @@ def submit_job():
 	res['submit_date']= submit_date
 	res['app']= app_name
 	res['job_inputs']= job_inputs
-	res['data_inputs']= inputfile
+	res['data_inputs']= inputfile_for_response
 	res['tag']= job_tag
 	res['state']= 'PENDING'
 	res['status']= 'Job submitted and registered with success'
