@@ -302,7 +302,7 @@ def submit_job():
 	res['submit_date']= submit_date
 	res['app']= app_name
 	res['job_inputs']= job_inputs
-	res['data_inputs']= inputfile_uid
+	res['data_inputs']= inputfile
 	res['tag']= job_tag
 	res['state']= 'PENDING'
 	res['status']= 'Job submitted and registered with success'
