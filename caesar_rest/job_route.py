@@ -263,7 +263,7 @@ def submit_job():
 		"submit_date": submit_date,
 		"app": app_name,	
 		"job_inputs": job_inputs,
-		"data_inputs": inputfile_uid,
+		"data_inputs": inputfile,
 		"job_top_dir": job_top_dir,
 		"metadata": '', # FIX ME
 		"tag": job_tag,
