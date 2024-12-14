@@ -35,11 +35,11 @@ class OutlierFinderAppConfigurator(AppConfigurator):
 	""" Class to configure OutlierFinder application """
 
 	def __init__(self):
-		""" Return aapp configurator class """
+		""" Return app configurator class """
 		AppConfigurator.__init__(self)
 
 		# - Define cmd name
-		self.cmd= 'run_umap.sh'
+		self.cmd= 'run_outlier_finder.sh'
 		self.cmd_args= []
 		self.batch_processing_support= True
 		
