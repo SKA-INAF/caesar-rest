@@ -29,6 +29,7 @@ from caesar_rest.cutex_app_configurator import CutexAppConfigurator
 from caesar_rest.cnn_classifier_app_configurator import CNNClassifierAppConfigurator
 from caesar_rest.simclr_app_configurator import SimCLRFeatExtractorAppConfigurator
 from caesar_rest.umap_app_configurator import UMAPAppConfigurator
+from caesar_rest.outlier_finder_app_configurator import OutlierFinderAppConfigurator
 
 # Get logger
 from caesar_rest import logger
@@ -47,9 +48,10 @@ class JobConfigurator(object):
 			'mrcnn': MaskRCNNAppConfigurator,
 			'aegean': AegeanAppConfigurator,
 			'cutex': CutexAppConfigurator,
-			'cnn_classifier': CNNClassifierAppConfigurator,
-			'simclr_featextractor': SimCLRFeatExtractorAppConfigurator,
+			'classifier-cnn': CNNClassifierAppConfigurator,
+			'featextractor-simclr': SimCLRFeatExtractorAppConfigurator,
 			'umap': UMAPAppConfigurator,
+			'outlier-finder': OutlierFinderAppConfigurator,
 		}
 		
 		
