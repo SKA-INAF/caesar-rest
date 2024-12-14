@@ -55,6 +55,14 @@ class UMAPAppConfigurator(AppConfigurator):
 				category='INPUT',
 				default_value='data'
 			),
+			'selcols' : ValueOption(
+				name='selcols',
+				value='',
+				value_type=str, 
+				description='Data column ids to be selected from input data, separated by commas (default=all columns)',
+				category='INPUT',
+				default_value=''
+			),
 		
 			# == UMAP OPTIONS ==
 			'nfeats' : ValueOption(
@@ -62,7 +70,7 @@ class UMAPAppConfigurator(AppConfigurator):
 				value='',
 				value_type=int, 
 				description='Encoded data dim in UMAP (default=2)',
-				category='PREPROCESSING',
+				category='PROCESSING',
 				default_value=2,
 				min_value=2,
 				max_value=512
@@ -72,7 +80,7 @@ class UMAPAppConfigurator(AppConfigurator):
 				value='',
 				value_type=float, 
 				description=' Min dist UMAP parameter (default=0.1)',
-				category='PREPROCESSING',
+				category='PROCESSING',
 				default_value=0.1,
 				min_value=0.0,
 				max_value=1.0
@@ -82,7 +90,7 @@ class UMAPAppConfigurator(AppConfigurator):
 				value='',
 				value_type=int, 
 				description='N neighbors UMAP parameter (default=15)',
-				category='PREPROCESSING',
+				category='PROCESSING',
 				default_value=15,
 				min_value=1,
 				max_value=10000
