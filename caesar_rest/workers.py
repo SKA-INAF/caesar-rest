@@ -12,6 +12,7 @@ import datetime
 import logging
 import numpy as np
 import subprocess
+import errno
 
 try:
 	FileNotFoundError  # python3

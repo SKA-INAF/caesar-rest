@@ -12,6 +12,7 @@ import logging
 import numpy as np
 import glob
 import base64
+import errno
 
 try:
 	FileNotFoundError  # python3

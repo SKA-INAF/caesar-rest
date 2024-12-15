@@ -14,6 +14,7 @@ from dateutil.tz import tzutc
 import logging
 import numpy as np
 import pprint
+import errno
 
 # - Import additional modules
 import requests
