@@ -18,7 +18,7 @@ import uuid
 from astropy.io import fits
 from astropy.visualization import ZScaleInterval, LinearStretch, ImageNormalize, MinMaxInterval
 import regions
-from regions import DS9Parser
+#from regions import DS9Parser
 from regions import read_ds9
 
 ## Graphics modules
