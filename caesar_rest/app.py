@@ -26,7 +26,12 @@ except ImportError:
 # Import Flask
 from flask import Flask
 from flask import flash, request, redirect, render_template, url_for
-from flask import send_file, send_from_directory, safe_join, abort
+from flask import send_file, send_from_directory, abort
+try:
+	from flask import safe_join
+except:
+	from werkzeug.utils import safe_join
+	
 from werkzeug.utils import secure_filename
 
 # Import Celery
