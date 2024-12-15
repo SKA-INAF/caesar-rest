@@ -18,8 +18,6 @@ import uuid
 from astropy.io import fits
 from astropy.visualization import ZScaleInterval, LinearStretch, ImageNormalize, MinMaxInterval
 import regions
-#from regions import DS9Parser
-from regions import read_ds9
 
 ## Graphics modules
 import matplotlib as mpl
@@ -107,7 +105,12 @@ def plot_img_and_regions(imgfile, regionfiles=[], zmin=0, zmax=0, cmap="afmhot",
 	regs= []
 	for regionfile in regionfiles:
 		logger.info("Reading region file %s ..." % regionfile)
-		region_list= regions.read_ds9(regionfile)
+		try:
+			region_list= regions.read_ds9(regionfile)
+		except Exception as e:
+			logger.warning("read_ds9 failed (err=%s), trying another method..." % (str(e)))	
+			region_list= regions.Regions.read(regionfile, format='ds9')
+			
 		regs.extend(region_list)
 
 	#===========================
