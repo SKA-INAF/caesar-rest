@@ -65,6 +65,29 @@ To use package scripts:
 * Add binary directory to your ```PATH``` environment variable:   
   ``` export PATH=$PATH:$INSTALL_DIR/bin ```    
 
+### **App containers**
+Apps are run as Docker (Kuberneter deploy) or Singularity (Slurm deploy) containers. Docker images are available in DockerHub:   
+
+* `caesar` source finder job: `docker://sriggi/caesar-job`   
+* `aegean` source finder job: `docker://sriggi/aegean-job`
+* `cutex` source finder job: `docker://sriggi/cutex-job`
+* `mrcnn` object detector (TensorFlow 1.x): `docker://sriggi/mrcnn-detect`
+* `classifier-cnn` image classifier (TensorFlow 2.x): `docker://sriggi/cnn-classifier`
+* `umap` dimensionality reduction: `docker://sriggi/umap-job`  
+* `outlier-finder` with Isolation Forest: `docker://sriggi/outlier-finder-job`   
+* `hdbscan` cluster search: `docker://sriggi/hdbscan-job`   
+
+Singularity containers can be created from docker images with:   
+
+```singularity pull [DOCKER URL]```
+
+Try to change these Singularity environment variables in case you don't have enough disk space for building the containers in the Singularity default cache/tmp directories:   
+
+```SINGULARITY_CACHEDIR```    
+```SINGULARITY_TMPDIR```    
+
+**NB: You may experience this error when running Singularity containers that produces large outputs (e.g. hundreds or MB or more): `OSError: [Errno 28] No space left on device`. Try to increase the default value (64 MB) of the `sessiondir max size` parameter in Singularity configuration file `/usr/local/etc/singularity/singularity.conf`.**      
+
 ## **How to run the service?**  
 
 In the following we describe the steps done to deploy and run the application and the auxiliary services. Three possible options are described below for the deployment, depending of whether the job management is done with celery, Kubernetes, or with Slurm. To ease the deployment we provide Docker containers and configuration files for Docker Compose or Kubernetes.       
