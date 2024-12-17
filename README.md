@@ -65,6 +65,29 @@ To use package scripts:
 * Add binary directory to your ```PATH``` environment variable:   
   ``` export PATH=$PATH:$INSTALL_DIR/bin ```    
 
+### **App containers**
+Apps are run as Docker (Kuberneter deploy) or Singularity (Slurm deploy) containers. Docker images are available in DockerHub:   
+
+* `caesar` source finder job: `docker://sriggi/caesar-job`   
+* `aegean` source finder job: `docker://sriggi/aegean-job`
+* `cutex` source finder job: `docker://sriggi/cutex-job`
+* `mrcnn` object detector (TensorFlow 1.x): `docker://sriggi/mrcnn-detect`
+* `classifier-cnn` image classifier (TensorFlow 2.x): `docker://sriggi/cnn-classifier`
+* `umap` dimensionality reduction: `docker://sriggi/umap-job`  
+* `outlier-finder` with Isolation Forest: `docker://sriggi/outlier-finder-job`   
+* `hdbscan` cluster search: `docker://sriggi/hdbscan-job`   
+
+Singularity containers can be created from docker images with:   
+
+```singularity pull [DOCKER URL]```
+
+Try to change these Singularity environment variables in case you don't have enough disk space for building the containers in the Singularity default cache/tmp directories:   
+
+```SINGULARITY_CACHEDIR```    
+```SINGULARITY_TMPDIR```    
+
+**NB: You may experience this error when running Singularity containers that produces large outputs (e.g. hundreds or MB or more): `OSError: [Errno 28] No space left on device`. Try to increase the default value (64 MB) of the `sessiondir max size` parameter in Singularity configuration file `/usr/local/etc/singularity/singularity.conf`.**      
+
 ## **How to run the service?**  
 
 In the following we describe the steps done to deploy and run the application and the auxiliary services. Three possible options are described below for the deployment, depending of whether the job management is done with celery, Kubernetes, or with Slurm. To ease the deployment we provide Docker containers and configuration files for Docker Compose or Kubernetes.       
@@ -242,7 +265,27 @@ where supported `ARGS` are:
    * `mount_rclone_volume`: Enable mounting of Nextcloud volume through rclone in container jobs (default=no)  
    * `mount_volume_path=[PATH]`: Mount volume path for container jobs (default=/mnt/storage)  
    * `rclone_storage_name=[NAME]`: rclone remote storage name (default=neanias-nextcloud)   
-   * `rclone_storage_path=[PATH]`: rclone remote storage path (default=.)    	
+   * `rclone_storage_path=[PATH]`: rclone remote storage path (default=.)
+
+   SINGULARITY CONTAINER OPTIONS
+   * `caesar_container`: Path to caesar job Singularity container (default=/opt/containers/caesar/caesar-job_latest.sif)   
+   * `aegean_container`: Path to aegean job Singularity container (default=/opt/containers/aegean/aegean-job_latest.sif)   
+   * `cutex_container`: Path to cutex job Singularity container (default=/opt/containers/cutex/cutex-job_latest.sif)
+   * `mrcnn_container`: Path to caesar-mrcnn job Singularity container (default=/opt/containers/mrcnn/mrcnn-detect_latest.sif)
+   * `cnn_classifier_container`: Path to CNN classifier Singularity container (default=/opt/containers/sclassifier/cnn-classifier_latest.sif)
+   * `umap_container`: Path to UMAP Singularity container (default=/opt/containers/sclassifier/umap_latest.sif)
+   * `outlier_finder_container`: Path to OutlierFinder Singularity container (default=/opt/containers/sclassifier/outlier_finder_latest.sif)
+   * `hdbscan_container`: Path to HDBSCAN Singularity container (default=/opt/containers/sclassifier/hdbscan_latest.sif)
+
+   DATASET OPTIONS  
+   * `dataset_smgps`: Path to smgps dataset json filelist
+   * `dataset_smgps_feats_simclr`: Path to smgps_feats_simclr dataset json filelist   
+   * `dataset_smgps_feats_siglip`: Path to smgps_feats_siglip dataset json filelist   
+   * `dataset_smgps_feats_dinov2`: Path to smgps_feats_dinov2 dataset json filelist
+   * `dataset_emu_pilot`: Path to emu-pilot dataset json filelist
+   * `dataset_emu`: Path to emu dataset json filelist
+   * `dataset_emu_scorpio_pilot`: Path to emu-scorpio-pilot dataset json filelist
+   * `dataset_emu_gp_pilot`: Path to emu-gp-pilot dataset json filelist      
   
 Flask default options are defined in the `config.py`. Celery options are defined in the `celery_config.py`. Other options may be defined in the future to override default Flask and Celery options.   
 
@@ -487,7 +530,27 @@ with response:
 {"file_ids":["a668c353ba4d4c7395ad94b4e8647d92","c54db5ef95734c62a499db38587c48a5","26bc9a545c8f4f05a2c719ec5c3917e0"]}
 ```
 
-### **App description**
+### **Dataset list & description**
+To get the list of supported datasets: 
+
+* URL:```http://server-address:port/caesar/api/v1.0/datasets```   
+* Request methods: GET   
+* Request header: none
+
+Server response contains a list of configured datasets that can be used as inputs in job submission:   
+
+```
+{
+  "smgps": {
+    "description": "A collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
+  },
+  "smgps-feats-simclr": {
+    "description": "Feature data (#512 features) obtained with a SimCLR self-supervised pre-trained model from a collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
+  }
+}
+```
+
+### **App list**
 To get the list of supported apps:   
 
 * URL:```http://server-address:port/caesar/api/v1.0/apps```   
@@ -500,21 +563,180 @@ Server response contains a list of valid apps that can be queried for further de
 {
   "apps": [
     "caesar",
-    "mrcnn"
+    "mrcnn",
+    "aegean",
+    "cutex",
+    "classifier-cnn",
+    "featextractor-simclr",
+    "umap",
+    "outlier-finder",
+    "hdbscan"
   ]
 }
 ```
 
+### **App description**
 To get information about a given app:  
 
 * URL:```http://server-address:port/caesar/api/v1.0/app/[app_name]/describe```   
 * Request methods: GET    
 * Request header: none
 
-Server response contains a list of app options that can be used in job submission:   
-
+Server response contains a list of app options that can be used in job submission. Below we report a description of the `umap` app (url: `http://server-address:port/caesar/api/v1.0/app/umap/describe`):   
 ```
-{"image":{"description":"Path to input image (.fits) to be given to classifier (default=empty)","mandatory":true,"type":"str"},"iouThr":{"description":"IOU threshold between detected and ground truth bboxes to consider the object as detected (default=0.6)","mandatory":false,"type":"float"},"scoreThr":{"description":"Detected object score threshold to select as final object (default=0.7)","mandatory":false,"type":"float"}}
+{
+	"datalist-key": {
+		"advanced": 0,
+		"category": "INPUT",
+		"default": "data",
+		"description": "Dictionary key name to be read in input datalist (default=data)",
+		"enum": false,
+		"mandatory": false,
+		"max": "",
+		"min": "",
+		"subcategory": "",
+		"type": "str"
+	},
+	"mindist": {
+		"advanced": 0,
+		"category": "PROCESSING",
+		"default": 0.1,
+		"description": " Min dist UMAP parameter (default=0.1)",
+		"enum": false,
+		"mandatory": false,
+		"max": 1.0,
+		"min": 0.0,
+		"subcategory": "",
+		"type": "float"
+	},
+	"nfeats": {
+		"advanced": 0,
+		"category": "PROCESSING",
+		"default": 2,
+		"description": "Encoded data dim in UMAP (default=2)",
+		"enum": false,
+		"mandatory": false,
+		"max": 512,
+		"min": 2,
+		"subcategory": "",
+		"type": "int"
+	},
+	"nneighbors": {
+		"advanced": 0,
+		"category": "PROCESSING",
+		"default": 15,
+		"description": "N neighbors UMAP parameter (default=15)",
+		"enum": false,
+		"mandatory": false,
+		"max": 10000,
+		"min": 1,
+		"subcategory": "",
+		"type": "int"
+	},
+	"no-logredir": {
+		"advanced": 0,
+		"category": "RUN",
+		"description": "Do not redirect logs to output file in script",
+		"enum": false,
+		"mandatory": false,
+		"subcategory": "",
+		"type": "none"
+	},
+	"no-save-ascii": {
+		"advanced": 0,
+		"category": "OUTPUT",
+		"description": "Do not save output in ascii format",
+		"enum": false,
+		"mandatory": false,
+		"subcategory": "",
+		"type": "none"
+	},
+	"no-save-json": {
+		"advanced": 0,
+		"category": "OUTPUT",
+		"description": "Do not save output in json format",
+		"enum": false,
+		"mandatory": false,
+		"subcategory": "",
+		"type": "none"
+	},
+	"no-save-model": {
+		"advanced": 0,
+		"category": "OUTPUT",
+		"description": "Do not save model",
+		"enum": false,
+		"mandatory": false,
+		"subcategory": "",
+		"type": "none"
+	},
+	"normalize_minmax": {
+		"advanced": 0,
+		"category": "PREPROCESSING",
+		"description": "Normalize each channel in range",
+		"enum": false,
+		"mandatory": false,
+		"subcategory": "",
+		"type": "none"
+	},
+	"outfile-sup": {
+		"advanced": 0,
+		"category": "OUTPUT",
+		"default": "featdata_umap_sup.dat",
+		"description": "Name of UMAP encoded data output file for supervised run in ascii format (default=featdata_umap_sup.dat)",
+		"enum": false,
+		"mandatory": false,
+		"max": "",
+		"min": "",
+		"subcategory": "",
+		"type": "str"
+	},
+	"outfile-unsup": {
+		"advanced": 0,
+		"category": "OUTPUT",
+		"default": "featdata_umap.dat",
+		"description": "Name of UMAP encoded data output file in ascii format (default=featdata_umap.dat)",
+		"enum": false,
+		"mandatory": false,
+		"max": "",
+		"min": "",
+		"subcategory": "",
+		"type": "str"
+	},
+	"outfile-unsup-json": {
+		"advanced": 0,
+		"category": "OUTPUT",
+		"default": "featdata_umap.json",
+		"description": "Name of UMAP encoded data output file in json format (default=featdata_umap.json)",
+		"enum": false,
+		"mandatory": false,
+		"max": "",
+		"min": "",
+		"subcategory": "",
+		"type": "str"
+	},
+	"run-supervised": {
+		"advanced": 0,
+		"category": "RUN",
+		"description": "Run UMAP also on labelled data alone (if available)",
+		"enum": false,
+		"mandatory": false,
+		"subcategory": "",
+		"type": "none"
+	},
+	"selcols": {
+		"advanced": 0,
+		"category": "INPUT",
+		"default": "",
+		"description": "Data column ids to be selected from input data, separated by commas (default=all columns)",
+		"enum": false,
+		"mandatory": false,
+		"max": "",
+		"min": "",
+		"subcategory": "",
+		"type": "str"
+	}
+}
+
 ```
 
 ### **Job submission**
