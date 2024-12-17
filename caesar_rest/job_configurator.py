@@ -30,6 +30,7 @@ from caesar_rest.cnn_classifier_app_configurator import CNNClassifierAppConfigur
 from caesar_rest.simclr_app_configurator import SimCLRFeatExtractorAppConfigurator
 from caesar_rest.umap_app_configurator import UMAPAppConfigurator
 from caesar_rest.outlier_finder_app_configurator import OutlierFinderAppConfigurator
+from caesar_rest.hdbscan_app_configurator import HDBSCANAppConfigurator
 
 # Get logger
 from caesar_rest import logger
@@ -52,6 +53,7 @@ class JobConfigurator(object):
 			'featextractor-simclr': SimCLRFeatExtractorAppConfigurator,
 			'umap': UMAPAppConfigurator,
 			'outlier-finder': OutlierFinderAppConfigurator,
+			'hdbscan': HDBSCANAppConfigurator,
 		}
 		
 		

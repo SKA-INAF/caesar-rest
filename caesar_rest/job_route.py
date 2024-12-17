@@ -412,6 +412,10 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
 	elif app_name=="outlier-finder":
 		image= current_app.config['OUTLIER_FINDER_JOB_IMAGE']
 		job_label= 'outlier-finder-job'
+		
+	elif app_name=="hdbscan":
+		image= current_app.config['HDBSCAN_JOB_IMAGE']
+		job_label= 'hdbscan-job'
 
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)
@@ -507,6 +511,9 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_o
 		
 	elif app_name=="outlier-finder":
 		image= current_app.config['SLURM_OUTLIER_FINDER_JOB_IMAGE']
+		
+	elif app_name=="hdbscan":
+		image= current_app.config['SLURM_HDBSCAN_JOB_IMAGE']
 		
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)

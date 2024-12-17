@@ -64,7 +64,8 @@ class Config(object):
 	SLURM_CUTEX_JOB_IMAGE= '/opt/containers/cutex/cutex-job_latest.sif'
 	SLURM_CNN_CLASSIFIER_JOB_IMAGE= '/opt/containers/sclassifier/cnn-classifier_latest.sif'
 	SLURM_UMAP_JOB_IMAGE= '/opt/containers/sclassifier/umap_latest.sif'
-	SLURM_OUTLIER_FINDER_JOB_IMAGE= '/opt/containers/sclassifier/outlier_finder_latest.sif'	
+	SLURM_OUTLIER_FINDER_JOB_IMAGE= '/opt/containers/sclassifier/outlier_finder_latest.sif'
+	SLURM_HDBSCAN_JOB_IMAGE= '/opt/containers/sclassifier/hdbscan_latest.sif'	
 	SLURM_MAX_CORE_PER_JOB= 4 # Maximum number of cores reserved for a job
 	
 	# - AAI options
@@ -101,6 +102,9 @@ class Config(object):
 	
 	# - UMAP app options
 	OUTLIER_FINDER_JOB_IMAGE= 'sriggi/outlier-finder:latest'
+	
+	# - HDBSCAN app options
+	HDBSCAN_JOB_IMAGE= 'sriggi/hdbscan:latest'
 	
 	# - DATASET app options
 	#   NB: paths are to be configured at app deployment phase.
