@@ -507,7 +507,27 @@ with response:
 {"file_ids":["a668c353ba4d4c7395ad94b4e8647d92","c54db5ef95734c62a499db38587c48a5","26bc9a545c8f4f05a2c719ec5c3917e0"]}
 ```
 
-### **App description**
+### **Dataset list & description**
+To get the list of supported datasets: 
+
+* URL:```http://server-address:port/caesar/api/v1.0/datasets```   
+* Request methods: GET   
+* Request header: none
+
+Server response contains a list of configured datasets that can be used as inputs in job submission:   
+
+```
+{
+  "smgps": {
+    "description": "A collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
+  },
+  "smgps-feats-simclr": {
+    "description": "Feature data (#512 features) obtained with a SimCLR self-supervised pre-trained model from a collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
+  }
+}
+```
+
+### **App list**
 To get the list of supported apps:   
 
 * URL:```http://server-address:port/caesar/api/v1.0/apps```   
@@ -532,36 +552,168 @@ Server response contains a list of valid apps that can be queried for further de
 }
 ```
 
+### **App description**
 To get information about a given app:  
 
 * URL:```http://server-address:port/caesar/api/v1.0/app/[app_name]/describe```   
 * Request methods: GET    
 * Request header: none
 
-Server response contains a list of app options that can be used in job submission:   
-
-```
-{"image":{"description":"Path to input image (.fits) to be given to classifier (default=empty)","mandatory":true,"type":"str"},"iouThr":{"description":"IOU threshold between detected and ground truth bboxes to consider the object as detected (default=0.6)","mandatory":false,"type":"float"},"scoreThr":{"description":"Detected object score threshold to select as final object (default=0.7)","mandatory":false,"type":"float"}}
-```
-
-### **Dataset description**
-To get the list of supported datasets: 
-
-* URL:```http://server-address:port/caesar/api/v1.0/datasets```   
-* Request methods: GET   
-* Request header: none
-
-Server response contains a list of configured datasets that can be used as inputs in job submission:   
-
+Server response contains a list of app options that can be used in job submission. Below we report a description of the `umap` app (url: `http://server-address:port/caesar/api/v1.0/app/umap/describe`):   
 ```
 {
-  "smgps": {
-    "description": "A collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
-  },
-  "smgps-feats-simclr": {
-    "description": "Feature data (#512 features) obtained with a SimCLR self-supervised pre-trained model from a collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
-  }
+	"datalist-key": {
+		"advanced": 0,
+		"category": "INPUT",
+		"default": "data",
+		"description": "Dictionary key name to be read in input datalist (default=data)",
+		"enum": false,
+		"mandatory": false,
+		"max": "",
+		"min": "",
+		"subcategory": "",
+		"type": "str"
+	},
+	"mindist": {
+		"advanced": 0,
+		"category": "PROCESSING",
+		"default": 0.1,
+		"description": " Min dist UMAP parameter (default=0.1)",
+		"enum": false,
+		"mandatory": false,
+		"max": 1.0,
+		"min": 0.0,
+		"subcategory": "",
+		"type": "float"
+	},
+	"nfeats": {
+		"advanced": 0,
+		"category": "PROCESSING",
+		"default": 2,
+		"description": "Encoded data dim in UMAP (default=2)",
+		"enum": false,
+		"mandatory": false,
+		"max": 512,
+		"min": 2,
+		"subcategory": "",
+		"type": "int"
+	},
+	"nneighbors": {
+		"advanced": 0,
+		"category": "PROCESSING",
+		"default": 15,
+		"description": "N neighbors UMAP parameter (default=15)",
+		"enum": false,
+		"mandatory": false,
+		"max": 10000,
+		"min": 1,
+		"subcategory": "",
+		"type": "int"
+	},
+	"no-logredir": {
+		"advanced": 0,
+		"category": "RUN",
+		"description": "Do not redirect logs to output file in script",
+		"enum": false,
+		"mandatory": false,
+		"subcategory": "",
+		"type": "none"
+	},
+	"no-save-ascii": {
+		"advanced": 0,
+		"category": "OUTPUT",
+		"description": "Do not save output in ascii format",
+		"enum": false,
+		"mandatory": false,
+		"subcategory": "",
+		"type": "none"
+	},
+	"no-save-json": {
+		"advanced": 0,
+		"category": "OUTPUT",
+		"description": "Do not save output in json format",
+		"enum": false,
+		"mandatory": false,
+		"subcategory": "",
+		"type": "none"
+	},
+	"no-save-model": {
+		"advanced": 0,
+		"category": "OUTPUT",
+		"description": "Do not save model",
+		"enum": false,
+		"mandatory": false,
+		"subcategory": "",
+		"type": "none"
+	},
+	"normalize_minmax": {
+		"advanced": 0,
+		"category": "PREPROCESSING",
+		"description": "Normalize each channel in range",
+		"enum": false,
+		"mandatory": false,
+		"subcategory": "",
+		"type": "none"
+	},
+	"outfile-sup": {
+		"advanced": 0,
+		"category": "OUTPUT",
+		"default": "featdata_umap_sup.dat",
+		"description": "Name of UMAP encoded data output file for supervised run in ascii format (default=featdata_umap_sup.dat)",
+		"enum": false,
+		"mandatory": false,
+		"max": "",
+		"min": "",
+		"subcategory": "",
+		"type": "str"
+	},
+	"outfile-unsup": {
+		"advanced": 0,
+		"category": "OUTPUT",
+		"default": "featdata_umap.dat",
+		"description": "Name of UMAP encoded data output file in ascii format (default=featdata_umap.dat)",
+		"enum": false,
+		"mandatory": false,
+		"max": "",
+		"min": "",
+		"subcategory": "",
+		"type": "str"
+	},
+	"outfile-unsup-json": {
+		"advanced": 0,
+		"category": "OUTPUT",
+		"default": "featdata_umap.json",
+		"description": "Name of UMAP encoded data output file in json format (default=featdata_umap.json)",
+		"enum": false,
+		"mandatory": false,
+		"max": "",
+		"min": "",
+		"subcategory": "",
+		"type": "str"
+	},
+	"run-supervised": {
+		"advanced": 0,
+		"category": "RUN",
+		"description": "Run UMAP also on labelled data alone (if available)",
+		"enum": false,
+		"mandatory": false,
+		"subcategory": "",
+		"type": "none"
+	},
+	"selcols": {
+		"advanced": 0,
+		"category": "INPUT",
+		"default": "",
+		"description": "Data column ids to be selected from input data, separated by commas (default=all columns)",
+		"enum": false,
+		"mandatory": false,
+		"max": "",
+		"min": "",
+		"subcategory": "",
+		"type": "str"
+	}
 }
+
 ```
 
 ### **Job submission**
