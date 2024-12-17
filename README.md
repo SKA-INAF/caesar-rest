@@ -520,7 +520,14 @@ Server response contains a list of valid apps that can be queried for further de
 {
   "apps": [
     "caesar",
-    "mrcnn"
+    "mrcnn",
+    "aegean",
+    "cutex",
+    "classifier-cnn",
+    "featextractor-simclr",
+    "umap",
+    "outlier-finder",
+    "hdbscan"
   ]
 }
 ```
@@ -535,6 +542,26 @@ Server response contains a list of app options that can be used in job submissio
 
 ```
 {"image":{"description":"Path to input image (.fits) to be given to classifier (default=empty)","mandatory":true,"type":"str"},"iouThr":{"description":"IOU threshold between detected and ground truth bboxes to consider the object as detected (default=0.6)","mandatory":false,"type":"float"},"scoreThr":{"description":"Detected object score threshold to select as final object (default=0.7)","mandatory":false,"type":"float"}}
+```
+
+### **Dataset description**
+To get the list of supported datasets: 
+
+* URL:```http://server-address:port/caesar/api/v1.0/datasets```   
+* Request methods: GET   
+* Request header: none
+
+Server response contains a list of configured datasets that can be used as inputs in job submission:   
+
+```
+{
+  "smgps": {
+    "description": "A collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
+  },
+  "smgps-feats-simclr": {
+    "description": "Feature data (#512 features) obtained with a SimCLR self-supervised pre-trained model from a collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
+  }
+}
 ```
 
 ### **Job submission**
