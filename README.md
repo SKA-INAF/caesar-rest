@@ -242,7 +242,27 @@ where supported `ARGS` are:
    * `mount_rclone_volume`: Enable mounting of Nextcloud volume through rclone in container jobs (default=no)  
    * `mount_volume_path=[PATH]`: Mount volume path for container jobs (default=/mnt/storage)  
    * `rclone_storage_name=[NAME]`: rclone remote storage name (default=neanias-nextcloud)   
-   * `rclone_storage_path=[PATH]`: rclone remote storage path (default=.)    	
+   * `rclone_storage_path=[PATH]`: rclone remote storage path (default=.)
+
+   SINGULARITY CONTAINER OPTIONS
+   * `caesar_container`: Path to caesar job Singularity container (default=/opt/containers/caesar/caesar-job_latest.sif)   
+   * `aegean_container`: Path to aegean job Singularity container (default=/opt/containers/aegean/aegean-job_latest.sif)   
+   * `cutex_container`: Path to cutex job Singularity container (default=/opt/containers/cutex/cutex-job_latest.sif)
+   * `mrcnn_container`: Path to caesar-mrcnn job Singularity container (default=/opt/containers/mrcnn/mrcnn-detect_latest.sif)
+   * `cnn_classifier_container`: Path to CNN classifier Singularity container (default=/opt/containers/sclassifier/cnn-classifier_latest.sif)
+   * `umap_container`: Path to UMAP Singularity container (default=/opt/containers/sclassifier/umap_latest.sif)
+   * `outlier_finder_container`: Path to OutlierFinder Singularity container (default=/opt/containers/sclassifier/outlier_finder_latest.sif)
+   * `hdbscan_container`: Path to HDBSCAN Singularity container (default=/opt/containers/sclassifier/hdbscan_latest.sif)
+
+   DATASET OPTIONS  
+   * `dataset_smgps`: Path to smgps dataset json filelist
+   * `dataset_smgps_feats_simclr`: Path to smgps_feats_simclr dataset json filelist   
+   * `dataset_smgps_feats_siglip`: Path to smgps_feats_siglip dataset json filelist   
+   * `dataset_smgps_feats_dinov2`: Path to smgps_feats_dinov2 dataset json filelist
+   * `dataset_emu_pilot`: Path to emu-pilot dataset json filelist
+   * `dataset_emu`: Path to emu dataset json filelist
+   * `dataset_emu_scorpio_pilot`: Path to emu-scorpio-pilot dataset json filelist
+   * `dataset_emu_gp_pilot`: Path to emu-gp-pilot dataset json filelist      
   
 Flask default options are defined in the `config.py`. Celery options are defined in the `celery_config.py`. Other options may be defined in the future to override default Flask and Celery options.   
 
