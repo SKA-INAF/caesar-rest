@@ -22,7 +22,12 @@ except ImportError:
 
 # Import flask modules
 from flask import current_app, Blueprint, render_template, request, redirect, url_for, g
-from flask import send_file, send_from_directory, safe_join, abort, make_response, jsonify
+from flask import send_file, send_from_directory, abort, make_response, jsonify
+try:
+	from flask import safe_join
+except:
+	from werkzeug.utils import safe_join
+	
 from werkzeug.utils import secure_filename
 from caesar_rest import oidc
 from caesar_rest import utils

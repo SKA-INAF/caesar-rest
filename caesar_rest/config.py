@@ -61,7 +61,11 @@ class Config(object):
 	SLURM_CAESAR_JOB_IMAGE= '/opt/containers/caesar/caesar-job_latest.sif'
 	SLURM_MASKRCNN_JOB_IMAGE= '/opt/containers/mrcnn/mrcnn-detect_latest.sif'
 	SLURM_AEGEAN_JOB_IMAGE= '/opt/containers/aegean/aegean-job_latest.sif'
-	SLURM_CUTEX_JOB_IMAGE= '/opt/containers/cutex/cutex-job_latest.sif'	
+	SLURM_CUTEX_JOB_IMAGE= '/opt/containers/cutex/cutex-job_latest.sif'
+	SLURM_CNN_CLASSIFIER_JOB_IMAGE= '/opt/containers/sclassifier/cnn-classifier_latest.sif'
+	SLURM_UMAP_JOB_IMAGE= '/opt/containers/sclassifier/umap_latest.sif'
+	SLURM_OUTLIER_FINDER_JOB_IMAGE= '/opt/containers/sclassifier/outlier_finder_latest.sif'
+	SLURM_HDBSCAN_JOB_IMAGE= '/opt/containers/sclassifier/hdbscan_latest.sif'	
 	SLURM_MAX_CORE_PER_JOB= 4 # Maximum number of cores reserved for a job
 	
 	# - AAI options
@@ -89,6 +93,55 @@ class Config(object):
 
 	# - CUTEX app options
 	CUTEX_JOB_IMAGE= 'sriggi/cutex-job:latest'
+	
+	# - IMAGE CLASSIFIER app options
+	CNN_CLASSIFIER_JOB_IMAGE= 'sriggi/cnn-classifier:latest'
+	
+	# - UMAP app options
+	UMAP_JOB_IMAGE= 'sriggi/umap:latest'
+	
+	# - UMAP app options
+	OUTLIER_FINDER_JOB_IMAGE= 'sriggi/outlier-finder:latest'
+	
+	# - HDBSCAN app options
+	HDBSCAN_JOB_IMAGE= 'sriggi/hdbscan:latest'
+	
+	# - DATASET app options
+	#   NB: paths are to be configured at app deployment phase.
+	DATASETS= {
+		"smgps": {
+			"path": "",
+			"description": "A collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
+		},
+		"smgps-feats-simclr": {
+			"path": "",
+			"description": "Feature data (#512 features) obtained with a SimCLR self-supervised pre-trained model from a collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
+		},
+		"smgps-feats-siglip": {
+			"path": "",
+			"description": "Feature data (#512 features) obtained with a SigLIP Vit14 pre-trained model from a collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
+		},
+		"smgps-feats-dinov2": {
+			"path": "",
+			"description": "Feature data (#1024 features) obtained with a DINOv2 vitl14 pre-trained model from a collection of 178,057 image cutouts of size 256x256 pixels extracted from the SARAO MeerKAT Galactic Plane survey (Goedhart+24)."
+		},
+		"emu-pilot": {
+			"path": "",
+			"description": "A collection of 55,773 image cutouts of size 256x256 pixels extracted from the ASKAP EMU pilot survey (Norris+2021)."
+		},
+		"emu": {
+			"path": "",
+			"description": "A collection of XXX image cutouts of size 256x256 pixels extracted from the ASKAP EMU main survey (Hopkins+2024)."
+		},
+		"emu-scorpio-pilot": {
+			"path": "",
+			"description": "A collection of 12,757 image cutouts of size 256x256 pixels extracted from the ASKAP EMU SCORPIO pilot survey (phase 1) (Umana+2021)."
+		},
+		"emu-gp-pilot": {
+			"path": "",
+			"description": "A collection of 38,998 image cutouts of size 256x256 pixels extracted from the ASKAP EMU Galactic Plane pilot observations (phase 2)."
+		},
+	} # close datasets
 	
 	# - Logging configuration
 	LOG_TO_FILE= False

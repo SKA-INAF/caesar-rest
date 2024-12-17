@@ -12,6 +12,7 @@ import datetime
 import logging
 import numpy as np
 import subprocess
+import errno
 
 try:
 	FileNotFoundError  # python3
@@ -25,7 +26,12 @@ except ImportError:
 
 # Import flask modules
 from flask import current_app, Blueprint, render_template, request, redirect, url_for
-from flask import send_file, send_from_directory, safe_join, abort, make_response, jsonify
+from flask import send_file, send_from_directory, abort, make_response, jsonify
+try:
+	from flask import safe_join
+except:
+	from werkzeug.utils import safe_join
+	
 from werkzeug.utils import secure_filename
 
 # Import celery modules

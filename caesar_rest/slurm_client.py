@@ -14,6 +14,7 @@ from dateutil.tz import tzutc
 import logging
 import numpy as np
 import pprint
+import errno
 
 # - Import additional modules
 import requests
@@ -452,7 +453,7 @@ class SlurmJobManager(object):
 		env_vars= ""
 		env_vars+= "".join("--env CHANGE_RUNUSER=0 ")
 		env_vars+= "".join("--env JOB_DIR=%s " % job_dir)
-		env_vars+= "".join("--env JOB_OPTIONS=\'%s\' " % job_args)		
+		env_vars+= "".join("--env JOB_OPTIONS=\'%s\' " % job_args)
 		env_vars+= "".join("--env JOB_OUTDIR=%s " % job_outdir)
 
 		# - Set singularity run options
@@ -468,10 +469,17 @@ class SlurmJobManager(object):
 		#vol_opts+= "".join("-B %s " % inputfile)	
 		if job_outdir_cluster!="":
 			vol_opts+= "".join("-B %s:%s " % (job_outdir_cluster, job_outdir))
-		vol_opts+= "".join("-B %s:%s " % (inputfile_cluster, inputfile))
-
+			logger.info("Binding host %s to container %s ..." % (job_outdir_cluster, job_outdir))
+			
+		###vol_opts+= "".join("-B %s:%s " % (inputfile_cluster, inputfile)) ## ORIGINAL CODE (BUG?)
+		###vol_opts+= "".join("-B %s:%s " % (inputfile, inputfile_cluster)) ## TEST
+		vol_opts+= "".join("-B %s:%s " % (self.cluster_datadir, self.app_datadir)) # bind entire data volume (NB: this invalidate previous bind)
+		logger.info("Binding host %s to container %s ..." % (self.cluster_datadir, self.app_datadir))
+		
 		if nproc>1:
 			vol_opts+= "-B /etc/libibverbs.d "
+		
+		logger.info("Binding opts: %s" % (vol_opts))
 		
 		# - Set run command
 		cmd= ""

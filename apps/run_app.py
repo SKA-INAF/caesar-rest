@@ -106,21 +106,40 @@ def get_args():
 	# - Slurm scheduler options
 	parser.add_argument('-slurm_keyfile','--slurm_keyfile', dest='slurm_keyfile', default='', required=False, type=str, help='Slurm rest service private key file path')
 	parser.add_argument('-slurm_user','--slurm_user', dest='slurm_user', default='cirasa', required=False, type=str, help='Username enabled to run in Slurm cluster')
-	parser.add_argument('-slurm_host','--slurm_host', dest='slurm_host', default='SLURM_HOST', required=False, type=str, help='Slurm cluster host/ipaddress')
+	parser.add_argument('-slurm_host','--slurm_host', dest='slurm_host', default='localhost', required=False, type=str, help='Slurm cluster host/ipaddress')
 	parser.add_argument('-slurm_port','--slurm_port', dest='slurm_port', default=6820, required=False, type=int, help='Slurm rest service port')
-	parser.add_argument('-slurm_batch_workdir','--slurm_batch_workdir', dest='slurm_batch_workdir', default='', required=False, type=str, help='Cluster directory where to place Slurm batch logs (must be writable by slurm_user)')
-	parser.add_argument('-slurm_queue','--slurm_queue', dest='slurm_queue', default='normal', required=False, type=str, help='Slurm cluster host/ipaddress')
+	parser.add_argument('-slurm_batch_workdir','--slurm_batch_workdir', dest='slurm_batch_workdir', default='/opt/slurm/batchlogs/caesar-rest', required=False, type=str, help='Cluster directory where to place Slurm batch logs (must be writable by slurm_user)')
+	parser.add_argument('-slurm_queue','--slurm_queue', dest='slurm_queue', default='normal', required=False, type=str, help='Slurm cluster queue for submitting jobs')
 	parser.add_argument('-slurm_jobdir','--slurm_jobdir', dest='slurm_jobdir', default='/mnt/storage/jobs', required=False, type=str, help='Path at which the job directory is mounted in Slurm cluster')	
 	parser.add_argument('-slurm_datadir','--slurm_datadir', dest='slurm_datadir', default='/mnt/storage/data', required=False, type=str, help='Path at which the data directory is mounted in Slurm cluster')	
 	parser.add_argument('-slurm_max_cores_per_job','--slurm_max_cores_per_job', dest='slurm_max_cores_per_job', default=4, required=False, type=int, help='Slurm maximum number of cores reserved for a job (default=4)')
 	
-
 	# - Volume mount options
 	parser.add_argument('--mount_rclone_volume', dest='mount_rclone_volume', action='store_true')	
 	parser.set_defaults(mount_rclone_volume=False)
 	parser.add_argument('-mount_volume_path','--mount_volume_path', dest='mount_volume_path', default='/mnt/storage', required=False, type=str, help='Mount volume path for container jobs')
 	parser.add_argument('-rclone_storage_name','--rclone_storage_name', dest='rclone_storage_name', default='neanias-nextcloud', required=False, type=str, help='rclone remote storage name (default=neanias-nextcloud)')
 	parser.add_argument('-rclone_storage_path','--rclone_storage_path', dest='rclone_storage_path', default='.', required=False, type=str, help='rclone remote storage path (default=.)')
+	
+	# - Singularity container app options
+	parser.add_argument('-caesar_container','--caesar_container', dest='caesar_container', default='/opt/containers/caesar/caesar-job_latest.sif', required=False, type=str, help='Path to caesar job Singularity container (default=/opt/containers/caesar/caesar-job_latest.sif)')
+	parser.add_argument('-aegean_container','--aegean_container', dest='aegean_container', default='/opt/containers/aegean/aegean-job_latest.sif', required=False, type=str, help='Path to aegean job Singularity container (default=/opt/containers/aegean/aegean-job_latest.sif)')
+	parser.add_argument('-cutex_container','--cutex_container', dest='cutex_container', default='/opt/containers/cutex/cutex-job_latest.sif', required=False, type=str, help='Path to cutex job Singularity container (default=/opt/containers/cutex/cutex-job_latest.sif)')
+	parser.add_argument('-mrcnn_container','--mrcnn_container', dest='mrcnn_container', default='/opt/containers/mrcnn/mrcnn-detect_latest.sif', required=False, type=str, help='Path to caesar-mrcnn job Singularity container (default=/opt/containers/mrcnn/mrcnn-detect_latest.sif)')
+	parser.add_argument('-cnn_classifier_container','--cnn_classifier_container', dest='cnn_classifier_container', default='/opt/containers/sclassifier/cnn-classifier_latest.sif', required=False, type=str, help='Path to CNN classifier Singularity container (default=/opt/containers/sclassifier/cnn-classifier_latest.sif)')
+	parser.add_argument('-umap_container','--umap_container', dest='umap_container', default='/opt/containers/sclassifier/umap_latest.sif', required=False, type=str, help='Path to UMAP Singularity container (default=/opt/containers/sclassifier/umap_latest.sif)')
+	parser.add_argument('-outlier_finder_container','--outlier_finder_container', dest='outlier_finder_container', default='/opt/containers/sclassifier/outlier_finder_latest.sif', required=False, type=str, help='Path to OutlierFinder Singularity container (default=/opt/containers/sclassifier/outlier_finder_latest.sif)')
+	parser.add_argument('-hdbscan_container','--hdbscan_container', dest='hdbscan_container', default='/opt/containers/sclassifier/hdbscan_latest.sif', required=False, type=str, help='Path to HDBSCAN Singularity container (default=/opt/containers/sclassifier/hdbscan_latest.sif)')
+	
+	# - Dataset options
+	parser.add_argument('-dataset_smgps','--dataset_smgps', dest='dataset_smgps', default='', required=False, type=str, help='Path to smgps dataset json filelist')
+	parser.add_argument('-dataset_smgps_feats_simclr','--dataset_smgps_feats_simclr', dest='dataset_smgps_feats_simclr', default='', required=False, type=str, help='Path to smgps_feats_simclr dataset json filelist')
+	parser.add_argument('-dataset_smgps_feats_siglip','--dataset_smgps_feats_siglip', dest='dataset_smgps_feats_siglip', default='', required=False, type=str, help='Path to smgps_feats_siglip dataset json filelist')
+	parser.add_argument('-dataset_smgps_feats_dinov2','--dataset_smgps_feats_dinov2', dest='dataset_smgps_feats_dinov2', default='', required=False, type=str, help='Path to smgps_feats_dinov2 dataset json filelist')
+	parser.add_argument('-dataset_emu_pilot','--dataset_emu_pilot', dest='dataset_emu_pilot', default='', required=False, type=str, help='Path to emu-pilot dataset json filelist')
+	parser.add_argument('-dataset_emu','--dataset_emu', dest='dataset_emu', default='', required=False, type=str, help='Path to emu dataset json filelist')
+	parser.add_argument('-dataset_emu_scorpio_pilot','--dataset_emu_scorpio_pilot', dest='dataset_emu_scorpio_pilot', default='', required=False, type=str, help='Path to emu-scorpio-pilot dataset json filelist')
+	parser.add_argument('-dataset_emu_gp_pilot','--dataset_emu_gp_pilot', dest='dataset_emu_gp_pilot', default='', required=False, type=str, help='Path to emu-gp-pilot dataset json filelist')
 	
 	args = parser.parse_args()	
 
@@ -253,7 +272,27 @@ slurm_queue= args.slurm_queue
 slurm_jobdir= args.slurm_jobdir
 slurm_datadir= args.slurm_datadir
 slurm_max_cores_per_job= args.slurm_max_cores_per_job
-	
+
+# - Singularity container options
+caesar_container= args.caesar_container
+aegean_container= args.aegean_container
+cutex_container= args.cutex_container
+mrcnn_container= args.mrcnn_container
+cnn_classifier_container= args.cnn_classifier_container	
+umap_container= args.umap_container
+outlier_finder_container= args.outlier_finder_container
+hdbscan_container= args.hdbscan_container
+
+# - Dataset options
+dataset_smgps= args.dataset_smgps
+dataset_smgps_feats_simclr= args.dataset_smgps_feats_simclr
+dataset_smgps_feats_siglip= args.dataset_smgps_feats_siglip
+dataset_smgps_feats_dinov2= args.dataset_smgps_feats_dinov2
+dataset_emu_pilot= args.dataset_emu_pilot
+dataset_emu= args.dataset_emu
+dataset_emu_scorpio_pilot= args.dataset_emu_scorpio_pilot
+dataset_emu_gp_pilot= args.dataset_emu_gp_pilot
+
 #===============================
 #==   INIT
 #===============================
@@ -308,6 +347,15 @@ config.LOG_TO_FILE= logtofile
 config.LOG_LEVEL= loglevel
 config.LOG_DIR= logdir
 config.LOG_FILE= logfile
+	
+config.SLURM_CAESAR_JOB_IMAGE= caesar_container
+config.SLURM_AEGEAN_JOB_IMAGE= aegean_container
+config.SLURM_CUTEX_JOB_IMAGE= cutex_container
+config.SLURM_MASKRCNN_JOB_IMAGE= mrcnn_container
+config.SLURM_CNN_CLASSIFIER_JOB_IMAGE= cnn_classifier_container
+config.SLURM_UMAP_JOB_IMAGE= umap_container
+config.SLURM_OUTLIER_FINDER_JOB_IMAGE= outlier_finder_container
+config.SLURM_HDBSCAN_JOB_IMAGE= hdbscan_container
 
 # - Create data manager (DEPRECATED BY MONGO)
 ##logger.info("Creating data manager ...")
@@ -321,6 +369,16 @@ jobcfg= JobConfigurator()
 # - Update celery configs
 celery.conf.result_backend= result_backend
 celery.conf.broker_url= broker_url
+
+# - Set dataset configs
+config.DATASETS["smgps"]["path"]= dataset_smgps
+config.DATASETS["smgps-feats-simclr"]["path"]= dataset_smgps_feats_simclr
+config.DATASETS["smgps-feats-siglip"]["path"]= dataset_smgps_feats_siglip
+config.DATASETS["smgps-feats-dinov2"]["path"]= dataset_smgps_feats_dinov2
+config.DATASETS["emu-pilot"]["path"]= dataset_emu_pilot
+config.DATASETS["emu"]["path"]= dataset_emu
+config.DATASETS["emu-scorpio-pilot"]["path"]= dataset_emu_scorpio_pilot
+config.DATASETS["emu-gp-pilot"]["path"]= dataset_emu_gp_pilot
 
 #===============================
 #==   CREATE APP

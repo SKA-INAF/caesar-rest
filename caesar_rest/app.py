@@ -26,7 +26,12 @@ except ImportError:
 # Import Flask
 from flask import Flask
 from flask import flash, request, redirect, render_template, url_for
-from flask import send_file, send_from_directory, safe_join, abort
+from flask import send_file, send_from_directory, abort
+try:
+	from flask import safe_join
+except:
+	from werkzeug.utils import safe_join
+	
 from werkzeug.utils import secure_filename
 
 # Import Celery
@@ -90,6 +95,7 @@ def create_app(cfg,jc):
 	from caesar_rest.download_route import delete_id_bp
 	from caesar_rest.job_route import job_bp, job_status_bp, job_output_bp, job_cancel_bp
 	from caesar_rest.job_route import job_catalog_bp, job_catalog_file_bp, job_component_catalog_bp, job_component_catalog_file_bp, job_preview_bp, job_preview_file_bp
+	from caesar_rest.job_route import dataset_names_bp
 	from caesar_rest.app_route import app_names_bp, app_describe_bp
 	from caesar_rest.accounting_route import accounting_bp, appstats_bp
 	app.register_blueprint(index_bp)
@@ -111,6 +117,7 @@ def create_app(cfg,jc):
 	app.register_blueprint(app_describe_bp)
 	app.register_blueprint(accounting_bp)
 	app.register_blueprint(appstats_bp)
+	app.register_blueprint(dataset_names_bp)
 
 	return app
 
