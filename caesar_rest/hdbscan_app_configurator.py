@@ -85,8 +85,8 @@ class HDBSCANAppConfigurator(AppConfigurator):
 				min_value=-1,
 				max_value=10000
 			),
-			'cluster-sel-eps' : ValueOption(
-				name='cluster-sel-eps',
+			'cluster-selection-epsilon' : ValueOption(
+				name='cluster-selection-epsilon',
 				value='',
 				value_type=float, 
 				description='A distance threshold. Clusters below this value will be merged (default=0)',
