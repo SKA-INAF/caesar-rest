@@ -89,6 +89,8 @@ def get_dataset_names():
 #=================================
 #===      JOB SUBMIT 
 #=================================
+
+
 @job_bp.route('/job', methods=['POST'])
 @custom_require_login
 def submit_job():
@@ -157,77 +159,65 @@ def submit_job():
 	# - Handle different data input formats
 	#   1) uid: Convert job input data UID to path
 	#   2) abspath: Allow to pass input files that are already an absolute path, even if they are not registered in the database
-	#   3) dataset: Use a pre-configured dataset. NB: App must define data path for this dataset. 
-	data_inputs_format= 'uid'
-	if 'data_inputs_format' in req_data:
-		data_inputs_format= req_data['data_inputs_format']
-		
-	if data_inputs_format=="uid": 
-		# - Convert job input data UID to path
-		inputfile_uid= req_data['data_inputs']
-		inputfile_for_response= inputfile_uid
-		inputfile= get_filepath_from_uuid(inputfile_uid, username)
-		if inputfile=='':
-			logger.warn("Cannot find file for user %s corresponding to uid=%s!" % (username, inputfile_uid), action="submitjob", user=username)	
-			res['state']= 'ABORTED'	
-			res['status']= 'Cannot find file corresponding to given data input uid!'
-			return make_response(jsonify(res),400)
-			
-	elif data_inputs_format=="abspath":
-		# - This is already intended to be an absolute path
-		inputfile= req_data['data_inputs']
-		inputfile_for_response= inputfile
-		 
-	elif data_inputs_format=="dataset":
-		# - Set input to dataset path (if defined)
-		dataset_id= req_data['data_inputs']
-		
-		if dataset_id not in datasets:
-			logger.warn("Dataset id %s given by user %s not found among configured datasets!" % (dataset_id, username), action="submitjob", user=username)	
-			res['state']= 'ABORTED'	
-			res['status']= 'Dataset id not found among configured datasets!'
-			return make_response(jsonify(res),400)
+	#   3) dataset: Use a pre-configured dataset. NB: App must define data path for this dataset.
+	#   NB: inputfile & inputfile_for_response are lists if data_inputs is a list
+	status, res, inputfile, inputfile_for_response= process_data_inputs(req_data, res, current_app, username)
+	if status<0:
+		logger.warn("Failed to process data inputs for user %s (see previous logs)!" % (username), action="submitjob", user=username)		
+		return make_response(jsonify(res), 400)
 	
-		if datasets[dataset_id]["path"]=="":
-			logger.warn("Dataset id %s required by user %s existing but its path was not configured when the app was deployed" % (dataset_id, username), action="submitjob", user=username)	
-			res['state']= 'ABORTED'	
-			res['status']= 'Dataset id existing but its path not configured when the app was deployed'
-			return make_response(jsonify(res),400)
+	#data_inputs_format= 'uid'
+	#if 'data_inputs_format' in req_data:
+	#	data_inputs_format= req_data['data_inputs_format']
 		
-		inputfile= datasets[dataset_id]["path"]
-		inputfile_for_response= dataset_id
-		
-	else:
-		logger.warn("Invalid data_inputs_format option value given by user %s!" % (username), action="submitjob", user=username)	
-		res['state']= 'ABORTED'	
-		res['status']= 'Invalid data_inputs_format option value!'
-		return make_response(jsonify(res),400)		
-
-	logger.info("inputfile: %s" % (inputfile))
-
-	# - Convert job input data UID to path
-	#   NB: Allow to pass input files that are already an absolute path, even if they are not registered in the database
-	#convert_uid_to_path= True
-	#if 'is_data_inputs_uid' in req_data:
-	#	convert_uid_to_path= req_data['is_data_inputs_uid']
-		
-	#inputfile_uid= req_data['data_inputs']
-	#if convert_uid_to_path:
+	#if data_inputs_format=="uid": 
+	#	# - Convert job input data UID to path
+	#	inputfile_uid= req_data['data_inputs']
+	#	inputfile_for_response= inputfile_uid
 	#	inputfile= get_filepath_from_uuid(inputfile_uid, username)
 	#	if inputfile=='':
 	#		logger.warn("Cannot find file for user %s corresponding to uid=%s!" % (username, inputfile_uid), action="submitjob", user=username)	
 	#		res['state']= 'ABORTED'	
 	#		res['status']= 'Cannot find file corresponding to given data input uid!'
 	#		return make_response(jsonify(res),400)
+			
+	#elif data_inputs_format=="abspath":
+	#	# - This is already intended to be an absolute path
+	#	inputfile= req_data['data_inputs']
+	#	inputfile_for_response= inputfile
+		 
+	#elif data_inputs_format=="dataset":
+	#	# - Set input to dataset path (if defined)
+	#	dataset_id= req_data['data_inputs']
+		
+	#	if dataset_id not in datasets:
+	#		logger.warn("Dataset id %s given by user %s not found among configured datasets!" % (dataset_id, username), action="submitjob", user=username)	
+	#		res['state']= 'ABORTED'	
+	#		res['status']= 'Dataset id not found among configured datasets!'
+	#		return make_response(jsonify(res),400)
+	
+	#	if datasets[dataset_id]["path"]=="":
+	#		logger.warn("Dataset id %s required by user %s existing but its path was not configured when the app was deployed" % (dataset_id, username), action="submitjob", user=username)	
+	#		res['state']= 'ABORTED'	
+	#		res['status']= 'Dataset id existing but its path not configured when the app was deployed'
+	#		return make_response(jsonify(res),400)
+		
+	#	inputfile= datasets[dataset_id]["path"]
+	#	inputfile_for_response= dataset_id
 		
 	#else:
-	#	inputfile= inputfile_uid # this is already intended to be an absolute path
-		
-	if inputfile=='':
-		logger.warn("Empty inputfile for user %s!" % (username), action="submitjob", user=username)	
-		res['state']= 'ABORTED'	
-		res['status']= 'Empty inputfile!'
-		return make_response(jsonify(res),400)
+	#	logger.warn("Invalid data_inputs_format option value given by user %s!" % (username), action="submitjob", user=username)	
+	#	res['state']= 'ABORTED'	
+	#	res['status']= 'Invalid data_inputs_format option value!'
+	#	return make_response(jsonify(res),400)		
+
+	#logger.info("inputfile: %s" % (inputfile))
+
+	#if inputfile=='':
+	#	logger.warn("Empty inputfile for user %s!" % (username), action="submitjob", user=username)	
+	#	res['state']= 'ABORTED'	
+	#	res['status']= 'Empty inputfile!'
+	#	return make_response(jsonify(res),400)
 	
 	# - Validate job inputs
 	(cmd, cmd_arg_list, val_status, run_opts)= current_app.config['jobcfg'].validate(app_name, job_inputs, inputfile)
@@ -992,6 +982,194 @@ def get_filepath_from_uuid(file_uuid, username):
 
 	return file_path
 
+
+def process_data_inputs(req_data, res, current_app, username):
+	""" Process data inputs received in request """
+	
+	data_inputs= req_data['data_inputs']
+	if isinstance(data_inputs, list):
+		return process_multi_data_inputs(req_data, res, current_app, username)
+	else:
+		return process_single_data_inputs(req_data, res, current_app, username)
+	
+def process_multi_data_inputs(req_data, res, current_app, username):
+	""" Process multiple data inputs (list) received in request """
+	
+	# - Retrieve info from app
+	datasets= current_app.config['DATASETS']
+	
+	# - Check data inputs & format size
+	data_inputs= req_data['data_inputs']
+	n_inputs= len(data_inputs)
+	status= 0
+	
+	data_inputs_format= ['uid']*n_inputs
+	if 'data_inputs_format' in req_data:
+		data_inputs_format= req_data['data_inputs_format']
+		
+		if isinstance(data_inputs_format, list):
+			if len(data_inputs_format)!=n_inputs:
+				logger.warn("Malformed request for user %s (inputs size is different from inputs format)!" % (username), action="submitjob", user=username)	
+				res['state']= 'ABORTED'	
+				res['status']= 'Malformed request (inputs size is different from inputs format)'
+				inputfiles= []
+				inputfiles_for_response= []
+				status= -1
+				return (status, res, inputfiles, inputfiles_for_response)
+		else:
+			# - Duplicate format value to match input size
+			data_inputs_format= [data_inputs_format]*n_inputs
+			
+	# - Handle different data input formats
+	#   1) uid: Convert job input data UID to path
+	#   2) abspath: Allow to pass input files that are already an absolute path, even if they are not registered in the database
+	#   3) dataset: Use a pre-configured dataset. NB: App must define data path for this dataset.
+	
+	inputfiles= []
+	inputfiles_for_response= []
+	
+	for i in range(n_inputs):
+		data_input= data_inputs[i]
+		data_format= data_inputs_format[i]
+		 
+		if data_inputs_format=="uid": 
+			# - Convert job input data UID to path
+			inputfile_uid= data_input
+			inputfile_for_response= inputfile_uid
+			inputfile= get_filepath_from_uuid(inputfile_uid, username)
+			if inputfile=='':
+				logger.warn("Cannot find file for user %s corresponding to uid=%s!" % (username, inputfile_uid), action="submitjob", user=username)	
+				res['state']= 'ABORTED'	
+				res['status']= 'Cannot find file corresponding to given data input uid!'
+				status= -1
+				return (status, res, [], [])
+	
+		elif data_inputs_format=="abspath":
+			# - This is already intended to be an absolute path
+			inputfile= data_input
+			inputfile_for_response= inputfile
+		 
+		elif data_inputs_format=="dataset":
+			# - Set input to dataset path (if defined)
+			dataset_id= data_input
+			inputfile= ""
+			inputfile_for_response= dataset_id
+		
+			if dataset_id not in datasets:
+				logger.warn("Dataset id %s given by user %s not found among configured datasets!" % (dataset_id, username), action="submitjob", user=username)	
+				res['state']= 'ABORTED'	
+				res['status']= 'Dataset id not found among configured datasets!'
+				status= -1
+				return (status, res, [], [])
+	
+			if datasets[dataset_id]["path"]=="":
+				logger.warn("Dataset id %s required by user %s existing but its path was not configured when the app was deployed" % (dataset_id, username), action="submitjob", user=username)	
+				res['state']= 'ABORTED'	
+				res['status']= 'Dataset id existing but its path not configured when the app was deployed'
+				status= -1
+				return (status, res, [], [])
+		
+			inputfile= datasets[dataset_id]["path"]
+			inputfile_for_response= dataset_id
+		
+		else:
+			logger.warn("Invalid data_inputs_format option value given by user %s!" % (username), action="submitjob", user=username)	
+			res['state']= 'ABORTED'	
+			res['status']= 'Invalid data_inputs_format option value!'
+			status= -1
+			return (status, res, [], [])
+			
+		# - Check if input file is empty
+		if inputfile=='':
+			logger.warn("Empty inputfile for user %s!" % (username), action="submitjob", user=username)	
+			res['state']= 'ABORTED'	
+			res['status']= 'Empty inputfile!'
+			status= -1
+			return (status, res, [], [])
+	
+		# - Append converted input to list
+		inputfiles.append(inputfile)
+		inputfiles_for_response.append(inputfile_for_response)
+		
+	logger.info("inputfiles: %s" % (str(inputfiles)))
+	
+	return (status, res, inputfiles, inputfiles_for_response)
+	
+
+def process_single_data_inputs(req_data, res, current_app, username):
+	""" Process data inputs (scalar) received in request """	
+
+	# - Retrieve info from app
+	datasets= current_app.config['DATASETS']
+	
+	# - Handle different data input formats
+	#   1) uid: Convert job input data UID to path
+	#   2) abspath: Allow to pass input files that are already an absolute path, even if they are not registered in the database
+	#   3) dataset: Use a pre-configured dataset. NB: App must define data path for this dataset.
+	data_inputs_format= 'uid'
+	if 'data_inputs_format' in req_data:
+		data_inputs_format= req_data['data_inputs_format']
+			
+	status= 0
+		
+	if data_inputs_format=="uid": 
+		# - Convert job input data UID to path
+		inputfile_uid= req_data['data_inputs']
+		inputfile_for_response= inputfile_uid
+		inputfile= get_filepath_from_uuid(inputfile_uid, username)
+		if inputfile=='':
+			logger.warn("Cannot find file for user %s corresponding to uid=%s!" % (username, inputfile_uid), action="submitjob", user=username)	
+			res['state']= 'ABORTED'	
+			res['status']= 'Cannot find file corresponding to given data input uid!'
+			status= -1
+			return (status, res, inputfile, inputfile_for_response)
+			
+	elif data_inputs_format=="abspath":
+		# - This is already intended to be an absolute path
+		inputfile= req_data['data_inputs']
+		inputfile_for_response= inputfile
+		 
+	elif data_inputs_format=="dataset":
+		# - Set input to dataset path (if defined)
+		dataset_id= req_data['data_inputs']
+		inputfile= ""
+		inputfile_for_response= dataset_id
+		
+		if dataset_id not in datasets:
+			logger.warn("Dataset id %s given by user %s not found among configured datasets!" % (dataset_id, username), action="submitjob", user=username)	
+			res['state']= 'ABORTED'	
+			res['status']= 'Dataset id not found among configured datasets!'
+			status= -1
+			return (status, res, inputfile, inputfile_for_response)
+	
+		if datasets[dataset_id]["path"]=="":
+			logger.warn("Dataset id %s required by user %s existing but its path was not configured when the app was deployed" % (dataset_id, username), action="submitjob", user=username)	
+			res['state']= 'ABORTED'	
+			res['status']= 'Dataset id existing but its path not configured when the app was deployed'
+			status= -1
+			return (status, res, inputfile, inputfile_for_response)
+		
+		inputfile= datasets[dataset_id]["path"]
+		inputfile_for_response= dataset_id
+		
+	else:
+		logger.warn("Invalid data_inputs_format option value given by user %s!" % (username), action="submitjob", user=username)	
+		res['state']= 'ABORTED'	
+		res['status']= 'Invalid data_inputs_format option value!'
+		status= -1
+		return (status, res, "", "")
+		
+	# - Check if input file is empty
+	if inputfile=='':
+		logger.warn("Empty inputfile for user %s!" % (username), action="submitjob", user=username)	
+		res['state']= 'ABORTED'	
+		res['status']= 'Empty inputfile!'
+		status= -1
+		return (status, res, "", "")
+
+	logger.info("inputfile: %s" % (inputfile))
+	
+	return (status, res, inputfile, inputfile_for_response)
 
 #=================================
 #===      JOB OUTPUTS 

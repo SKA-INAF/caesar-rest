@@ -211,7 +211,8 @@ class AppConfigurator(object):
 			return False
 
 		# - Check data inputs
-		if not data_inputs or data_inputs is None:
+		#if not data_inputs or data_inputs is None:
+		if data_inputs is None or (isinstance(data_inputs,list) and not data_inputs) or (isinstance(data_inputs,str) and data_inputs==""):
 			self.validation_status= 'Empty or null data input given!'
 			logger.warn(self.validation_status, action="submitjob")
 			return False
