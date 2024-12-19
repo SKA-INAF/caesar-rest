@@ -71,9 +71,9 @@ class SimilaritySearchAppConfigurator(AppConfigurator):
 				value_type=str, 
 				description='Feature extractor model to be used',
 				category='MODEL',
-				default_value='hulk-smgps',
+				default_value='simclr-smgps',
 				#allowed_values=['hulk-smgps','hulk-emupilot','banner-smgps','banner-emupilot']
-				allowed_values=['hulk-smgps']
+				allowed_values=['simclr-smgps']
 			),
 			
 			#'model' : ValueOption(
