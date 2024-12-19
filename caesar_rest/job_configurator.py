@@ -31,6 +31,7 @@ from caesar_rest.simclr_app_configurator import SimCLRFeatExtractorAppConfigurat
 from caesar_rest.umap_app_configurator import UMAPAppConfigurator
 from caesar_rest.outlier_finder_app_configurator import OutlierFinderAppConfigurator
 from caesar_rest.hdbscan_app_configurator import HDBSCANAppConfigurator
+from caesar_rest.simsearch_app_configurator import SimilaritySearchAppConfigurator
 
 # Get logger
 from caesar_rest import logger
@@ -54,10 +55,11 @@ class JobConfigurator(object):
 			'umap': UMAPAppConfigurator,
 			'outlier-finder': OutlierFinderAppConfigurator,
 			'hdbscan': HDBSCANAppConfigurator,
+			'similarity-search': SimilaritySearchAppConfigurator,
 		}
 		
 		
-	def validate(self, app_name, job_inputs, data_inputs):
+	def validate(self, app_name, job_options, data_inputs):
 		""" Validate job inputs """
 
 		# - Validate if job inputs are valid for app
@@ -70,7 +72,7 @@ class JobConfigurator(object):
 		# - Create an instance of app configurator
 		configurator= self.app_configurators[app_name]()
 		
-		status= configurator.validate(job_inputs, data_inputs)
+		status= configurator.validate(job_options, data_inputs)
 		if not status:
 			status_msg= configurator.validation_status
 			logger.warn("Given inputs for app %s failed to be validated!" % app_name, action="submitjob")

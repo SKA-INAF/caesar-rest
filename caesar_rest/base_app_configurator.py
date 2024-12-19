@@ -135,7 +135,7 @@ class AppConfigurator(object):
 	def __init__(self):
 		""" Constructor"""
 
-		self.job_inputs= ''
+		self.job_options= ''
 		self.data_inputs= ''
 		self.cmd= ''
 		self.cmd_args= []
@@ -199,19 +199,20 @@ class AppConfigurator(object):
 		# Left empty as to be overridden in derived classes
 		
 
-	def validate(self, job_inputs, data_inputs):
+	def validate(self, job_options, data_inputs):
 		""" Validate job input """
 
 		logger.info("Validating given inputs ...", action="submitjob")
 
 		# - Check if job inputs are empty
-		if not job_inputs:		
+		if not job_options:		
 			self.validation_status= 'Empty job inputs given!'
 			logger.warn(self.validation_status, action="submitjob")
 			return False
 
 		# - Check data inputs
-		if not data_inputs or data_inputs is None:
+		#if not data_inputs or data_inputs is None:
+		if data_inputs is None or (isinstance(data_inputs,list) and not data_inputs) or (isinstance(data_inputs,str) and data_inputs==""):
 			self.validation_status= 'Empty or null data input given!'
 			logger.warn(self.validation_status, action="submitjob")
 			return False
@@ -219,26 +220,26 @@ class AppConfigurator(object):
 		self.data_inputs= data_inputs
 
 		# - Convert json string to dictionary
-		#print("type(job_inputs)")
-		#print(type(job_inputs))
-		#print(job_inputs)
+		#print("type(job_options)")
+		#print(type(job_options))
+		#print(job_options)
 
-		if not isinstance(job_inputs,dict):
+		if not isinstance(job_options,dict):
 			self.validation_status= 'Given job inputs data is not a dictionary!'
 			logger.warn(self.validation_status, action="submitjob")
 			return False
 
 		try:
-			self.job_inputs= yaml.safe_load(json.dumps(job_inputs))
+			self.job_options= yaml.safe_load(json.dumps(job_options))
 
 		except ValueError:
 			self.validation_status= 'Failed to parse job inputs as json dictionary!'
 			logger.warn(self.validation_status, action="submitjob")
 			return False
 
-		#print("type(self.job_inputs)")
-		#print(type(self.job_inputs))
-		#print(self.job_inputs)
+		#print("type(self.job_options)")
+		#print(type(self.job_options))
+		#print(self.job_options)
 
 		# - Validate options 
 		valid= self.validate_options()
@@ -263,7 +264,7 @@ class AppConfigurator(object):
 
 		# - Validate options
 		for opt_name, option in self.valid_options.items():
-			option_given= opt_name in self.job_inputs
+			option_given= opt_name in self.job_options
 
 			# - Check if mandatory option is given
 			mandatory= option.mandatory
@@ -281,7 +282,7 @@ class AppConfigurator(object):
 			if value_required:
 				# - Check for value type
 				expected_val_type= option.value_type
-				parsed_value= self.job_inputs[opt_name]
+				parsed_value= self.job_options[opt_name]
 				parsed_value_type= type(parsed_value)
 				if not isinstance(parsed_value, expected_val_type):
 					#self.validation_status= ''.join(["Option ",opt_name," expects a ",str(expected_val_type)," value type and not a ",str(parsed_value_type)," !"])
@@ -348,7 +349,7 @@ class AppConfigurator(object):
 			else: # No value required
 
 				# - Check boolean value given
-				parsed_value= self.job_inputs[opt_name]
+				parsed_value= self.job_options[opt_name]
 				parsed_value_type= type(parsed_value)
 				if not isinstance(parsed_value, bool):
 					self.validation_status= ''.join(["Failed to parse bool option ",opt_name," (parsed value type is not a boolean)!"])
