@@ -75,7 +75,8 @@ Apps are run as Docker (Kuberneter deploy) or Singularity (Slurm deploy) contain
 * `classifier-cnn` image classifier (TensorFlow 2.x): `docker://sriggi/cnn-classifier`
 * `umap` dimensionality reduction: `docker://sriggi/umap-job`  
 * `outlier-finder` with Isolation Forest: `docker://sriggi/outlier-finder-job`   
-* `hdbscan` cluster search: `docker://sriggi/hdbscan-job`   
+* `hdbscan` cluster search: `docker://sriggi/hdbscan-job`
+* `similarity-search`: `docker://sriggi/similarity-search-job`   
 
 Singularity containers can be created from docker images with:   
 
@@ -98,10 +99,10 @@ Before running the application you must do some preparatory stuff:
 * (OPTIONAL) Create a dedicated user & group (e.g. `caesar`) allowed to run the application and services and give it ownership to the directories created below    * Create the application working dir (by default `/opt/caesar-rest`)   
 * (OPTIONAL) Mount an external storage in the application working dir, for example using rclone: `/usr/bin/rclone mount --daemon [--uid=[UID] --gid=[UID]] --umask 000 --allow-other --file-perms 0777 --dir-cache-time 0m5s --vfs-cache-mode full [RCLONE_REMOTE_STORAGE]:[RCLONE_REMOTE_STORAGE_PATH] /opt/caesar-rest -vvv` where `UID` is the Linux user id of the user previously created.     
 * Create the top directory for data upload (by default `/opt/caesar-rest/data`)   
-* Create the top directory for jobs (by default `/opt/caesar-rest/jobs`)   
+* Create the top directory for jobs (by default `/opt/caesar-rest/jobs`)    
+* Create the top directory for models (by default `/opt/caesar-rest/models`)    
 * (OPTIONAL) Create the log directory for system services (see below), e.g. `/opt/caesar-rest/logs` 
 * (OPTIONAL) Create the run directory for system services (see below), e.g. `/opt/caesar-rest/run` 
-
 
 ### **Run DB service**
 caesar-rest requires a MongoDB service where to store user data and job information. To start the DB service:    
@@ -110,7 +111,7 @@ caesar-rest requires a MongoDB service where to store user data and job informat
 
 Alternatively you can use the Docker container ```sriggi/caesar-rest-db:latest``` (see https://hub.docker.com/r/sriggi/caesar-rest-db) and deploy it with DockerCompose or Kubernetes (see the configuration files under the repository ```config``` directory.   
 
-### **Run Filebeat service**   
+### **Run Filebeat service (OPTIONAL)**   
 caesar-rest uses filebeat to forward file logs to an ElasticSearch service. To start the service:   
 
 ```systemctl start filebeat.service```    
@@ -119,6 +120,7 @@ Alternatively, you can use the Docker container for the application ```sriggi/ca
 
 ### **Run Celery services (OPTIONAL)**
 If you want to manage jobs with Celery, you must run a message broker service (i.e. rabbitmq), a task store service (i.e. redis or mongdb) and one or more Celery worker services.   
+**NB: Celery job management option is not developed and maintained anymore in caesar-rest application. We suggest to use Slurm or Kubernetes deployment.**    
 
 #### **Run broker service**   
 To run the rabbimq message broker service:   
@@ -197,10 +199,43 @@ In production you may want to run this as a system service:
   
 * Start the service:   
   
-     ```sudo systemctl caesar-workers.service start```    
+     ```systemctl start caesar-workers.service```    
      
 Alternatively, you can use the Docker container ```sriggi/caesar-rest-worker:latest``` (https://hub.docker.com/r/sriggi/caesar-rest-worker) and deploy it with DockerCompose or Kubernetes (see the configuration files under the repository ```config``` directory.      
-   
+
+### **Run Slurm services (OPTIONAL)**   
+If you want to manage jobs with Slurm, you must run the following services:    
+
+```systemctl start munge.service```    
+```systemctl start slurmd.service```   
+```systemctl start slurmdbd.service```    
+```systemctl start slurmctld.service```   
+```systemctl start slurmrestd.service```    
+
+Below, we report a sample configuration file (`/usr/lib/systemd/system/slurmrestd.service`) for the Slurm REST service:    
+
+```
+[Unit]
+Description=Slurm REST daemon
+After=network.target munge.service slurmctld.service
+ConditionPathExists=/etc/slurm/slurm.conf
+
+[Service]
+Type=simple
+User=caesar
+Group=caesar
+EnvironmentFile=-/etc/sysconfig/slurmrestd
+# Default to local auth via socket
+ExecStart=/usr/sbin/slurmrestd -f /etc/slurm/slurmrestd.conf -a rest_auth/jwt -s openapi/v0.0.36 -vvvv 0.0.0.0:6820
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**NB: Slurm is currently the suggested job management option for caesar-rest application.**
+
+
 ### **Run the web application**   
 
 #### **Run the application in development mode**   
