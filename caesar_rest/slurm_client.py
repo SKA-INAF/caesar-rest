@@ -464,6 +464,8 @@ class SlurmJobManager(object):
 		env_vars+= "".join("--env JOB_OPTIONS=\'%s\' " % job_args)
 		env_vars+= "".join("--env JOB_OUTDIR=%s " % job_outdir)
 		env_vars+= "".join("--env MODEL_DIR=%s " % self.app_modeldir)
+		
+		logger.info("app_modeldir: %s" % (self.app_modeldir))
 
 		# - Set singularity run options
 		#   NB: Added --no-home because if container is run as caesar user the home is automatically mounter
