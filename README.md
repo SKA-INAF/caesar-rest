@@ -98,9 +98,9 @@ Before running the application you must do some preparatory stuff:
 
 * (OPTIONAL) Create a dedicated user & group (e.g. `caesar`) allowed to run the application and services and give it ownership to the directories created below    * Create the application working dir (by default `/opt/caesar-rest`)   
 * (OPTIONAL) Mount an external storage in the application working dir, for example using rclone: `/usr/bin/rclone mount --daemon [--uid=[UID] --gid=[UID]] --umask 000 --allow-other --file-perms 0777 --dir-cache-time 0m5s --vfs-cache-mode full [RCLONE_REMOTE_STORAGE]:[RCLONE_REMOTE_STORAGE_PATH] /opt/caesar-rest -vvv` where `UID` is the Linux user id of the user previously created.     
-* Create the top directory for data upload (by default `/opt/caesar-rest/data`)   
+* Create the top directory for data upload (by default `/opt/caesar-rest/data`). Place here also supported pre-configured datasets.       
 * Create the top directory for jobs (by default `/opt/caesar-rest/jobs`)    
-* Create the top directory for models (by default `/opt/caesar-rest/models`)    
+* Create the top directory for models (by default `/opt/caesar-rest/models`) and put TensorFlow/PyTorch model & weights files under this path.        
 * (OPTIONAL) Create the log directory for system services (see below), e.g. `/opt/caesar-rest/logs` 
 * (OPTIONAL) Create the run directory for system services (see below), e.g. `/opt/caesar-rest/run` 
 
@@ -311,6 +311,7 @@ where supported `ARGS` are:
    * `umap_container`: Path to UMAP Singularity container (default=/opt/containers/sclassifier/umap_latest.sif)
    * `outlier_finder_container`: Path to OutlierFinder Singularity container (default=/opt/containers/sclassifier/outlier_finder_latest.sif)
    * `hdbscan_container`: Path to HDBSCAN Singularity container (default=/opt/containers/sclassifier/hdbscan_latest.sif)
+   * `simsearch_container`: Path to Similarity Search Singularity container (default=/opt/containers/sclassifier/similarity-search_latest.sif)
 
    DATASET OPTIONS  
    * `dataset_smgps`: Path to smgps dataset json filelist
@@ -605,7 +606,8 @@ Server response contains a list of valid apps that can be queried for further de
     "featextractor-simclr",
     "umap",
     "outlier-finder",
-    "hdbscan"
+    "hdbscan",
+    "similarity-search"	
   ]
 }
 ```
@@ -779,12 +781,12 @@ Server response contains a list of app options that can be used in job submissio
 * Request methods: POST   
 * Request header: ```content-type: application/json```   
 
-A sample curl request would be:   
+A sample curl request for running the `caesar` source finder app would be:   
 
 ```
 curl -X POST \   
   -H 'Content-Type: application/json' \   
-  -d '{"app":"caesar","job_inputs":{"inputfile":"/opt/caesar-rest/data/67a49bf7555b41739095681bf52a1f99.fits","run":true,"no-logredir":true,"envfile":"/home/riggi/Software/setvars.sh","no-mpi":true,"no-nestedsearch":true,"no-extendedsearch":true}}' \   
+  -d '{"app": "caesar","data_inputs": {"data": "39ca08fc5c7c446d8756a48088ee684c"},"job_options": {"run": true,"no-logredir": true,"no-mpi": true,"no-nestedsearch": true,"no-extendedsearch": true}}' \   
   --url 'http://localhost:8080/caesar/api/v1.0/job'   
 ```
 
@@ -795,18 +797,19 @@ Server response is:
 ```
 {
   "app": "caesar",
-  "job_id": "69ca62d7-5098-4fe7-a675-63895a2d06b1",
-  "job_inputs": {
-    "envfile": "/home/riggi/Software/setvars.sh",
-    "inputfile": "67a49bf7555b41739095681bf52a1f99",
+  "data_inputs": "39ca08fc5c7c446d8756a48088ee684c",
+  "job_id": "a4095b815a074d81a0cc447762aa29f1",
+  "job_options": {
     "no-extendedsearch": true,
     "no-logredir": true,
     "no-mpi": true,
     "no-nestedsearch": true,
     "run": true
-  },
-  "status": "Job submitted with success",
-  "submit_date": "2020-04-24T14:05:24.761766"
+   },
+   "state": "PENDING",
+   "status": "Job submitted and registered with success",
+   "submit_date": "2024-12-19T10:00:42.865802",
+   "tag": ""
 }
 ```
 
