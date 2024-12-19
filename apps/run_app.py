@@ -48,6 +48,7 @@ def get_args():
 	# - Specify cmd options
 	parser.add_argument('-datadir','--datadir', dest='datadir', default='/opt/caesar-rest/data', required=False, type=str, help='Directory where to store uploaded data') 
 	parser.add_argument('-jobdir','--jobdir', dest='jobdir', default='/opt/caesar-rest/jobs', required=False, type=str, help='Directory where to store jobs') 
+	parser.add_argument('-modeldir','--modeldir', dest='modeldir', default='/opt/caesar-rest/models', required=False, type=str, help='Directory where models are stored') 
 	parser.add_argument('-job_scheduler','--job_scheduler', dest='job_scheduler', default='celery', required=False, type=str, help='Job scheduler to be used. Options are: {celery,kubernetes,slurm} (default=celery)')
 	parser.add_argument('-job_monitoring_period','--job_monitoring_period', dest='job_monitoring_period', default=5, required=False, type=int, help='Job monitoring poll period in seconds') 
 	parser.add_argument('--debug', dest='debug', action='store_true')	
@@ -112,6 +113,7 @@ def get_args():
 	parser.add_argument('-slurm_queue','--slurm_queue', dest='slurm_queue', default='normal', required=False, type=str, help='Slurm cluster queue for submitting jobs')
 	parser.add_argument('-slurm_jobdir','--slurm_jobdir', dest='slurm_jobdir', default='/mnt/storage/jobs', required=False, type=str, help='Path at which the job directory is mounted in Slurm cluster')	
 	parser.add_argument('-slurm_datadir','--slurm_datadir', dest='slurm_datadir', default='/mnt/storage/data', required=False, type=str, help='Path at which the data directory is mounted in Slurm cluster')	
+	parser.add_argument('-slurm_modeldir','--slurm_modeldir', dest='slurm_modeldir', default='/mnt/storage/models', required=False, type=str, help='Path at which the models directory is mounted in Slurm cluster')	
 	parser.add_argument('-slurm_max_cores_per_job','--slurm_max_cores_per_job', dest='slurm_max_cores_per_job', default=4, required=False, type=int, help='Slurm maximum number of cores reserved for a job (default=4)')
 	
 	# - Volume mount options
@@ -130,6 +132,7 @@ def get_args():
 	parser.add_argument('-umap_container','--umap_container', dest='umap_container', default='/opt/containers/sclassifier/umap_latest.sif', required=False, type=str, help='Path to UMAP Singularity container (default=/opt/containers/sclassifier/umap_latest.sif)')
 	parser.add_argument('-outlier_finder_container','--outlier_finder_container', dest='outlier_finder_container', default='/opt/containers/sclassifier/outlier_finder_latest.sif', required=False, type=str, help='Path to OutlierFinder Singularity container (default=/opt/containers/sclassifier/outlier_finder_latest.sif)')
 	parser.add_argument('-hdbscan_container','--hdbscan_container', dest='hdbscan_container', default='/opt/containers/sclassifier/hdbscan_latest.sif', required=False, type=str, help='Path to HDBSCAN Singularity container (default=/opt/containers/sclassifier/hdbscan_latest.sif)')
+	parser.add_argument('-simsearch_container','--simsearch_container', dest='simsearch_container', default='/opt/containers/sclassifier/similarity-search_latest.sif', required=False, type=str, help='Path to Similarity Search Singularity container (default=/opt/containers/sclassifier/similarity-search_latest.sif)')
 	
 	# - Dataset options
 	parser.add_argument('-dataset_smgps','--dataset_smgps', dest='dataset_smgps', default='', required=False, type=str, help='Path to smgps dataset json filelist')
@@ -159,6 +162,7 @@ except Exception as ex:
 # - Dir options
 datadir= args.datadir
 jobdir= args.jobdir
+modeldir= args.modeldir
 debug= args.debug
 
 # - Log level options
@@ -191,8 +195,6 @@ if logtofile:
 
 logger.info("Setting log level to %s ..." % loglevel)
 logger.setLevel(loglevel)
-
-
 
 # - AAI options
 use_aai= args.aai
@@ -271,6 +273,7 @@ slurm_batch_workdir= args.slurm_batch_workdir
 slurm_queue= args.slurm_queue
 slurm_jobdir= args.slurm_jobdir
 slurm_datadir= args.slurm_datadir
+slurm_modeldir= args.slurm_modeldir
 slurm_max_cores_per_job= args.slurm_max_cores_per_job
 
 # - Singularity container options
@@ -282,6 +285,7 @@ cnn_classifier_container= args.cnn_classifier_container
 umap_container= args.umap_container
 outlier_finder_container= args.outlier_finder_container
 hdbscan_container= args.hdbscan_container
+simsearch_container= args.simsearch_container
 
 # - Dataset options
 dataset_smgps= args.dataset_smgps
@@ -301,6 +305,7 @@ logger.info("Creating app configuration ...")
 config= Config()
 config.UPLOAD_FOLDER= datadir
 config.JOB_DIR= jobdir
+config.MODEL_DIR= modeldir
 config.USE_AAI= False
 config.JOB_MONITORING_PERIOD= job_monitoring_period
 
@@ -336,6 +341,7 @@ config.SLURM_BATCH_WORKDIR= slurm_batch_workdir
 config.SLURM_PORT= slurm_port
 config.SLURM_JOB_DIR= slurm_jobdir
 config.SLURM_DATA_DIR= slurm_datadir
+config.SLURM_MODEL_DIR= slurm_modeldir
 config.SLURM_MAX_CORE_PER_JOB= slurm_max_cores_per_job
 
 config.MOUNT_RCLONE_VOLUME= args.mount_rclone_volume
@@ -356,6 +362,7 @@ config.SLURM_CNN_CLASSIFIER_JOB_IMAGE= cnn_classifier_container
 config.SLURM_UMAP_JOB_IMAGE= umap_container
 config.SLURM_OUTLIER_FINDER_JOB_IMAGE= outlier_finder_container
 config.SLURM_HDBSCAN_JOB_IMAGE= hdbscan_container
+config.SLURM_SIMSEARCH_JOB_IMAGE= simsearch_container
 
 # - Create data manager (DEPRECATED BY MONGO)
 ##logger.info("Creating data manager ...")
@@ -447,8 +454,10 @@ if job_scheduler=='slurm' and jobmgr_slurm is not None:
 	jobmgr_slurm.cluster_batch_workdir= config.SLURM_BATCH_WORKDIR
 	jobmgr_slurm.cluster_jobdir= config.SLURM_JOB_DIR
 	jobmgr_slurm.cluster_datadir= config.SLURM_DATA_DIR
+	jobmgr_slurm.cluster_modeldir= config.SLURM_MODEL_DIR
 	jobmgr_slurm.app_jobdir= config.JOB_DIR
 	jobmgr_slurm.app_datadir= config.UPLOAD_FOLDER
+	jobmgr_slurm.app_modeldir= config.MODEL_DIR
 	jobmgr_slurm.max_cores= config.SLURM_MAX_CORE_PER_JOB
 
 	# - Initialize client

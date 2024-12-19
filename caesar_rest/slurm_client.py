@@ -50,8 +50,10 @@ class SlurmJobManager(object):
 		self.cluster_batch_workdir= ''
 		self.cluster_jobdir= ''
 		self.cluster_datadir= ''
+		self.cluster_modeldir= ''
 		self.app_jobdir= ''
 		self.app_datadir= ''
+		self.app_modeldir= ''
 		self.sleep_before_run= True # to enable job directory to be created in nextcloud
 		self.sleeptime_before_run= 10
 		self.max_cores= 4
@@ -90,6 +92,10 @@ class SlurmJobManager(object):
 		if self.app_datadir=="":
 			logger.warn("Empty app datadir given, check given app options!")
 			return -1
+			
+		if self.app_modeldir=="":
+			logger.warn("Empty app modeldir given, check given app options!")
+			return -1
 
 		if self.cluster_jobdir=="":
 			logger.warn("Empty cluster jobdir given, check given app options!")
@@ -97,6 +103,10 @@ class SlurmJobManager(object):
 
 		if self.cluster_datadir=="":
 			logger.warn("Empty cluster datadir given, check given app options!")
+			return -1
+			
+		if self.cluster_modeldir=="":
+			logger.warn("Empty cluster modeldir given, check given app options!")
 			return -1
 		
 		return 0
@@ -420,8 +430,6 @@ class SlurmJobManager(object):
 			logger.warn("Requested nproc (%d) exceeds max (%d), set nproc to 1..." % (nproc,self.max_cores), action="submitjob")
 			nproc= 1
 		
-		
-		
 
 		#################################
 		###   SET CLUSTER JOB/DATA DIR
@@ -455,6 +463,7 @@ class SlurmJobManager(object):
 		env_vars+= "".join("--env JOB_DIR=%s " % job_dir)
 		env_vars+= "".join("--env JOB_OPTIONS=\'%s\' " % job_args)
 		env_vars+= "".join("--env JOB_OUTDIR=%s " % job_outdir)
+		env_vars+= "".join("--env MODEL_DIR=%s " % self.app_modeldir)
 
 		# - Set singularity run options
 		#   NB: Added --no-home because if container is run as caesar user the home is automatically mounter
@@ -475,6 +484,9 @@ class SlurmJobManager(object):
 		###vol_opts+= "".join("-B %s:%s " % (inputfile, inputfile_cluster)) ## TEST
 		vol_opts+= "".join("-B %s:%s " % (self.cluster_datadir, self.app_datadir)) # bind entire data volume (NB: this invalidate previous bind)
 		logger.info("Binding host %s to container %s ..." % (self.cluster_datadir, self.app_datadir))
+		
+		vol_opts+= "".join("-B %s:%s " % (self.cluster_modeldir, self.app_modeldir)) # bind entire data volume (NB: this invalidate previous bind)
+		logger.info("Binding host %s to container %s ..." % (self.cluster_modeldir, self.app_modeldir))
 		
 		if nproc>1:
 			vol_opts+= "-B /etc/libibverbs.d "

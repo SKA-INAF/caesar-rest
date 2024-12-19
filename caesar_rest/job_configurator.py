@@ -31,6 +31,7 @@ from caesar_rest.simclr_app_configurator import SimCLRFeatExtractorAppConfigurat
 from caesar_rest.umap_app_configurator import UMAPAppConfigurator
 from caesar_rest.outlier_finder_app_configurator import OutlierFinderAppConfigurator
 from caesar_rest.hdbscan_app_configurator import HDBSCANAppConfigurator
+from caesar_rest.simsearch_app_configurator import SimilaritySearchAppConfigurator
 
 # Get logger
 from caesar_rest import logger
@@ -54,6 +55,7 @@ class JobConfigurator(object):
 			'umap': UMAPAppConfigurator,
 			'outlier-finder': OutlierFinderAppConfigurator,
 			'hdbscan': HDBSCANAppConfigurator,
+			'similarity-search': SimilaritySearchAppConfigurator,
 		}
 		
 		

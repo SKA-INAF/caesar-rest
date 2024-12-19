@@ -30,6 +30,7 @@ class Config(object):
 
 	# - Additional options
 	JOB_DIR= '/opt/caesar-rest/jobs'
+	MODEL_DIR= '/opt/caesar-rest/models'
 	UPLOAD_ALLOWED_FILE_FORMATS= set(['png', 'jpg', 'jpeg', 'gif', 'fits'])
 	JOB_MONITORING_PERIOD= 5 # in seconds
 
@@ -58,6 +59,7 @@ class Config(object):
 	SLURM_BATCH_WORKDIR= '/opt/caesar-rest/batchlogs'
 	SLURM_JOB_DIR= '/mnt/storage/jobs'  # Path at which the job directory is mounted in Slurm cluster 
 	SLURM_DATA_DIR= '/mnt/storage/data' # Path at which the data directory is mounted in Slurm cluster
+	SLURM_MODEL_DIR= '/mnt/storage/models' # Path at which the models directory is mounted in Slurm cluster
 	SLURM_CAESAR_JOB_IMAGE= '/opt/containers/caesar/caesar-job_latest.sif'
 	SLURM_MASKRCNN_JOB_IMAGE= '/opt/containers/mrcnn/mrcnn-detect_latest.sif'
 	SLURM_AEGEAN_JOB_IMAGE= '/opt/containers/aegean/aegean-job_latest.sif'
@@ -65,7 +67,8 @@ class Config(object):
 	SLURM_CNN_CLASSIFIER_JOB_IMAGE= '/opt/containers/sclassifier/cnn-classifier_latest.sif'
 	SLURM_UMAP_JOB_IMAGE= '/opt/containers/sclassifier/umap_latest.sif'
 	SLURM_OUTLIER_FINDER_JOB_IMAGE= '/opt/containers/sclassifier/outlier_finder_latest.sif'
-	SLURM_HDBSCAN_JOB_IMAGE= '/opt/containers/sclassifier/hdbscan_latest.sif'	
+	SLURM_HDBSCAN_JOB_IMAGE= '/opt/containers/sclassifier/hdbscan_latest.sif'
+	SLURM_SIMSEARCH_JOB_IMAGE= '/opt/containers/sclassifier/similarity-search_latest.sif'	
 	SLURM_MAX_CORE_PER_JOB= 4 # Maximum number of cores reserved for a job
 	
 	# - AAI options
@@ -105,6 +108,9 @@ class Config(object):
 	
 	# - HDBSCAN app options
 	HDBSCAN_JOB_IMAGE= 'sriggi/hdbscan:latest'
+	
+	# - SIM SEARCH app options
+	SIMSEARCH_JOB_IMAGE= 'sriggi/similarity-search:latest'
 	
 	# - DATASET app options
 	#   NB: paths are to be configured at app deployment phase.
