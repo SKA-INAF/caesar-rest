@@ -59,7 +59,7 @@ class OutlierFinderAppConfigurator(AppConfigurator):
 				name='selcols',
 				value='',
 				value_type=str, 
-				description='Data column ids to be selected from input data, separated by commas (default=all columns)',
+				description='Data column ids to be selected from input data, separated by dashes (default=all columns)',
 				category='INPUT',
 				default_value=''
 			),
