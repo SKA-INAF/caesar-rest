@@ -11,6 +11,8 @@ import time
 import datetime
 import numpy as np
 import argparse
+import structlog
+import logging
 
 # Import mongo
 from pymongo import MongoClient
