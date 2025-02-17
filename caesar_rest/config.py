@@ -31,7 +31,7 @@ class Config(object):
 	# - Additional options
 	JOB_DIR= '/opt/caesar-rest/jobs'
 	MODEL_DIR= '/opt/caesar-rest/models'
-	UPLOAD_ALLOWED_FILE_FORMATS= set(['png', 'jpg', 'jpeg', 'gif', 'fits'])
+	UPLOAD_ALLOWED_FILE_FORMATS= set(['png', 'jpg', 'jpeg', 'gif', 'fits', 'json'])
 	JOB_MONITORING_PERIOD= 5 # in seconds
 
 	JOB_SCHEDULER= 'celery' # Options are: {'celery','kubernetes','slurm'}
