@@ -65,6 +65,7 @@ class Config(object):
 	SLURM_AEGEAN_JOB_IMAGE= '/opt/containers/aegean/aegean-job_latest.sif'
 	SLURM_CUTEX_JOB_IMAGE= '/opt/containers/cutex/cutex-job_latest.sif'
 	SLURM_CNN_CLASSIFIER_JOB_IMAGE= '/opt/containers/sclassifier/cnn-classifier_latest.sif'
+	SLURM_VIT_CLASSIFIER_JOB_IMAGE= '/opt/containers/sclassifier-vit/vit-classifier_latest.sif'
 	SLURM_UMAP_JOB_IMAGE= '/opt/containers/sclassifier/umap_latest.sif'
 	SLURM_OUTLIER_FINDER_JOB_IMAGE= '/opt/containers/sclassifier/outlier_finder_latest.sif'
 	SLURM_HDBSCAN_JOB_IMAGE= '/opt/containers/sclassifier/hdbscan_latest.sif'
@@ -97,8 +98,11 @@ class Config(object):
 	# - CUTEX app options
 	CUTEX_JOB_IMAGE= 'sriggi/cutex-job:latest'
 	
-	# - IMAGE CLASSIFIER app options
+	# - IMAGE CNN CLASSIFIER app options
 	CNN_CLASSIFIER_JOB_IMAGE= 'sriggi/cnn-classifier:latest'
+	
+	# - IMAGE ViT CLASSIFIER app options
+	VIT_CLASSIFIER_JOB_IMAGE= 'sriggi/vit-classifier:latest'
 	
 	# - UMAP app options
 	UMAP_JOB_IMAGE= 'sriggi/umap:latest'
