@@ -342,6 +342,10 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
 		image= current_app.config['CNN_CLASSIFIER_JOB_IMAGE']
 		job_label= 'cnn_classifier-job'
 		
+	elif app_name=="classifier-vit":
+		image= current_app.config['VIT_CLASSIFIER_JOB_IMAGE']
+		job_label= 'vit_classifier-job'
+		
 	elif app_name=="umap":
 		image= current_app.config['UMAP_JOB_IMAGE']
 		job_label= 'umap-job'
@@ -446,6 +450,9 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_o
 	
 	elif app_name=="classifier-cnn":
 		image= current_app.config['SLURM_CNN_CLASSIFIER_JOB_IMAGE']
+		
+	elif app_name=="classifier-vit":
+		image= current_app.config['SLURM_VIT_CLASSIFIER_JOB_IMAGE']
 	
 	elif app_name=="umap":
 		image= current_app.config['SLURM_UMAP_JOB_IMAGE']
