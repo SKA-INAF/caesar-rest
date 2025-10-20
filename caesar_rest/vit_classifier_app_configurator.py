@@ -54,7 +54,7 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 				description='Classifier model to be used',
 				category='MODEL',
 				default_value='smorphclass_multilabel',
-				allowed_values=['smorphclass_multilabel']
+				allowed_values=['smorphclass_multilabel', 'smorphclass_singlelabel_rgz']
 			),
 
 			# == PRE-PROCESSING OPTIONS ==
