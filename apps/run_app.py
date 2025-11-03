@@ -134,6 +134,7 @@ def get_args():
 	parser.add_argument('-outlier_finder_container','--outlier_finder_container', dest='outlier_finder_container', default='/opt/containers/sclassifier/outlier_finder_latest.sif', required=False, type=str, help='Path to OutlierFinder Singularity container (default=/opt/containers/sclassifier/outlier_finder_latest.sif)')
 	parser.add_argument('-hdbscan_container','--hdbscan_container', dest='hdbscan_container', default='/opt/containers/sclassifier/hdbscan_latest.sif', required=False, type=str, help='Path to HDBSCAN Singularity container (default=/opt/containers/sclassifier/hdbscan_latest.sif)')
 	parser.add_argument('-simsearch_container','--simsearch_container', dest='simsearch_container', default='/opt/containers/sclassifier/similarity-search_latest.sif', required=False, type=str, help='Path to Similarity Search Singularity container (default=/opt/containers/sclassifier/similarity-search_latest.sif)')
+	parser.add_argument('-caesar_yolo_container','--caesar_yolo_container', dest='caesar_yolo_container', default='/opt/containers/caesar-yolo/caesar-yolo-job_latest.sif', required=False, type=str, help='Path to CAESAR-YOLO Singularity container (default=/opt/containers/caesar-yolo/caesar-yolo-job_latest.sif)')
 	
 	# - Dataset options
 	parser.add_argument('-dataset_smgps','--dataset_smgps', dest='dataset_smgps', default='', required=False, type=str, help='Path to smgps dataset json filelist')
@@ -288,6 +289,7 @@ umap_container= args.umap_container
 outlier_finder_container= args.outlier_finder_container
 hdbscan_container= args.hdbscan_container
 simsearch_container= args.simsearch_container
+caesar_yolo_container= args.caesar_yolo_container
 
 # - Dataset options
 dataset_smgps= args.dataset_smgps
@@ -366,6 +368,7 @@ config.SLURM_UMAP_JOB_IMAGE= umap_container
 config.SLURM_OUTLIER_FINDER_JOB_IMAGE= outlier_finder_container
 config.SLURM_HDBSCAN_JOB_IMAGE= hdbscan_container
 config.SLURM_SIMSEARCH_JOB_IMAGE= simsearch_container
+config.SLURM_CAESAR_YOLO_JOB_IMAGE= caesar_yolo_container
 
 # - Create data manager (DEPRECATED BY MONGO)
 ##logger.info("Creating data manager ...")

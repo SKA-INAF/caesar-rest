@@ -362,6 +362,10 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
 		image= current_app.config['SIMSEARCH_JOB_IMAGE']
 		job_label= 'simsearch-job'
 
+	elif app_name=="caesar-yolo":
+		image= current_app.config['CAESAR_YOLO_JOB_IMAGE']
+		job_label= 'caesar-yolo-job'
+
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)
 		return None
