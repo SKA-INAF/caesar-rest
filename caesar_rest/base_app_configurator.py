@@ -132,9 +132,10 @@ class EnumValueOption(Option):
 class AppConfigurator(object):
 	""" Class to define base app configurator """
   
-	def __init__(self):
+	def __init__(self, app_name="unknown"):
 		""" Constructor"""
 
+		self.app_name= app_name
 		self.job_options= ''
 		self.data_inputs= ''
 		self.cmd= ''
@@ -149,14 +150,30 @@ class AppConfigurator(object):
 			"ncores": 1,
 			"nproc": 1
 		}
+		self.job_outputs= {}
+		self.description= ""
+		self.input_requirements= {}
+		self.limitations= []
 
 	def describe_dict(self):
 		""" Return a dictionary describing valid options """
 			
-		d= {}
+		# - Init dictionary	
+		#d= {}
+		d= {
+			"name": self.app_name,
+			"description": self.description,
+			"input_requirements": self.input_requirements,
+			"job_options": {},
+			"job_outputs": self.job_outputs,
+			"limitations": self.limitations
+		}
+		
+		# - Fill job options
 		for opt_name, option in self.valid_options.items():
 			option_dict= option.to_dict()
-			d.update(option_dict)
+			#d.update(option_dict)
+			d["job_options"].update(option_dict)
 
 		return d
 

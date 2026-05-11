@@ -34,14 +34,40 @@ from caesar_rest import logger
 class CaesarYoloAppConfigurator(AppConfigurator):
 	""" Class to configure caesar-yolo source finder application """
 
-	def __init__(self):
+	def __init__(self, app_name="caesar-yolo"):
 		""" Return app configurator class """
-		AppConfigurator.__init__(self)
+		AppConfigurator.__init__(self, app_name=app_name)
 
 		# - Define cmd name
 		self.cmd= 'run_sdetector.sh'
 		self.cmd_args= []
 		self.batch_processing_support= True
+		
+		# - Describe app
+		self.description = (
+			"Run YOLO-based object detection on astronomical radio-continuum images. "
+			"The app detects candidate radio sources and classifies them as spurious, compact, "
+			"extended, extended-multisland, or flagged. It expects image-like astronomical data, "
+			"typically FITS-derived image products or CAESAR-supported image inputs. "
+			"Results are returned as a JSON catalog of detections and optional diagnostic plots."
+		)
+		
+		self.input_requirements = {
+			"supported_formats": ["uid", "abspath", "dataset"],
+			"expected_data": "Single astronomical image suitable for source/object detection.",
+			"notes": [
+				"Use uid input in production after uploading the file to caesar-rest.",
+				"Use abspath only when MAASAI and caesar-rest share the same filesystem.",
+				"Use dataset only for datasets registered in the CAESAR service."
+			]
+		}
+
+		self.limitations = [
+			"Detection quality depends on the selected pretrained model and image preprocessing.",
+			"Bounding boxes are image-pixel coordinates, not sky coordinates unless post-processed with WCS metadata.",
+			"Very large images may require tiling.",
+			"Low-confidence detections depend strongly on score-thr and preprocessing choices."
+		]
 		
 		# - Define dictionary with allowed options
 		self.valid_options= {
@@ -428,6 +454,58 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			
 		} ## close valid options
 		
+		
+		# - Define dictionary with job outputs produced
+		catalog_out_desc= (
+			'Dictionary containing list of detected objects with class labels, scores, and bounding boxes. '
+			'The format of the returned dictionary follows the example below: \n\n'
+			'{\n'
+			'  "image_id": "f572b6faffb34f5680bccb12c02aacf5", \n'
+			'  "objs": [ \n'
+			'    { \n'
+			'      "class_id": 3, \n'
+			'      "class_name": "extended-multisland", \n'
+			'      "edge": 0, \n'
+			'      "name": "S1", \n'
+			'      "score": 0.8755874037742615, \n'
+			'      "x1": 27.0, \n'
+			'      "x2": 114.0, \n'
+			'      "y1": 39.0, \n'
+			'      "y2": 96.0 \n'
+			'    } \n'
+			'  ] \n'
+			'} \n'
+			'\n'
+			'Below, we report a description of each dictionary field: \n'
+			'* image_id | str: Input image UID identifier, assigned by caesar-rest system.\n'
+			'* objs | list(dict): List of detected objects, with each object dictionary containing the following information: \n'
+			'      - class_id | int: Object class identifier with these possible values: 0-->spurious, 1-->compact, 2-->extended, 3-->extended-multisland, 4-->flagged \n'
+			'      - class_name | str: Object class label with these possible values: spurious, compact, extended, extended-multisland, flagged \n'
+			'      - edge | int: Boolean flag indicating if the detected source is at the border (=1) of the image or not (=0) \n'
+			'      - name | str: A string identifier for the detected object, usually with an "S" prefix followed by an integer \n'
+			'      - score | float: Object detection confidence probability in range [0,1] \n'
+			'      - x1 | float: Min x-axis coordinate of the object bounding box rectangle \n'
+			'      - x2 | float: Max x-axis coordinate of the object bounding box rectangle \n'
+			'      - y1 | float: Min y-axis coordinate of the object bounding box rectangle \n'
+			'      - y2 | float: Max y-axis coordinate of the object bounding box rectangle \n'
+		)
+				
+		self.job_outputs= {
+			"catalog": {
+				"path": None,
+				"glob": "out_*.json",
+				"type": "application/json",
+				"role": "primary_result",
+				"description": catalog_out_desc,
+				"parser": "json",
+				"required": True,
+				"summary_hint": (
+					"Summarize number of detected objects, class distribution, "
+					"confidence-score range, edge flags, and bounding-box coordinates."
+				),
+			},
+		
+		} ## close job outputs
 		
 		# - Define option value transformers
 		self.option_value_transformer= {

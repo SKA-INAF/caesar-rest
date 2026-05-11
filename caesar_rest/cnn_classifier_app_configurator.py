@@ -34,14 +34,33 @@ from caesar_rest import logger
 class CNNClassifierAppConfigurator(AppConfigurator):
 	""" Class to configure CNN image classifier application """
 
-	def __init__(self):
+	def __init__(self, app_name="classifier-cnn"):
 		""" Return aapp configurator class """
-		AppConfigurator.__init__(self)
+		AppConfigurator.__init__(self, app_name=app_name)
 
 		# - Define cmd name
 		self.cmd= 'run_classifier.sh'
 		self.cmd_args= []
 		self.batch_processing_support= True
+		
+		# - Describe app
+		self.description = (
+			""
+		)
+		
+		self.input_requirements = {
+			"supported_formats": ["uid", "abspath", "dataset"],
+			"expected_data": "TBD",
+			"notes": [
+				"TBD",
+				"TBD"
+			]
+		}
+		
+		self.limitations = [
+			"TBD",
+			"TBD"
+		]
 		
 		# - Define dictionary with allowed options
 		self.valid_options= {
@@ -202,6 +221,10 @@ class CNNClassifierAppConfigurator(AppConfigurator):
 		
 		} ## close valid options
 		
+		# - Define dictionary with job outputs produced
+		self.job_outputs= {
+		
+		}
 		
 		# - Define option value transformers
 		self.option_value_transformer= {

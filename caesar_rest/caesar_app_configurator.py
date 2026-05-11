@@ -36,14 +36,33 @@ from caesar_rest import logger
 class CaesarAppConfigurator(AppConfigurator):
 	""" Class to configure CAESAR sfinder application """
 
-	def __init__(self):
+	def __init__(self, app_name="caesar"):
 		""" Return caesar sfinder app configurator class """
-		AppConfigurator.__init__(self)
+		AppConfigurator.__init__(self, app_name=app_name)
 
 		# - Define cmd name
 		self.cmd= 'SFinderSubmitter.sh'
 		self.cmd_args= []
 		self.batch_processing_support= True
+
+		# - Describe app
+		self.description = (
+			""
+		)
+		
+		self.input_requirements = {
+			"supported_formats": ["uid", "abspath", "dataset"],
+			"expected_data": "TBD",
+			"notes": [
+				"TBD",
+				"TBD"
+			]
+		}
+		
+		self.limitations = [
+			"TBD",
+			"TBD"
+		]
 
 		# - Define dictionary with allowed options
 		self.valid_options= {
@@ -1635,6 +1654,11 @@ class CaesarAppConfigurator(AppConfigurator):
 
 
 		} # close dict
+
+		# - Define dictionary with job outputs produced
+		self.job_outputs= {
+		
+		}
 
 		# - Define option value transformers
 		self.option_value_transformer= {

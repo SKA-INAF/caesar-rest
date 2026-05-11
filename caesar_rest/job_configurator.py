@@ -49,7 +49,6 @@ class JobConfigurator(object):
 
 		self.app_configurators= {
 			'caesar': CaesarAppConfigurator,
-			'mrcnn': MaskRCNNAppConfigurator,
 			'aegean': AegeanAppConfigurator,
 			'cutex': CutexAppConfigurator,
 			'classifier-cnn': CNNClassifierAppConfigurator,
@@ -59,6 +58,7 @@ class JobConfigurator(object):
 			'outlier-finder': OutlierFinderAppConfigurator,
 			'hdbscan': HDBSCANAppConfigurator,
 			'similarity-search': SimilaritySearchAppConfigurator,
+			'caesar-mrcnn': MaskRCNNAppConfigurator,
 			'caesar-yolo': CaesarYoloAppConfigurator,
 		}
 		
@@ -74,7 +74,8 @@ class JobConfigurator(object):
 			return (None,None,msg,None)
 
 		# - Create an instance of app configurator
-		configurator= self.app_configurators[app_name]()
+		#configurator= self.app_configurators[app_name]()
+		configurator= self.app_configurators[app_name](app_name=app_name)
 		
 		status= configurator.validate(job_options, data_inputs)
 		if not status:
@@ -102,7 +103,8 @@ class JobConfigurator(object):
 			return None
 
 		# - Create an instance of app configurator
-		configurator= self.app_configurators[app_name]()
+		#configurator= self.app_configurators[app_name]()
+		configurator= self.app_configurators[app_name](app_name=app_name)
 
 		# - Get description
 		d= configurator.describe_dict()	
@@ -132,7 +134,8 @@ class JobConfigurator(object):
 			return None
 
 		# - Create an instance of app configurator
-		configurator= self.app_configurators[app_name]()
+		#configurator= self.app_configurators[app_name]()
+		configurator= self.app_configurators[app_name](app_name=app_name)
 
 		# - Get flag
 		flag= configurator.batch_processing_support
