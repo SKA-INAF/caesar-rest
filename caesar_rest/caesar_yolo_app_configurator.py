@@ -45,28 +45,26 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 		
 		# - Describe app
 		self.description = (
-			"Run YOLO-based object detection on astronomical radio-continuum images. "
-			"The app detects candidate radio sources and classifies them as spurious, compact, "
-			"extended, extended-multisland, or flagged. It expects image-like astronomical data, "
-			"typically FITS-derived image products or CAESAR-supported image inputs. "
+			"Run a pre-trained YOLO object detection model on astronomical radio-continuum images. "
+			"The app detects candidate radio sources and classifies them as 'spurious', 'compact', "
+			"'extended', 'extended-multisland', or 'flagged' (i.e. poorly-imaged sources). "
+			"It expects input image-like astronomical data, in either FITS or PNG format. "
 			"Results are returned as a JSON catalog of detections and optional diagnostic plots."
 		)
 		
 		self.input_requirements = {
-			"supported_formats": ["uid", "abspath", "dataset"],
+			"supported_formats": ["fits", "png"],
 			"expected_data": "Single astronomical image suitable for source/object detection.",
 			"notes": [
-				"Use uid input in production after uploading the file to caesar-rest.",
-				"Use abspath only when MAASAI and caesar-rest share the same filesystem.",
-				"Use dataset only for datasets registered in the CAESAR service."
+				"The method is most suited for radio-continuum images."
 			]
 		}
 
 		self.limitations = [
-			"Detection quality depends on the selected pretrained model and image preprocessing.",
-			"Bounding boxes are image-pixel coordinates, not sky coordinates unless post-processed with WCS metadata.",
-			"Very large images may require tiling.",
-			"Low-confidence detections depend strongly on score-thr and preprocessing choices."
+			"Source detection quality depends on the selected pretrained model, image preprocessing, survey parameters (e.g. resolution/noise) of the input image, and detection parameters choices ('score-thr', 'iou-thr').",
+			"For better detection performance, set model and imgsize to the same value (e.g. yolov11l_imgsize640, imgsize=640), as closest as possible to original input image size.",
+			"Processing of very large images (>1024 pixels) is supported but it requires enabling the tiling and parallel run mode (see options).",
+			"The app can in principle be used to detect sources in astronomical images (FITS/PNG) from other domains (e.g. optical, infrared, gamma-rays) but we anticipate sub-optimal performance as the model was trained/tested on radio images only."
 		]
 		
 		# - Define dictionary with allowed options
@@ -80,7 +78,7 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				description='Pretrained model to be used in prediction',
 				category='MODEL',
 				default_value='yolov11l_imgsize640',
-				allowed_values=['yolov11l_imgsize128','yolov11l_imgsize256','yolov11l_imgsize512','yolov11l_imgsize640']
+				allowed_values=['yolov11l_imgsize128','yolov11l_imgsize256','yolov11l_imgsize512','yolov11l_imgsize640', 'yolov11l_imgsize1024']
 			),
 
 			# == PRE-PROCESSING OPTIONS ==
@@ -465,10 +463,10 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 		
 		# - Define dictionary with job outputs produced
 		catalog_out_desc= (
-			'Dictionary containing list of detected objects with class labels, scores, and bounding boxes. '
-			'The format of the returned dictionary follows the example below: \n\n'
+			'Dictionary containing list of detected objects/sources with class labels, confidence scores, bounding-box rectangle coordinates and various flags. '
+			'When the input data is an image, the format of the returned dictionary follows the structure of the example below: \n\n'
 			'{\n'
-			'  "filepath": "f572b6faffb34f5680bccb12c02aacf5", \n'
+			'  "filepath": "f572b6faffb34f5680bccb12c02aacf5.fits", \n'
 			'  "sname": "f572b6faffb34f5680bccb12c02aacf5", \n'
 			'  "sources": [ \n'
 			'    { \n'
@@ -486,35 +484,70 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			'} \n'
 			'\n'
 			'Below, we report a description of each dictionary field: \n'
-			#'* filepath | str: Input image UID identifier, assigned by caesar-rest system.\n'
-			'* filepath | str: Input image filename (not absolute filename).\n'
+			'* filepath | str: Input image filename (base path, not absolute path).\n'
 			'* sname | str: Input image identifier, usually set to filepath without file extension.\n'
-			'* sources | list(dict): List of detected objects, with each object dictionary containing the following information: \n'
+			'* sources | list(dict): List of detected object parameters, where each object dictionary contains the following information: \n'
 			'      - class_id | int: Object class identifier with these possible values: 0-->spurious, 1-->compact, 2-->extended, 3-->extended-multisland, 4-->flagged \n'
 			'      - class_name | str: Object class label with these possible values: spurious, compact, extended, extended-multisland, flagged \n'
 			'      - edge | int: Boolean flag indicating if the detected source is at the border (=1) of the image or not (=0) \n'
+			'      - merged | int: Boolean flag indicating if the detected source was assembled from connected objects detected at the border of adjacent image tiles (=1) or not (=0). This flag is only set in parallel runs where the input image is partitioned into sub-tiles. \n'
 			'      - name | str: A string identifier for the detected object, usually with an "S" prefix followed by an integer \n'
 			'      - score | float: Object detection confidence probability in range [0,1] \n'
-			'      - x1 | float: Min x-axis coordinate of the object bounding box rectangle \n'
-			'      - x2 | float: Max x-axis coordinate of the object bounding box rectangle \n'
-			'      - y1 | float: Min y-axis coordinate of the object bounding box rectangle \n'
-			'      - y2 | float: Max y-axis coordinate of the object bounding box rectangle \n'
+			'      - x1 | float: Minimum x-value of the object bounding box rectangle in image coordinates \n'
+			'      - x2 | float: Maximum x-value of the object bounding box rectangle in image coordinates \n'
+			'      - y1 | float: Minimum y-value of the object bounding box rectangle in image coordinates  \n'
+			'      - y2 | float: Maximum y-value of the object bounding box rectangle in image coordinates  \n'
 		)
 				
 		self.job_outputs= {
 			"catalog": {
 				"path": None,
-				"glob": "out_*.json",
+				"glob": "*.json",
 				"type": "application/json",
 				"role": "primary_result",
 				"description": catalog_out_desc,
 				"parser": "json",
 				"required": True,
-				"summary_hint": (
-					"Summarize number of detected objects, class distribution, "
-					"confidence-score range, edge flags, and bounding-box coordinates."
-				),
+				"notes": (
+					"The catalog output filename is by default set to 'catalog.json', but it can be configured by the user with the option 'outfile-catalog'"
+				)
 			},
+			"plot": {
+				"path": None,
+				"glob": "*.png",
+				"type": "image/png",
+				"role": "visualization",
+				"description": "Image with detections overlaid.",
+				"parser": "image",
+				"required": False,
+				"notes": (
+					"The plot output filename is by default set to 'plot.png', but it can be configured by the user with the option 'outfile-plot'"
+				)
+			},
+			"region": {
+				"path": None,
+				"glob": "*.reg",
+				"type": "application/x-ds9",
+				"role": "visualization",
+				"description": "A DS9 region file containing detected sources as colored and tagged box regions.",
+				"parser": "ds9",
+				"required": False,
+				"notes": (
+					"The region output filename is by default set to 'ds9.reg', but it can be configured by the user with the option 'outfile-region'"
+				)
+			},
+			"log": {
+				"path": None,
+				"glob": "*.log",
+				"type": "text/plain",
+				"role": "diagnostic",
+				"description": "Execution log.",
+				"parser": "text",
+				"required": False,
+				"notes": (
+					""
+				)
+			}
 		
 		} ## close job outputs
 		
