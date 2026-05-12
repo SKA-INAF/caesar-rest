@@ -428,13 +428,13 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				description='Enable saving of subtile image files', 
 				category='SAVE'
 			),
-			'outfile' : ValueOption(
-				name='outfile',
+			'outfile-plot' : ValueOption(
+				name='outfile-plot',
 				value='',
 				value_type=str, 
 				description='Output plot PNG filename (internally generated if left empty)',
 				category='SAVE',
-				default_value='output.png'
+				default_value='plot.png'
 			),
 			'outfile-catalog' : ValueOption(
 				name='outfile-catalog',
@@ -443,6 +443,14 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				description='Output json filename with detected objects (internally generated if left empty for --image option)',
 				category='SAVE',
 				default_value='catalog.json'
+			),
+			'outfile-region' : ValueOption(
+				name='outfile-region',
+				value='',
+				value_type=str, 
+				description='Output DS9 region filename (internally generated if left empty)',
+				category='SAVE',
+				default_value='ds9.reg'
 			),
 	
 			# == RUN OPTIONS ==
@@ -460,8 +468,9 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			'Dictionary containing list of detected objects with class labels, scores, and bounding boxes. '
 			'The format of the returned dictionary follows the example below: \n\n'
 			'{\n'
-			'  "image_id": "f572b6faffb34f5680bccb12c02aacf5", \n'
-			'  "objs": [ \n'
+			'  "filepath": "f572b6faffb34f5680bccb12c02aacf5", \n'
+			'  "sname": "f572b6faffb34f5680bccb12c02aacf5", \n'
+			'  "sources": [ \n'
 			'    { \n'
 			'      "class_id": 3, \n'
 			'      "class_name": "extended-multisland", \n'
@@ -477,8 +486,10 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			'} \n'
 			'\n'
 			'Below, we report a description of each dictionary field: \n'
-			'* image_id | str: Input image UID identifier, assigned by caesar-rest system.\n'
-			'* objs | list(dict): List of detected objects, with each object dictionary containing the following information: \n'
+			#'* filepath | str: Input image UID identifier, assigned by caesar-rest system.\n'
+			'* filepath | str: Input image filename (not absolute filename).\n'
+			'* sname | str: Input image identifier, usually set to filepath without file extension.\n'
+			'* sources | list(dict): List of detected objects, with each object dictionary containing the following information: \n'
 			'      - class_id | int: Object class identifier with these possible values: 0-->spurious, 1-->compact, 2-->extended, 3-->extended-multisland, 4-->flagged \n'
 			'      - class_name | str: Object class label with these possible values: spurious, compact, extended, extended-multisland, flagged \n'
 			'      - edge | int: Boolean flag indicating if the detected source is at the border (=1) of the image or not (=0) \n'
