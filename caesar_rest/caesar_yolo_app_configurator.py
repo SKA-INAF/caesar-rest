@@ -266,9 +266,9 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				name='zscale-contrasts',
 				value='',
 				value_type=str, 
-				description='zscale contrasts applied to all channels, separated by commas',
+				description='zscale contrasts applied to all channels, separated by colons',
 				category='PREPROCESSING',
-				default_value='0.25,0.25,0.25'
+				default_value='0.25:0.25:0.25'
 			),
 			'chan3-preproc' : Option(
 				name='chan3-preproc', 
@@ -325,7 +325,7 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				min_value=0.0,
 				max_value=1.0
 			),
-			'merge_overlap-iou-thr-hard' : ValueOption(
+			'merge-overlap-iou-thr-hard' : ValueOption(
 				name='merge_overlap-iou-thr-hard',
 				value='',
 				value_type=float, 
