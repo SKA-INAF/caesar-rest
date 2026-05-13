@@ -326,7 +326,7 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				max_value=1.0
 			),
 			'merge-overlap-iou-thr-hard' : ValueOption(
-				name='merge_overlap-iou-thr-hard',
+				name='merge-overlap-iou-thr-hard',
 				value='',
 				value_type=float, 
 				description='IOU threshold used to merge overlapping detected objects, even those with same class ',
