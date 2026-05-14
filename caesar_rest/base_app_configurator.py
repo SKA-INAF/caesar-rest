@@ -98,7 +98,7 @@ class Option(object):
 						"default": self.default_value,
 						"min": self.min_value,
 						"max": self.max_value,
-						"enum": self.enum
+						"enum": self.enum # could be removed for non-enum options
 					}
 				}
 		else:
@@ -110,7 +110,7 @@ class Option(object):
 					"advanced": int(self.advanced),
 					"category": self.category,
 					"subcategory": self.subcategory,
-					"enum": self.enum
+					"enum": self.enum # could be removed for non-enum options
 				}
 			}
 			
