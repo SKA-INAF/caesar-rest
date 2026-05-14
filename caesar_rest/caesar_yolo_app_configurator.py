@@ -135,12 +135,14 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			'preprocessing' : Option(
 				name='preprocessing', 
 				description='Apply pre-processing to input image',
-				category='PREPROCESSING'
+				category='PREPROCESSING',
+				default_value=True
 			),
 			'normalize' : Option(
 				name='normalize', 
 				description='Normalize each channel in range', 
-				category='PREPROCESSING'
+				category='PREPROCESSING',
+				default_value=True
 			),
 			'normmin' : ValueOption(
 				name='normmin',
@@ -158,14 +160,15 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				value_type=float, 
 				description='Normalization max value',
 				category='PREPROCESSING',
-				default_value=1.0,
+				default_value=255.0,
 				min_value=1.0,
 				max_value=255.0
 			),
-			'subtract_bkg' : Option(
-				name='subtract_bkg', 
+			'subtract-bkg' : Option(
+				name='subtract-bkg', 
 				description='Subtract bkg from ref channel image', 
-				category='PREPROCESSING'
+				category='PREPROCESSING',
+				default_value=False
 			),
 			'sigma-bkg' : ValueOption(
 				name='sigma-bkg',
@@ -177,15 +180,11 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				min_value=1.0,
 				max_value=100.0
 			),
-			'subtract-bkg' : Option(
-				name='subtract-bkg', 
-				description='Subtract bkg from ref channel image', 
-				category='PREPROCESSING'
-			),
 			'use-box-mask-in-bkg' : Option(
 				name='use-box-mask-in-bkg', 
 				description='Compute bkg value in borders left from box mask', 
-				category='PREPROCESSING'
+				category='PREPROCESSING',
+				default_value=False
 			),
 			'bkg-box-mask-fract' : ValueOption(
 				name='bkg-box-mask-fract',
@@ -210,7 +209,8 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			'clipshiftdata' : Option(
 				name='clipshiftdata', 
 				description='Do sigma clipping shifting', 
-				category='PREPROCESSING'
+				category='PREPROCESSING',
+				default_value=False
 			),
 			'sigmaclip' : ValueOption(
 				name='sigmaclip',
@@ -225,7 +225,8 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			'clipdata' : Option(
 				name='clipdata', 
 				description='Apply sigma clipping to all channels', 
-				category='PREPROCESSING'
+				category='PREPROCESSING',
+				default_value=False
 			),
 			'sigmaclip-low' : ValueOption(
 				name='sigmaclip-low',
@@ -260,7 +261,8 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			'zscale' : Option(
 				name='zscale', 
 				description='Apply z-scale transform to each channel with given contrasts', 
-				category='PREPROCESSING'
+				category='PREPROCESSING',
+				default_value=True
 			),
 			'zscale-contrasts' : ValueOption(
 				name='zscale-contrasts',
@@ -273,7 +275,8 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			'chan3-preproc' : Option(
 				name='chan3-preproc', 
 				description='Use the 3-channel pre-processor', 
-				category='PREPROCESSING'
+				category='PREPROCESSING',
+				default_value=False
 			),
 			'sigmaclip-baseline' : ValueOption(
 				name='sigmaclip-baseline',
@@ -299,9 +302,9 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				name='score-thr',
 				value='',
 				value_type=float, 
-				description='Object detection score threshold to be used during test',
+				description='Object detection score threshold to be used during test. Low value: higher recall, lower precision. High value: lower recall, higher precision.',
 				category='DETECT',
-				default_value=0.7,
+				default_value=0.5,
 				min_value=0.0,
 				max_value=1.0
 			),
@@ -340,7 +343,8 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			'split-img-in-tiles' : Option(
 				name='split-img-in-tiles', 
 				description='Split input image in multiple sub tiles', 
-				category='PARALLEL-RUN'
+				category='PARALLEL-RUN',
+				default_value=False
 			),
 			'tile-xsize' : ValueOption(
 				name='tile-xsize',
@@ -397,34 +401,40 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			'draw-plots' : Option(
 				name='draw-plots', 
 				description='Enable plot making', 
-				category='DRAW'
+				category='DRAW',
+				default_value=False
 			),
 			'draw-class-label-in-caption' : Option(
 				name='draw-class-label-in-caption', 
 				description='Enable drawing of class label in plots', 
-				category='DRAW'
+				category='DRAW',
+				default_value=True
 			),
 	
 			# == SAVE OPTIONS ==
 			'save-plots' : Option(
 				name='save-plots', 
 				description='Enable plot saving', 
-				category='SAVE'
+				category='SAVE',
+				default_value=True
 			),
 			'save-tile-catalog' : Option(
 				name='save-tile-catalog', 
 				description='Enable saving of subtile catalog files', 
-				category='SAVE'
+				category='SAVE',
+				default_value=False
 			),
 			'save-tile-region' : Option(
 				name='save-tile-region', 
 				description='Enable saving of subtile DS9 region files', 
-				category='SAVE'
+				category='SAVE',
+				default_value=False
 			),
 			'save-tile-img' : Option(
 				name='save-tile-img', 
 				description='Enable saving of subtile image files', 
-				category='SAVE'
+				category='SAVE',
+				default_value=False
 			),
 			'outfile-plot' : ValueOption(
 				name='outfile-plot',
@@ -454,8 +464,9 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			# == RUN OPTIONS ==
 			'no-logredir' : Option(
 				name='no-logredir', 
-				description='Do not redirect logs to output file in script',
-				category='RUN'
+				description='Do not redirect logs to output file in run script. If True, no log file produced and returned as output product (only internal Slurm log)',
+				category='RUN',
+				default_value=False
 			),
 			
 		} ## close valid options

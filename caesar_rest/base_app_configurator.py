@@ -31,7 +31,20 @@ from caesar_rest import logger
 ##############################
 class Option(object):
 
-	def __init__(self, name, mandatory=False, description='', category='', subcategory='', advanced=False):
+	#def __init__(self, name, mandatory=False, description='', category='', subcategory='', advanced=False):
+	#	self.name= name
+	#	self.mandatory= mandatory
+	#	self.value_required= False
+	#	self.value= None
+	#	self.value_type= type(None)
+	#	self.description= description
+	#	self.advanced= advanced	
+	#	self.category= category
+	#	self.subcategory= subcategory	
+	#	self.enum= False
+	#	self.allowed_values= []
+		
+	def __init__(self, name, mandatory=False, description='', category='', subcategory='', advanced=False, default_value=None):
 		self.name= name
 		self.mandatory= mandatory
 		self.value_required= False
@@ -43,6 +56,7 @@ class Option(object):
 		self.subcategory= subcategory	
 		self.enum= False
 		self.allowed_values= []
+		self.default_value= default_value
 
 	def to_argopt(self):
 		""" Convert option to cmdline format """
@@ -98,7 +112,10 @@ class Option(object):
 					"subcategory": self.subcategory,
 					"enum": self.enum
 				}
-			}			
+			}
+			
+			if self.default_value is not None:
+				d[self.name]["default"] = self.default_value	
 			
 		return d
 	
@@ -290,9 +307,29 @@ class AppConfigurator(object):
 				logger.warn(self.validation_status, action="submitjob")
 				return False
 	
-			# - Skip if not given
+			# - Skip if not given, unless this is a boolean option with an explicit default value
 			if not option_given:
-				continue
+				if option.value_required:
+					continue
+
+				# - Retro-compatibility:
+				# if default_value is None, keep old behavior and skip missing bool options
+				if option.default_value is None:
+					continue
+
+				# - Boolean options must have boolean defaults
+				if not isinstance(option.default_value, bool):
+					self.validation_status= ''.join([
+						"Default value for bool option ",
+						opt_name,
+						" is not a boolean!"
+					])
+					logger.warn(self.validation_status, action="submitjob")
+					return False
+
+				# - Use the configured default as if it had been provided in job_options
+				self.job_options[opt_name]= option.default_value
+				option_given= True
 
 			# - Check if required value
 			value_required= option.value_required
@@ -384,7 +421,8 @@ class AppConfigurator(object):
 					option.description,
 					option.category,
 					option.subcategory,
-					option.advanced
+					option.advanced,
+					option.default_value
 				)
 				self.options.append(bool_option)
 
