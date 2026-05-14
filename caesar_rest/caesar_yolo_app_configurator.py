@@ -46,15 +46,19 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 		# - Describe app
 		self.description = (
 			"Run a pre-trained YOLO object detection model on astronomical radio-continuum images. "
-			"The app detects candidate radio sources and classifies them as 'spurious', 'compact', "
-			"'extended', 'extended-multisland', or 'flagged' (i.e. poorly-imaged sources). "
-			"It expects input image-like astronomical data, in either FITS or PNG format. "
+			"The app detects candidate radio sources and classifies them as: \n",
+			"- 'SPURIOUS': imaging artefacts, usually found around bright sources and with a ring-like or elongated compact morphology;\n",
+			"- 'COMPACT': single-island isolated point- or slightly resolved compact radio sources, eventually hosting one or more blended components, each with morphology resembling the synthesized beam shape;\n"
+			"- 'EXTENDED': radio sources with a single-island extended morphology, eventually hosting one or more blended components, with some deviating from the synthesized beam shape;\n"
+			"- 'EXTENDED-MULTISLAND': radio sources with an extended morphology, consisting of more (point-like or extended) islands, each one eventually hosting one or more blended components;\n"
+			"- 'FLAGGED': single-island bright radio sources, with compact or extended morphology, that are poorly imaged and cannot be separated from close imaging artefacts.\n"			
+			"The app expects input image-like astronomical data, in either FITS or PNG format. "
 			"Results are returned as a JSON catalog of detections and optional diagnostic plots."
 		)
 		
 		self.input_requirements = {
 			"supported_formats": ["fits", "png"],
-			"expected_data": "Single astronomical image suitable for source/object detection.",
+			"expected_data": "Single astronomical image suitable for source/object detection and morphology classification.",
 			"notes": [
 				"The method is most suited for radio-continuum images."
 			]

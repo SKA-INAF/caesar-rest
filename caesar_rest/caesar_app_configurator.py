@@ -47,21 +47,25 @@ class CaesarAppConfigurator(AppConfigurator):
 
 		# - Describe app
 		self.description = (
-			""
+			"Run a source finder tool on astronomical radio-continuum images. "
+			"The tool supports both point-like/compact and extended source extraction. "
+			"It also supports measurement of point-like/compact source and nested component parameters (flux density, position, extension, morphological flags) through 2D gaussian mixture fitting. "
+			"The app expects input image-like astronomical data, in either FITS or PNG format. "
 		)
 		
 		self.input_requirements = {
-			"supported_formats": ["uid", "abspath", "dataset"],
-			"expected_data": "TBD",
+			"supported_formats": ["fits"],
+			"expected_data": "Single astronomical image suitable for source detection.",
 			"notes": [
-				"TBD",
-				"TBD"
+				"The method is most suited for radio-continuum images."
 			]
 		}
 		
 		self.limitations = [
-			"TBD",
-			"TBD"
+			"Compact source detection quality depends on background estimation parameters and detection thresholds.",
+			"Extended source detection quality depends on background estimation parameters and on the extended source detection algorithm chosen."
+			"Processing of very large images (>10000 pixels) is supported but it may be computationally expensive unless the tiling and parallel run mode is activated (see options).",
+			"The app can in principle be used to detect sources in astronomical images (FITS) from other domains (e.g. optical, infrared, gamma-rays) but we anticipate sub-optimal performance as the tool was specifically tested on radio images and relative image metadata only."
 		]
 
 		# - Define dictionary with allowed options
@@ -74,65 +78,76 @@ class CaesarAppConfigurator(AppConfigurator):
 			'save-fits' : Option(
 				name='save-fits', 
 				description='Save maps in FITS format (default: ROOT format)', 
-				category='OUTPUT'
+				category='OUTPUT',
+				default_value=False
 			),
 			'save-inputmap' : Option(
 				name='save-inputmap', 
 				description='Save input map in output file', 
-				category='OUTPUT'
+				category='OUTPUT',
+				default_value=False
 			),
 			'save-bkgmap' : Option(
 				name='save-bkgmap', 
 				description='Save bkg map in output file', 
-				category='OUTPUT'
+				category='OUTPUT',
+				default_value=False
 			),
 			'save-rmsmap' : Option(
 				name='save-rmsmap', 
 				description='Save rms map in output file', 
-				category='OUTPUT'
+				category='OUTPUT',
+				default_value=False
 			),
 			'save-significancemap' : Option(
 				name='save-significancemap', 
 				description='Save significance map in output file', 
-				category='OUTPUT'
+				category='OUTPUT',
+				default_value=False
 			),
 			'save-residualmap' : Option(
 				name='save-residualmap', 
 				description='Save residual map in output file', 
-				category='OUTPUT'
+				category='OUTPUT',
+				default_value=False
 			),
 			'save-saliencymap' : Option(
 				name='save-saliencymap', 	
 				description='Save saliency map in output file', 
-				category='OUTPUT'
+				category='OUTPUT',
+				default_value=False
 			),
 			'save-segmentedmap' : Option(
 				name='save-segmentedmap', 
 				description='Save segmented map in output file', 
-				category='OUTPUT'
+				category='OUTPUT',
+				default_value=False
 			),
-			#'save-regions' : Option(
-			#	name='save-regions', 
-			#	description='Save DS9 regions', 
-			#	category='OUTPUT'
-			#),
+			'save-regions' : Option(
+				name='save-regions', 
+				description='Save DS9 regions', 
+				category='OUTPUT',
+				default_value=True
+			),
+			'save-summaryplot' : Option(
+				name='save-summaryplot', 
+				description='Save summary plot image+detections', 
+				category='OUTPUT',
+				default_value=True
+			),
+			'save-catalog-to-json' : Option(
+				name='save-catalog-to-json', 
+				description='Save catalog of detected sources in JSON format', 
+				category='OUTPUT',
+				default_value=True
+			),
 			'convertregionstowcs' : Option(
 				name='convertregionstowcs', 
 				description='Save DS9 regions in WCS format', 
 				category='OUTPUT', 
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
-			#'regionwcs' : ValueOption(
-			#	name='regionwcs',
-			#	value='',
-			#	value_type=int, 
-			#	description='DS9 region WCS output format (0=J2000,1=B1950,2=GALACTIC) (default=0)', 
-			#	category='OUTPUT', 
-			#	advanced=True,
-			#	default_value=0,
-			#	min_value=0,
-			#	max_value=2
-			#),
 			'regionwcs' : EnumValueOption(
 				name='regionwcs',
 				value='',
@@ -149,7 +164,8 @@ class CaesarAppConfigurator(AppConfigurator):
 			'read-subimg' : Option(
 				name='read-subimg', 
 				description='Read sub-image of input image in [xmin,xmax] [ymin,ymax] range (default=read full image)',
-				category='IMGREAD'
+				category='IMGREAD',
+				default_value=False
 			),
 			'xmin' : ValueOption(
 				name='xmin',
@@ -197,7 +213,8 @@ class CaesarAppConfigurator(AppConfigurator):
 				name='no-parallelmedian', 
 				description='Switch off parallel median algorithm',
 				category='IMGSTATS',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 
 			# == BKG OPTIONS ==		
@@ -248,18 +265,9 @@ class CaesarAppConfigurator(AppConfigurator):
 			'globalbkg' : Option(
 				name='globalbkg', 
 				description='Use global bkg (default: use local bkg)',
-				category='IMGBKG'	
+				category='IMGBKG',
+				default_value=False
 			),
-			#'bkgestimator' : ValueOption(
-			#	name='bkgestimator',
-			#	value='',
-			#	value_type=int, 
-			#	description='Stat estimator used for bkg (1=Mean,2=Median,3=BiWeight,4=ClippedMedian) (default=2)',
-			#	category='IMGBKG',
-			#	default_value=2,
-			#	min_value=1,
-			#	max_value=4
-			#),
 			'bkgestimator' : EnumValueOption(
 				name='bkgestimator',
 				value='',
@@ -272,7 +280,8 @@ class CaesarAppConfigurator(AppConfigurator):
 			'bkgboxpix': Option(
 				name='bkgboxpix', 
 				description='Assume box size option expressed in pixels (default: multiple of beam size)',
-				category='IMGBKG'
+				category='IMGBKG',
+				default_value=False
 			), 
 			'bkgbox' : ValueOption(
 				name='bkgbox',
@@ -298,13 +307,15 @@ class CaesarAppConfigurator(AppConfigurator):
 				name='no-bkg2ndpass', 
 				description='Do not perform a 2nd pass in bkg estimation',
 				category='IMGBKG',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'bkgskipoutliers' : Option(
 				name='bkgskipoutliers', 
 				description='Remove bkg outliers (blobs above seed thr) when estimating bkg',
 				category='IMGBKG',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'sourcebkgboxborder' : ValueOption(
 				name='sourcebkgboxborder',
@@ -322,7 +333,8 @@ class CaesarAppConfigurator(AppConfigurator):
 			'no-compactsearch' : Option(
 				name='no-compactsearch', 
 				description='Do not search compact sources',
-				category='COMPACT-SOURCES'
+				category='COMPACT-SOURCES',
+				default_value=False
 			),
 			'npixmin' : ValueOption(
 				name='npixmin',
@@ -350,7 +362,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				value_type=float, 
 				description='Merge threshold (in nsigmas) used in flood-fill algo',
 				category='COMPACT-SOURCES',
-				default_value=2.6,
+				default_value=2.5,
 				min_value=0,
 				max_value=10000
 			),
@@ -358,9 +370,9 @@ class CaesarAppConfigurator(AppConfigurator):
 				name='compactsearchiters',
 				value='',
 				value_type=int, 
-				description='Maximum number of compact source search iterations',
+				description='Maximum number of compact source search iterations. Increase this to detect more fainter sources at the cost of also detecting false sources or artefacts.',
 				category='COMPACT-SOURCES',
-				default_value=1,
+				default_value=2,
 				min_value=0,
 				max_value=100
 			),
@@ -378,15 +390,17 @@ class CaesarAppConfigurator(AppConfigurator):
 			# == COMPACT SOURCE SELECTION OPTIONS ==
 			'selectsources' : Option(
 				name='selectsources', 
-				description='Apply selection to compact sources found',
+				description='Apply selection to compact sources found. Set to true if interested in detecting point-like sources.',
 				category='COMPACT-SOURCES',
-				subcategory='SELECTION'
+				subcategory='SELECTION',
+				default_value=False
 			),
 			'no-boundingboxcut' : Option(
 				name='no-boundingboxcut', 
-				description='Do not apply bounding box cut',
+				description='If selectsources is enabled, do not apply bounding box cut',
 				category='COMPACT-SOURCES',
-				subcategory='SELECTION'
+				subcategory='SELECTION',
+				default_value=False
 			),
 			'minboundingbox' : ValueOption(
 				name='minboundingbox',
@@ -401,10 +415,11 @@ class CaesarAppConfigurator(AppConfigurator):
 			),
 			'no-circratiocut' : Option(
 				name='no-circratiocut', 
-				description='Do not apply circular ratio parameter cut',	
+				description='If selectsources is enabled, do not apply circular ratio parameter cut',	
 				category='COMPACT-SOURCES',
 				subcategory='SELECTION',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'circratiothr' : ValueOption(
 				name='circratiothr',
@@ -420,10 +435,11 @@ class CaesarAppConfigurator(AppConfigurator):
 			),
 			'no-elongationcut' : Option(
 				name='no-elongationcut', 
-				description='Do not apply elongation parameter cut',
+				description='If selectsources is enabled, do not apply elongation parameter cut',
 				category='COMPACT-SOURCES',
 				subcategory='SELECTION',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'elongationthr' : ValueOption(
 				name='elongationthr',
@@ -439,10 +455,11 @@ class CaesarAppConfigurator(AppConfigurator):
 			),
 			'ellipsearearatiocut' : Option(
 				name='ellipsearearatiocut', 
-				description='Apply ellipse area ratio parameter cut',
+				description='If selectsources is enabled, apply ellipse area ratio parameter cut',
 				category='COMPACT-SOURCES',
 				subcategory='SELECTION',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'ellipsearearatiominthr' : ValueOption(
 				name='ellipsearearatiominthr',
@@ -470,9 +487,10 @@ class CaesarAppConfigurator(AppConfigurator):
 			),
 			'maxnpixcut' : Option(
 				name='maxnpixcut', 
-				description='Apply max pixels cut (NB: source below this thr passes the point-like cut)',
+				description='If selectsources is enabled, apply max pixels cut (NB: source below this thr passes the point-like cut)',
 				category='COMPACT-SOURCES',
-				subcategory='SELECTION'
+				subcategory='SELECTION',
+				default_value=False
 			),
 			'maxnpix' : ValueOption(
 				name='maxnpix',
@@ -487,9 +505,10 @@ class CaesarAppConfigurator(AppConfigurator):
 			),
 			'no-nbeamscut' : Option(
 				name='no-nbeamscut', 
-				description='Use number of beams in source cut',
+				description='If selectsources is enabled, do not apply the cut on the number of beams contained in a source',
 				category='COMPACT-SOURCES',
-				subcategory='SELECTION'
+				subcategory='SELECTION',
+				default_value=False
 			),
 			'nbeamsthr' : ValueOption(
 				name='nbeamsthr',
@@ -498,7 +517,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='nBeams threshold (sources passes point-like cut if nBeams<thr)',
 				category='COMPACT-SOURCES',
 				subcategory='SELECTION',
-				default_value=3,
+				default_value=10,
 				min_value=0.,
 				max_value=1000.
 			),
@@ -507,21 +526,11 @@ class CaesarAppConfigurator(AppConfigurator):
 			# == COMPACT NESTED SOURCE OPTIONS ==
 			'no-nestedsearch' : Option(
 				name='no-nestedsearch', 
-				description='Do not search nested sources',
+				description='Do not search for sources nested inside the sources previously extracted with the iterative flood-fill detection method.',
 				category='COMPACT-SOURCES',
-				subcategory='NESTED-SOURCES'
+				subcategory='NESTED-SOURCES',
+				default_value=True
 			),
-			#'blobmaskmethod' : ValueOption(
-			#	name='blobmaskmethod',
-			#	value='',
-			#	value_type=int, 
-			#	description='Blob mask method (1=gaus smooth+Laplacian,2=multi-scale LoG) (default=2)',
-			#	category='COMPACT-SOURCES',
-			#	subcategory='NESTED-SOURCES',
-			#	default_value=2,
-			#	min_value=1,
-			#	max_value=2
-			#),
 			'blobmaskmethod' : EnumValueOption(
 				name='blobmaskmethod',
 				value='',
@@ -540,7 +549,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='Source area/beam thr to add nested sources (e.g. npix>thr*beamArea). NB: thr=0 means always if searchNestedSources is enabled',
 				category='COMPACT-SOURCES',
 				subcategory='NESTED-SOURCES',
-				default_value=5.,
+				default_value=10.,
 				min_value=0.,
 				max_value=1000000.
 			),
@@ -651,29 +660,19 @@ class CaesarAppConfigurator(AppConfigurator):
 			# == SOURCE FITTING OPTIONS ==
 			'fitsources' : Option(
 				name='fitsources', 
-				description='Fit compact point-like sources found',
+				description='Fit compact point-like sources found. Enable this option for measuring compact source parameters (flux, position, extension).',
 				category='COMPACT-SOURCES',
-				subcategory='FITTING'
+				subcategory='FITTING',
+				default_value=False
 			),
 			'fit-usethreads' : Option(
 				name='fit-usethreads', 
 				description='Enable multithread in source fitting (NB: use Minuit2 minimizer if enabled)',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				advanced=True
+				advanced=True,
+				default_value=True # False previously
 			),
-			#'fit-minimizer' : ValueOption(
-			#	name='fit-minimizer',
-			#	value='',
-			#	value_type=str, 
-			#	description='Fit minimizer {Minuit,Minuit2} (default=Minuit2)',
-			#	category='COMPACT-SOURCES',
-			#	subcategory='FITTING',
-			#	advanced=True,
-			#	default_value='Minuit2',
-			#	min_value='',
-			#	max_value=''
-			#),
 			'fit-minimizer' : EnumValueOption(
 				name='fit-minimizer',
 				value='',
@@ -685,18 +684,6 @@ class CaesarAppConfigurator(AppConfigurator):
 				default_value='Minuit2',
 				allowed_values=['Minuit','Minuit2']
 			),
-			#'fit-minimizeralgo' : ValueOption(
-			#	name='fit-minimizeralgo',
-			#	value='',
-			#	value_type=str, 
-			#	description='Fit minimizer algo {migrad,simplex,minimize,scan,fumili (Minuit2)} (default=minimize)',
-			#	category='COMPACT-SOURCES',
-			##	subcategory='FITTING',
-			#	advanced=True,
-			#	default_value='minimize',
-			#	min_value='',
-			#	max_value=''
-			#),
 			'fit-minimizeralgo' : EnumValueOption(
 				name='fit-minimizeralgo',
 				value='',
@@ -708,7 +695,6 @@ class CaesarAppConfigurator(AppConfigurator):
 				default_value='minimize',
 				allowed_values=['migrad','simplex','minimize','scan','fumili']
 			),
-
 			'fit-printlevel' : ValueOption(
 				name='fit-printlevel',
 				value='',
@@ -740,7 +726,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='Maximum number of beams for fitting if compact source',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				default_value=20,
+				default_value=100,
 				min_value=0,
 				max_value=100000
 			),
@@ -748,7 +734,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				name='fit-maxcomponents',
 				value='',
 				value_type=int, 
-				description='Maximum number of components fitted in a blob',
+				description='Maximum number of components fitted in a blob. Reduce it to limit spurious components when fitting diffuse/extended sources.',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
 				default_value=3,
@@ -760,31 +746,35 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='Initialize fit components to nested sources found in source',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'fit-freebkg' : Option(
 				name='fit-freebkg', 
 				description='Fit with bkg offset parameter free to vary',
 				category='COMPACT-SOURCES',
-				subcategory='FITTING'
+				subcategory='FITTING',
+				default_value=False
 			),
 			'fit-estimatedbkg' : Option(
 				name='fit-estimatedbkg', 
-				description='Set bkg par starting value to estimated bkg (average over source pixels by default, box around source if --fit-estimatedboxbkg is given) (default: use fixed bkg start value)',
+				description='Set bkg par starting value to the estimated bkg (average over source pixels by default, box around source if --fit-usebkgboxestimate is given)',
 				category='COMPACT-SOURCES',
-				subcategory='FITTING'
+				subcategory='FITTING',
+				default_value=True # previously set to False
 			),
 			'fit-usebkgboxestimate' : Option(
 				name='fit-usebkgboxestimate', 
-				description='Set bkg par starting value to estimated bkg (from box around source)',
+				description='Set bkg par starting value to the estimated bkg in a box around source',
 				category='COMPACT-SOURCES',
-				subcategory='FITTING'
+				subcategory='FITTING',
+				default_value=False
 			),
 			'fit-bkg' : ValueOption(
 				name='fit-bkg',
 				value='',
 				value_type=float, 
-				description='Bkg par starting value (NB: ineffective when -fit-estimatedbkg is enabled)',
+				description='Bkg par starting value (NB: ineffective when --fit-estimatedbkg is enabled)',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
 				default_value=0.,
@@ -798,16 +788,17 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='Limit amplitude range par (Speak*(1+-FIT_AMPL_LIMIT))',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				default_value=0.3,
+				default_value=0.5,
 				min_value=0.,
 				max_value=2.
 			),
 			'prefit-freeampl' : Option(
 				name='prefit-freeampl', 	
-				description='Set free amplitude par in pre-fit',
+				description='Set amplitude as free par in pre-fit. If false, keep it fixed.',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'fit-sigmalimit' : ValueOption(
 				name='fit-sigmalimit',
@@ -816,7 +807,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='Gaussian sigma limit around psf or beam (Bmaj*(1+-FIT_SIGMA_LIMIT))',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				default_value=0.3,
+				default_value=0.5,
 				min_value=0.,
 				max_value=2.
 			),
@@ -827,7 +818,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='Gaussian theta limit around psf or beam in degrees (e.g. Bpa +- FIT_THETA_LIMIT)',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				default_value=90.,
+				default_value=360.,
 				min_value=0.,
 				max_value=360.
 			),
@@ -835,25 +826,29 @@ class CaesarAppConfigurator(AppConfigurator):
 				name='fit-nobkglimits', 
 				description='Do not apply limits in bkg offset parameter in fit',
 				category='COMPACT-SOURCES',
-				subcategory='FITTING'
+				subcategory='FITTING',
+				default_value=False
 			),
 			'fit-noampllimits' : Option(
 				name='fit-noampllimits', 
 				description='Do not apply limits in Gaussian amplitude parameters in fit',
 				category='COMPACT-SOURCES',
-				subcategory='FITTING'
+				subcategory='FITTING',
+				default_value=False
 			),
 			'fit-nosigmalimits' : Option(
 				name='fit-nosigmalimits', 
 				description='Do not apply limits in Gaussian sigma parameters in fit',
 				category='COMPACT-SOURCES',
-				subcategory='FITTING'
+				subcategory='FITTING',
+				default_value=False
 			),
 			'fit-noposlimits' : Option(
 				name='fit-noposlimits', 
 				description='Do not apply limits in Gaussian mean parameters in fit',
 				category='COMPACT-SOURCES',
-				subcategory='FITTING'
+				subcategory='FITTING',
+				default_value=False
 			),
 			'fit-poslimit' : ValueOption(
 				name='fit-poslimit',
@@ -868,9 +863,10 @@ class CaesarAppConfigurator(AppConfigurator):
 			),
 			'prefit-freepos' : Option(
 				name='prefit-freepos', 
-				description='Set free centroid pars in pre-fit (default: fixed)',
+				description='Set centroid as a free par in pre-fit. If False, keep it fixed.',
 				category='COMPACT-SOURCES',
-				subcategory='FITTING'
+				subcategory='FITTING',
+				default_value=False
 			),
 			'fit-nothetalimits' : Option(
 				name='fit-nothetalimits', 
@@ -883,28 +879,32 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='Fit with sigma parameters fixed to start value (beam bmaj/bmin) (default: fit with sigma free and constrained)',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'prefit-fixsigma' : Option(
 				name='prefit-fixsigma', 
-				description='Fix sigma parameters in pre-fit (default: free)',
+				description='Fix sigma parameters in pre-fit. If False, keep them free.',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'fit-fixtheta' : Option(
 				name='fit-fixtheta', 
 				description='Fit with theta parameters fixed to start value (beam bpa) (default: fit with theta free and constrained)',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'prefit-fixtheta' : Option(
 				name='prefit-fixtheta', 
-				description='Fix theta parameter in pre-fit (default: free)',
+				description='Fix theta parameter in pre-fit. If False, keep it free.',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'fit-peakminkern' : ValueOption(
 				name='fit-peakminkern',
@@ -985,7 +985,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
 				advanced=True,
-				default_value=10000,
+				default_value=1000000,
 				min_value=0,
 				max_value=1000000
 			),
@@ -994,14 +994,16 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='Do not use iterative fitting to try to achieve fit convergence',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'fit-noretry' : Option(
 				name='fit-noretry', 
 				description='Do not iteratively retry fit with less components in case of failed convergence',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'fit-nretries' : ValueOption(
 				name='fit-nretries',
@@ -1011,7 +1013,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
 				advanced=True,
-				default_value=10,
+				default_value=100,
 				min_value=0,
 				max_value=100000
 			),
@@ -1032,20 +1034,23 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='Run final minimizer step (e.g. HESS) to improve fit error estimates',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',	
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'fit-scaledatatomax' : Option(
 				name='fit-scaledatatomax', 
 				description='Scale source data to max pixel flux for fitting. Otherwise scale to mJy.',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'fit-nochi2cut' : Option(
 				name='fit-nochi2cut', 
 				description='Do not apply reduced chi2 cut to fitted sources',
 				category='COMPACT-SOURCES',
-				subcategory='FITTING'
+				subcategory='FITTING',
+				default_value=False
 			),
 			'fit-chi2cut' : ValueOption(
 				name='fit-chi2cut',
@@ -1063,19 +1068,22 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='Apply ellipse cuts to fitted sources',
 				category='COMPACT-SOURCES',
 				subcategory='FITTING',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 
 			# == SOURCE RESIDUAL OPTIONS ==
 			'computeresiduals' : Option(
 				name='computeresiduals', 
 				description='Compute compact source residual map (after compact source search)',
-				category='IMGRES'
+				category='IMGRES',
+				default_value=False
 			),
 			'res-removenested' : Option(
 				name='res-removenested', 
 				description='When a source has nested sources, perform the source removal only on nested sources',
-				category='IMGRES'
+				category='IMGRES',
+				default_value=False
 			),
 			'res-zthr' : ValueOption(
 				name='res-zthr',
@@ -1107,16 +1115,6 @@ class CaesarAppConfigurator(AppConfigurator):
 				min_value=1,
 				max_value=1001
 			),
-			#'res-removedsourcetype' : ValueOption(
-			#	name='res-removedsourcetype',
-			#	value='',
-			#	value_type=int, 
-			#	description='Type of source dilated from the input image (-1=ALL,1=COMPACT,2=POINT-LIKE,3=EXTENDED) (default=2)',
-			#	category='IMGRES',
-			#	default_value=2,
-			#	min_value=-1,
-			#	max_value=3
-			#),
 			'res-removedsourcetype' : EnumValueOption(
 				name='res-removedsourcetype',
 				value='',
@@ -1126,16 +1124,6 @@ class CaesarAppConfigurator(AppConfigurator):
 				default_value='POINT-LIKE',
 				allowed_values=['ALL','COMPACT','POINT-LIKE','EXTENDED']
 			),
-			#'res-pssubtractionmethod' : ValueOption(
-			#	name='res-pssubtractionmethod',
-			#	value='',
-			#	value_type=int, 
-			#	description='Method used to subtract point-sources in residual map (1=DILATION, 2=FIT MODEL REMOVAL)',
-			#	category='IMGRES',
-			#	default_value=1,
-			#	min_value=1,
-			#	max_value=2
-			#),
 			'res-pssubtractionmethod' : EnumValueOption(
 				name='res-pssubtractionmethod',
 				value='',
@@ -1148,25 +1136,17 @@ class CaesarAppConfigurator(AppConfigurator):
 			'res-bkgaroundsource': Option(
 				name='res-bkgaroundsource', 
 				description='Use bkg computed around source rather than the one computed using the global/local bkg map (default=false)',	
-				category='IMGRES'
+				category='IMGRES',
+				default_value=False
 			),
 
 			# == SMOOTHING FILTER OPTIONS ==
 			'no-presmoothing' : Option(	
 				name='no-presmoothing', 
 				description='Do not smooth input/residual map before extended source search',
-				category='IMGSMOOTH'
+				category='IMGSMOOTH',
+				default_value=False
 			),
-			#'smoothfilter' : ValueOption(
-			#	name='smoothfilter',
-			#	value='',
-			#	value_type=int, 
-			#	description='Smoothing filter to be used (1=gaussian, 2=guided filter) (default=2)',
-			#	category='IMGSMOOTH',
-			#	default_value=2,
-			#	min_value=1,
-			#	max_value=2
-			#),
 			'smoothfilter' : EnumValueOption(
 				name='smoothfilter',
 				value='',
@@ -1200,19 +1180,10 @@ class CaesarAppConfigurator(AppConfigurator):
 			# == EXTENDED SOURCE SEARCH OPTIONS ==
 			'no-extendedsearch' : Option(
 				name='no-extendedsearch', 
-				description='Do not search extended sources',
-				category='EXTENDED-SOURCES'
+				description='Do not search extended sources. If True, extended sources are searched with --extsfinder selected method',
+				category='EXTENDED-SOURCES',
+				default_value=False
 			),
-			#'extsfinder' : ValueOption(
-			#	name='extsfinder',
-			#	value='',
-			#	value_type=int, 
-			#	description='Extended source search method {1=WT-thresholding,2=SPSegmentation,3=ActiveContour,4=Saliency thresholding} (default=4)',	
-			#	category='EXTENDED-SOURCES',
-			#	default_value=4,
-			#	min_value=1,
-			#	max_value=4
-			#),
 			'extsfinder' : EnumValueOption(
 				name='extsfinder',
 				value='',
@@ -1222,16 +1193,6 @@ class CaesarAppConfigurator(AppConfigurator):
 				default_value='SALIENCY-THRESH',
 				allowed_values=['WT-THRESH','SP-HIERCLUST','ACTIVE-CONTOUR','SALIENCY-THRESH']
 			),
-			#'activecontour' : ValueOption(
-			#	name='activecontour',
-			#	value='',
-			#	value_type=int, 
-			#	description='Active contour method {1=Chanvese, 2=LRAC} (default=1)',
-			#	category='EXTENDED-SOURCES',
-			#	default_value=1,
-			#	min_value=1,
-			#	max_value=2
-			#),
 			'activecontour' : EnumValueOption(
 				name='activecontour',
 				value='',
@@ -1343,20 +1304,23 @@ class CaesarAppConfigurator(AppConfigurator):
 				description='Use bkg map in saliency computation',
 				category='EXTENDED-SOURCES',
 				subcategory='SALIENCY',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'saliency-usermsmap' : Option(
 				name='saliency-usermsmap', 
 				description='Use noise map in saliency computation',
 				category='EXTENDED-SOURCES',
 				subcategory='SALIENCY',
-				advanced=True
+				advanced=True,
+				default_value=False
 			),
 			'saliency-userobustpars' : Option(
 				name='saliency-userobustpars', 
 				description='Use robust pars in saliency computation',
 				category='EXTENDED-SOURCES',
-				subcategory='SALIENCY'
+				subcategory='SALIENCY',
+				default_value=False
 			),
 
 			# == ACTIVE-CONTOUR MAIN OPTIONS ==
@@ -1371,17 +1335,6 @@ class CaesarAppConfigurator(AppConfigurator):
 				min_value=1,
 				max_value=100000
 			),
-			#'ac-levelset' : ValueOption(
-			#	name='ac-levelset',
-			#	value='',
-			#	value_type=int,
-			#	description='Init level set method in active-contour algorithms (1=circle,2=checkerboard,3=saliency) (default=1)',
-			#	category='EXTENDED-SOURCES',
-			#	subcategory='ACTIVE-CONTOUR',
-			#	default_value=1,
-			#	min_value=1,
-			#	max_value=3
-			#),
 			'ac-levelset' : EnumValueOption(
 				name='ac-levelset',
 				value='',
@@ -1543,28 +1496,6 @@ class CaesarAppConfigurator(AppConfigurator):
 			),
 
 			# == RUN OPTIONS ==
-			#'run' : Option('run', description='Run the generated run script on the local shell. If disabled only run script will be generated for later run',category='RUN'),
-			#'envfile' : ValueOption('envfile','',str, description='File (.sh) with list of environment variables to be loaded by each processing node',category='RUN'),
-			#'maxfiles' : ValueOption('maxfiles','',int, description='Maximum number of input files processed in filelist (default=-1=all files)',category='RUN'),
-			#'addrunindex' : Option('addrunindex', description='Append a run index to submission script (in case of list execution) (default=no)',category='RUN'),
-			#'jobdir' : ValueOption('jobdir','',str, description='Job directory where to run (default=pwd)',category='RUN'),			
-			#'outdir' : ValueOption('outdir','',str, description='Output directory where to put run output file (default=pwd)',category='RUN'),
-			#'mpioptions' : ValueOption('mpioptions','',str, description='Options to be passed to MPI (e.g. --bind-to {none,hwthread, core, l1cache, l2cache, l3cache, socket, numa, board}) (default=none)',category='RUN'),
-			#'hostfile' : ValueOption('hostfile','',str, description='Ascii file with list of hosts used by MPI (default=no hostfile used)',category='RUN'),
-			#'containerrun' : Option('containerrun', description='Run inside Caesar container',category='RUN'),
-			#'containerimg' : ValueOption('containerimg','',str, description='Singularity container image file (.simg) with CAESAR installed software',category='RUN'),
-			#'containeroptions' : ValueOption('containeroptions','',str, description='Options to be passed to container run (e.g. -B /home/user:/home/user) (default=none)',category='RUN'),
-
-			#'loglevel' : ValueOption(
-			#	name='loglevel',
-			#	value='',
-			#	value_type=str, 
-			#	description='Logging level string {INFO, DEBUG, WARN, ERROR, OFF} (default=INFO)',
-			#	category='RUN',
-			#	default_value='INFO',
-			#	min_value='',
-			#	max_value=''
-			#),
 			'loglevel' : EnumValueOption(
 				name='loglevel',
 				value='',
@@ -1576,13 +1507,15 @@ class CaesarAppConfigurator(AppConfigurator):
 			),
 			'no-logredir' : Option(
 				name='no-logredir', 
-				description='Do not redirect logs to output file in script',
-				category='RUN'
+				description='Do not redirect logs to output file in script. If True, no log file produced and returned as output product (only internal Slurm log)',
+				category='RUN',
+				default_value=False
 			),
 			'no-mpi' : Option(
 				name='no-mpi', 
-				description='Disable MPI run (even with 1 proc)',
-				category='RUN'
+				description='Disable MPI run. If False, MPI is used (even with 1 proc).',
+				category='RUN',
+				default_value=True
 			),
 			'nproc' : ValueOption(
 				name='nproc',
@@ -1606,20 +1539,14 @@ class CaesarAppConfigurator(AppConfigurator):
 			),
 			
 			# == SFINDER SUBMISSION OPTIONS ==
-			#'submit' : Option('submit', description='Submit the script to the batch system using queue specified. Takes precedence over local run.',category='RUN'),
-			#'batchsystem' : ValueOption('batchsystem','',str, description='Name of batch system. Valid choices are {PBS,SLURM} (default=PBS)',category='RUN'),
-			#'queue' : ValueOption('queue','',str, description='Name of queue in batch system',category='RUN'),
-			#'jobwalltime' : ValueOption('jobwalltime','',str, description='Job wall time in batch system (default=96:00:00)',category='RUN'),
-			#'jobcpus' : ValueOption('jobcpus','',int, description='Number of cpu per node requested for the job (default=1)',category='RUN'),
-			#'jobnodes' : ValueOption('jobnodes','',int, description='Number of nodes requested for the job (default=1)',category='RUN'),
-			#'jobmemory' : ValueOption('jobmemory','',float, description='Memory in GB required for the job (default=4)',category='RUN'),
-			#'jobusergroup' : ValueOption('jobusergroup','',str, description='Name of job user group batch system (default=empty)',category='RUN'),
-
+			# --> NOT EXPOSED THROUGH THE API
+			
 			# == PARALLEL PROCESSING OPTIONS ==
 			'tilesplit' : Option(
 				name='tilesplit', 
 				description='Partition input image in tiles and perform distributed processing (default=no tile split)',
-				category='RUN'
+				category='RUN',
+				default_value=False
 			),
 			'tilesize' : ValueOption(
 				name='tilesize',
@@ -1644,12 +1571,14 @@ class CaesarAppConfigurator(AppConfigurator):
 			'mergeedgesources' : Option(
 				name='mergeedgesources', 
 				description='Merge sources at tile edges. NB: Used for multitile processing',
-				category='RUN'
+				category='RUN',
+				default_value=True
 			),
 			'no-mergesources' : Option(
 				name='no-mergesources', 
-				description='Disable source merging in each tile',
-				category='RUN'
+				description='If True, disable source merging in each tile',
+				category='RUN',
+				default_value=True
 			),
 
 
