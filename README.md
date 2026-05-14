@@ -72,7 +72,8 @@ Apps are run as Docker (Kuberneter deploy) or Singularity (Slurm deploy) contain
 * `aegean` source finder job: `docker://sriggi/aegean-job`
 * `cutex` source finder job: `docker://sriggi/cutex-job`
 * `mrcnn` object detector (TensorFlow 1.x): `docker://sriggi/mrcnn-detect`
-* `classifier-cnn` image classifier (TensorFlow 2.x): `docker://sriggi/cnn-classifier`
+* `classifier-cnn` CNN image classifier (TensorFlow 2.x): `docker://sriggi/cnn-classifier`
+* `classifier-vit` ViT image classifier (PyTorch 2.x + Transformers): `docker://sriggi/vit-classifier`
 * `umap` dimensionality reduction: `docker://sriggi/umap-job`  
 * `outlier-finder` with Isolation Forest: `docker://sriggi/outlier-finder-job`   
 * `hdbscan` cluster search: `docker://sriggi/hdbscan-job`
@@ -308,6 +309,7 @@ where supported `ARGS` are:
    * `cutex_container`: Path to cutex job Singularity container (default=/opt/containers/cutex/cutex-job_latest.sif)
    * `mrcnn_container`: Path to caesar-mrcnn job Singularity container (default=/opt/containers/mrcnn/mrcnn-detect_latest.sif)
    * `cnn_classifier_container`: Path to CNN classifier Singularity container (default=/opt/containers/sclassifier/cnn-classifier_latest.sif)
+   * `vit_classifier_container`: Path to VIT classifier Singularity container (default=/opt/containers/sclassifier-vit/vit-classifier_latest.sif)
    * `umap_container`: Path to UMAP Singularity container (default=/opt/containers/sclassifier/umap_latest.sif)
    * `outlier_finder_container`: Path to OutlierFinder Singularity container (default=/opt/containers/sclassifier/outlier_finder_latest.sif)
    * `hdbscan_container`: Path to HDBSCAN Singularity container (default=/opt/containers/sclassifier/hdbscan_latest.sif)
@@ -603,6 +605,7 @@ Server response contains a list of valid apps that can be queried for further de
     "aegean",
     "cutex",
     "classifier-cnn",
+    "classifier-vit",
     "featextractor-simclr",
     "umap",
     "outlier-finder",

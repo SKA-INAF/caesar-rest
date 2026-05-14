@@ -36,9 +36,9 @@ from caesar_rest import logger
 class MaskRCNNAppConfigurator(AppConfigurator):
 	""" Class to configure Mask-RCNN source finder application """
 
-	def __init__(self):
+	def __init__(self, app_name="caesar-mrcnn"):
 		""" Return Mask-RCNN configurator class """
-		AppConfigurator.__init__(self)
+		AppConfigurator.__init__(self, app_name=app_name)
 
 		# - Define cmd name
 		self.weights= current_app.config['MASKRCNN_WEIGHTS'] 
@@ -47,6 +47,25 @@ class MaskRCNNAppConfigurator(AppConfigurator):
 		#self.cmd_mode= ''
 		self.batch_processing_support= False
 
+		# - Describe app
+		self.description = (
+			""
+		)
+		
+		self.input_requirements = {
+			"supported_formats": ["uid", "abspath", "dataset"],
+			"expected_data": "TBD",
+			"notes": [
+				"TBD",
+				"TBD"
+			]
+		}
+		
+		self.limitations = [
+			"TBD",
+			"TBD"
+		]
+		
 		# - Define dictionary with allowed options
 		self.valid_options= {
 			#'image' : ValueOption('image','',str,True, description='Path to input image (.fits) to be given to classifier (default=empty)'),
@@ -74,6 +93,11 @@ class MaskRCNNAppConfigurator(AppConfigurator):
 			),
 		
 		} # close dict
+	
+		# - Define dictionary with job outputs produced
+		self.job_outputs= {
+		
+		}
 	
 		# - Define option value transformers
 		#self.option_value_transformer= {

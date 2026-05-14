@@ -45,7 +45,7 @@ from caesar_rest import logger
 ##############################
 #   CREATE BLUEPRINT
 ##############################
-#ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'fits'])
+#ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'fits', 'json'])
 
 def allowed_file(filename):
 	#return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -102,7 +102,7 @@ def upload_file():
 		return make_response(jsonify(res),400)
 		
 	if not allowed_file(f.filename):
-		errmsg= "File format not allowed, allowed file types are: {png|jpg|jpeg|gif|fits}"
+		errmsg= "File format not allowed, allowed file types are: {png|jpg|jpeg|gif|fits|json}"
 		flash(errmsg)
 		logger.warn(errmsg, action="upload", user=username)
 		res['status']= errmsg

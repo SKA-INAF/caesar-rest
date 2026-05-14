@@ -27,11 +27,13 @@ from caesar_rest.mrcnn_app_configurator import MaskRCNNAppConfigurator
 from caesar_rest.aegean_app_configurator import AegeanAppConfigurator
 from caesar_rest.cutex_app_configurator import CutexAppConfigurator
 from caesar_rest.cnn_classifier_app_configurator import CNNClassifierAppConfigurator
+from caesar_rest.vit_classifier_app_configurator import ViTClassifierAppConfigurator
 from caesar_rest.simclr_app_configurator import SimCLRFeatExtractorAppConfigurator
 from caesar_rest.umap_app_configurator import UMAPAppConfigurator
 from caesar_rest.outlier_finder_app_configurator import OutlierFinderAppConfigurator
 from caesar_rest.hdbscan_app_configurator import HDBSCANAppConfigurator
 from caesar_rest.simsearch_app_configurator import SimilaritySearchAppConfigurator
+from caesar_rest.caesar_yolo_app_configurator import CaesarYoloAppConfigurator
 
 # Get logger
 from caesar_rest import logger
@@ -47,15 +49,17 @@ class JobConfigurator(object):
 
 		self.app_configurators= {
 			'caesar': CaesarAppConfigurator,
-			'mrcnn': MaskRCNNAppConfigurator,
 			'aegean': AegeanAppConfigurator,
 			'cutex': CutexAppConfigurator,
 			'classifier-cnn': CNNClassifierAppConfigurator,
+			'classifier-vit': ViTClassifierAppConfigurator,
 			'featextractor-simclr': SimCLRFeatExtractorAppConfigurator,
 			'umap': UMAPAppConfigurator,
 			'outlier-finder': OutlierFinderAppConfigurator,
 			'hdbscan': HDBSCANAppConfigurator,
 			'similarity-search': SimilaritySearchAppConfigurator,
+			'caesar-mrcnn': MaskRCNNAppConfigurator,
+			'caesar-yolo': CaesarYoloAppConfigurator,
 		}
 		
 		
@@ -70,7 +74,8 @@ class JobConfigurator(object):
 			return (None,None,msg,None)
 
 		# - Create an instance of app configurator
-		configurator= self.app_configurators[app_name]()
+		#configurator= self.app_configurators[app_name]()
+		configurator= self.app_configurators[app_name](app_name=app_name)
 		
 		status= configurator.validate(job_options, data_inputs)
 		if not status:
@@ -98,7 +103,8 @@ class JobConfigurator(object):
 			return None
 
 		# - Create an instance of app configurator
-		configurator= self.app_configurators[app_name]()
+		#configurator= self.app_configurators[app_name]()
+		configurator= self.app_configurators[app_name](app_name=app_name)
 
 		# - Get description
 		d= configurator.describe_dict()	
@@ -128,7 +134,8 @@ class JobConfigurator(object):
 			return None
 
 		# - Create an instance of app configurator
-		configurator= self.app_configurators[app_name]()
+		#configurator= self.app_configurators[app_name]()
+		configurator= self.app_configurators[app_name](app_name=app_name)
 
 		# - Get flag
 		flag= configurator.batch_processing_support

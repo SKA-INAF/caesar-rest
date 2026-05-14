@@ -129,10 +129,12 @@ def get_args():
 	parser.add_argument('-cutex_container','--cutex_container', dest='cutex_container', default='/opt/containers/cutex/cutex-job_latest.sif', required=False, type=str, help='Path to cutex job Singularity container (default=/opt/containers/cutex/cutex-job_latest.sif)')
 	parser.add_argument('-mrcnn_container','--mrcnn_container', dest='mrcnn_container', default='/opt/containers/mrcnn/mrcnn-detect_latest.sif', required=False, type=str, help='Path to caesar-mrcnn job Singularity container (default=/opt/containers/mrcnn/mrcnn-detect_latest.sif)')
 	parser.add_argument('-cnn_classifier_container','--cnn_classifier_container', dest='cnn_classifier_container', default='/opt/containers/sclassifier/cnn-classifier_latest.sif', required=False, type=str, help='Path to CNN classifier Singularity container (default=/opt/containers/sclassifier/cnn-classifier_latest.sif)')
+	parser.add_argument('-vit_classifier_container','--vit_classifier_container', dest='vit_classifier_container', default='/opt/containers/sclassifier-vit/vit-classifier_latest.sif', required=False, type=str, help='Path to VIT classifier Singularity container (default=/opt/containers/sclassifier/cnn-classifier_latest.sif)')
 	parser.add_argument('-umap_container','--umap_container', dest='umap_container', default='/opt/containers/sclassifier/umap_latest.sif', required=False, type=str, help='Path to UMAP Singularity container (default=/opt/containers/sclassifier/umap_latest.sif)')
 	parser.add_argument('-outlier_finder_container','--outlier_finder_container', dest='outlier_finder_container', default='/opt/containers/sclassifier/outlier_finder_latest.sif', required=False, type=str, help='Path to OutlierFinder Singularity container (default=/opt/containers/sclassifier/outlier_finder_latest.sif)')
 	parser.add_argument('-hdbscan_container','--hdbscan_container', dest='hdbscan_container', default='/opt/containers/sclassifier/hdbscan_latest.sif', required=False, type=str, help='Path to HDBSCAN Singularity container (default=/opt/containers/sclassifier/hdbscan_latest.sif)')
 	parser.add_argument('-simsearch_container','--simsearch_container', dest='simsearch_container', default='/opt/containers/sclassifier/similarity-search_latest.sif', required=False, type=str, help='Path to Similarity Search Singularity container (default=/opt/containers/sclassifier/similarity-search_latest.sif)')
+	parser.add_argument('-caesar_yolo_container','--caesar_yolo_container', dest='caesar_yolo_container', default='/opt/containers/caesar-yolo/caesar-yolo-job_latest.sif', required=False, type=str, help='Path to CAESAR-YOLO Singularity container (default=/opt/containers/caesar-yolo/caesar-yolo-job_latest.sif)')
 	
 	# - Dataset options
 	parser.add_argument('-dataset_smgps','--dataset_smgps', dest='dataset_smgps', default='', required=False, type=str, help='Path to smgps dataset json filelist')
@@ -281,11 +283,13 @@ caesar_container= args.caesar_container
 aegean_container= args.aegean_container
 cutex_container= args.cutex_container
 mrcnn_container= args.mrcnn_container
-cnn_classifier_container= args.cnn_classifier_container	
+cnn_classifier_container= args.cnn_classifier_container
+vit_classifier_container= args.vit_classifier_container	
 umap_container= args.umap_container
 outlier_finder_container= args.outlier_finder_container
 hdbscan_container= args.hdbscan_container
 simsearch_container= args.simsearch_container
+caesar_yolo_container= args.caesar_yolo_container
 
 # - Dataset options
 dataset_smgps= args.dataset_smgps
@@ -359,10 +363,12 @@ config.SLURM_AEGEAN_JOB_IMAGE= aegean_container
 config.SLURM_CUTEX_JOB_IMAGE= cutex_container
 config.SLURM_MASKRCNN_JOB_IMAGE= mrcnn_container
 config.SLURM_CNN_CLASSIFIER_JOB_IMAGE= cnn_classifier_container
+config.SLURM_VIT_CLASSIFIER_JOB_IMAGE= vit_classifier_container
 config.SLURM_UMAP_JOB_IMAGE= umap_container
 config.SLURM_OUTLIER_FINDER_JOB_IMAGE= outlier_finder_container
 config.SLURM_HDBSCAN_JOB_IMAGE= hdbscan_container
 config.SLURM_SIMSEARCH_JOB_IMAGE= simsearch_container
+config.SLURM_CAESAR_YOLO_JOB_IMAGE= caesar_yolo_container
 
 # - Create data manager (DEPRECATED BY MONGO)
 ##logger.info("Creating data manager ...")

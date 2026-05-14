@@ -31,7 +31,7 @@ class Config(object):
 	# - Additional options
 	JOB_DIR= '/opt/caesar-rest/jobs'
 	MODEL_DIR= '/opt/caesar-rest/models'
-	UPLOAD_ALLOWED_FILE_FORMATS= set(['png', 'jpg', 'jpeg', 'gif', 'fits'])
+	UPLOAD_ALLOWED_FILE_FORMATS= set(['png', 'jpg', 'jpeg', 'gif', 'fits', 'json'])
 	JOB_MONITORING_PERIOD= 5 # in seconds
 
 	JOB_SCHEDULER= 'celery' # Options are: {'celery','kubernetes','slurm'}
@@ -65,10 +65,12 @@ class Config(object):
 	SLURM_AEGEAN_JOB_IMAGE= '/opt/containers/aegean/aegean-job_latest.sif'
 	SLURM_CUTEX_JOB_IMAGE= '/opt/containers/cutex/cutex-job_latest.sif'
 	SLURM_CNN_CLASSIFIER_JOB_IMAGE= '/opt/containers/sclassifier/cnn-classifier_latest.sif'
+	SLURM_VIT_CLASSIFIER_JOB_IMAGE= '/opt/containers/sclassifier-vit/vit-classifier_latest.sif'
 	SLURM_UMAP_JOB_IMAGE= '/opt/containers/sclassifier/umap_latest.sif'
 	SLURM_OUTLIER_FINDER_JOB_IMAGE= '/opt/containers/sclassifier/outlier_finder_latest.sif'
 	SLURM_HDBSCAN_JOB_IMAGE= '/opt/containers/sclassifier/hdbscan_latest.sif'
-	SLURM_SIMSEARCH_JOB_IMAGE= '/opt/containers/sclassifier/similarity-search_latest.sif'	
+	SLURM_SIMSEARCH_JOB_IMAGE= '/opt/containers/sclassifier/similarity-search_latest.sif'
+	SLURM_CAESAR_YOLO_JOB_IMAGE= '/opt/containers/caesar-yolo/caesar-yolo-job_latest.sif'	
 	SLURM_MAX_CORE_PER_JOB= 4 # Maximum number of cores reserved for a job
 	
 	# - AAI options
@@ -97,8 +99,11 @@ class Config(object):
 	# - CUTEX app options
 	CUTEX_JOB_IMAGE= 'sriggi/cutex-job:latest'
 	
-	# - IMAGE CLASSIFIER app options
+	# - IMAGE CNN CLASSIFIER app options
 	CNN_CLASSIFIER_JOB_IMAGE= 'sriggi/cnn-classifier:latest'
+	
+	# - IMAGE ViT CLASSIFIER app options
+	VIT_CLASSIFIER_JOB_IMAGE= 'sriggi/vit-classifier:latest'
 	
 	# - UMAP app options
 	UMAP_JOB_IMAGE= 'sriggi/umap:latest'
@@ -111,6 +116,9 @@ class Config(object):
 	
 	# - SIM SEARCH app options
 	SIMSEARCH_JOB_IMAGE= 'sriggi/similarity-search:latest'
+	
+	# - CAESAR-YOLO app options
+	CAESAR_YOLO_JOB_IMAGE= 'sriggi/caesar-yolo-job:latest'
 	
 	# - DATASET app options
 	#   NB: paths are to be configured at app deployment phase.

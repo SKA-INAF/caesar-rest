@@ -11,6 +11,8 @@ import time
 import datetime
 import numpy as np
 import argparse
+import structlog
+import logging
 
 # Import mongo
 from pymongo import MongoClient
@@ -62,6 +64,14 @@ def get_args():
 	parser.add_argument('-slurm_host','--slurm_host', dest='slurm_host', default='SLURM_HOST', required=False, type=str, help='Slurm cluster host/ipaddress')
 	parser.add_argument('-slurm_port','--slurm_port', dest='slurm_port', default=6820, required=False, type=int, help='Slurm rest service port')
 	
+	# - Log options
+	parser.add_argument('-loglevel','--loglevel', dest='loglevel', default='INFO', required=False, type=str, help='Log level to be used (default=INFO)')
+	parser.add_argument('--logtofile', dest='logtofile', action='store_true')	
+	parser.set_defaults(logtofile=False)
+	parser.add_argument('-logdir','--logdir', dest='logdir', default='/opt/caesar-rest/logs', required=False, type=str, help='Directory where to store logs')
+	parser.add_argument('-logfile','--logfile', dest='logfile', default='app_logs.json', required=False, type=str, help='Name of json log file')
+	parser.add_argument('-logfile_maxsize','--logfile_maxsize', dest='logfile_maxsize', default=5.0, required=False, type=float, help='Max file size in MB (default=5)')
+
 	args = parser.parse_args()	
 
 	return args
@@ -93,6 +103,37 @@ def main():
 	if job_scheduler=='kubernetes' and jobmgr_kube is None:
 		logger.error("Chosen scheduler is Kubernetes but kube client failed to be instantiated (see previous logs)!")
 		sys.exit(1)
+		
+	# - Log level options
+	loglevel= args.loglevel
+	logtofile= args.logtofile
+	logdir= args.logdir
+	logfile= args.logfile
+	logfilepath= os.path.join(logdir,logfile)
+	logfile_maxsize= args.logfile_maxsize
+
+	if logtofile:
+		logger.info("Enabling logging to file %s ..." % logfilepath)
+	
+		formatter_file= structlog.stdlib.ProcessorFormatter(
+			processor=structlog.processors.JSONRenderer(),
+		)
+
+		try:
+			handler_file= logging.handlers.RotatingFileHandler(
+				logfilepath, 
+				maxBytes=logfile_maxsize*1024*1024,
+				backupCount=2 
+			)
+		except Exception as e:
+			logger.error("Failed to initialize file logger (err=%s)!" % str(e))
+			sys.exit(1)
+
+		handler_file.setFormatter(formatter_file)
+		logger.addHandler(handler_file)
+
+	logger.info("Setting log level to %s ..." % loglevel)
+	logger.setLevel(loglevel)
 
 	#===============================
 	#==   INIT MONGO CLIENT
