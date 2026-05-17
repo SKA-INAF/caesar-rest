@@ -10,7 +10,6 @@ import datetime
 import logging
 import numpy as np
 import subprocess
-import json
 import ast
 import yaml
 
@@ -1584,10 +1583,337 @@ class CaesarAppConfigurator(AppConfigurator):
 
 		} # close dict
 
+
 		# - Define dictionary with job outputs produced
-		self.job_outputs= {
+		json_catalog_out_desc= (
+			'Dictionary containing list of detected sources, following the structure of the example below: \n\n'
+			'{\n'
+			'  "metadata": {...}\n'
+			'  "sources": [\n'
+			'     "name": "S0",\n'
+			'     ...\n'
+			'     "islands": [\n'
+			'        {\n'
+			'           "name": "S0",\n'
+			'           "Stot": 0.01,\n'
+			'           "fit_info": {\n'
+			'              "ncomponents": 1,\n'
+			'              "components": [\n'
+			'                 {\n'
+			'                    "S": 0.002,\n'
+			'                    "S_err": 0.0001,\n'
+			'                    ...\n'
+			'                 }\n'
+			'                 ...\n'
+			'              ]\n'
+			'           }\n'
+			'           ...\n'
+			'        }\n'
+			'     ]\n'
+			'  ]\n'
+			'}\n'
+			'where:\n'
+			'* metadata | dict: info on the input image data parameters (taken from the FITS header), software version/tags \n'
+			'* sources | List(dict) : list length equal to the number of extracted sources, with each dictionary containing parameters for each detected source, listed below: \n'
+			'    - name | str: Source name, usually with an "S" prefix followed by an integer\n'
+			'    - iau_name | str: Source name in IAU notation\n'
+			'    - x0/y0 | float: Source centroid position in image coordinates\n'
+			'    - ra/dec | float: Source centroid position in sky WCS coordinates\n'
+			'    - class_label | str: WRITE ME\n'
+			'    - class_score | int: WRITE ME\n'
+			'    - morph_label | str: WRITE ME \n'
+			'    - sourceness_label | str: WRITE ME\n'
+			'    - sourceness_score | int: WRITE ME \n'
+			'    - nest_level | int: WRITE ME\n'
+			'    - tags | List[str]: List of source tags given (usually empty)\n'
+			'    - nislands | int: Number of source islands found inside this source\n'
+			'    - islands | List(dict): list length equal to the number of source islands, with each dictionary containing parameters for each detected island, detailed below \n'
+			'\n'
+			'    *islands: A group of 4-connected pixels with intensity above a detection threshold with respect to the sky background level. A source may contain one or more islands and an island may contain one or multiple source components. Caesar usually produces 1 island per source, unless nested source search is activated.\n'
+			'        - name | str: Island name, usually with an "S" prefix followed by an integer\n'
+			'        - iau_name | str: Island name in IAU notation\n'
+			'        - npix | int: Number of image pixels belonging to the island\n'
+			'        - x/y | float: Island centroid position in image coordinates\n'
+			'        - ra/dec | float: Island centroid position in sky WCS coordinates (unit: deg)\n'
+			'        - xmin/xmax/ymin/ymax | float: Island bounding box position in image coordinates\n'
+			'        - ra_min/ra_max/dec_min/dec_max | float: Island bounding box position in sky WCS coordinates (unit: deg)\n'
+			'        - vertices | List[[float,float]]: Coordinates of the island contour in image coordinates\n'
+			'        - pixels | List[[float,float]]: Coordinates of the island pixels in image coordinates\n'
+			'        - Smax | float: Max pixel brightness in island (unit: Jy/beam)\n'
+			'        - Stot | float: Sum of island pixel brightness divided by beam area (unit: Jy)\n'
+			'        - bkg | float: Average background level, set to background sum over island pixels divided by the number of island pixels (unit: Jy/beam)\n'
+			'        - rms | float: Average background noise, set to background noise sum over island pixels divided by the number of island pixels (unit: Jy/beam)\n'
+			'        - morph_label | str: Source morphology label {UNKNOWN-MORPH,COMPACT,EXTENDED,COMPACT-EXTENDED,DIFFUSE}\n'
+			'        - sourceness_label | str: Sourceness label {REAL,CANDIDATE,FALSE}\n'
+			'        - sourceness_score | float: Sourceness confidence score in range [0,1]. Set to -1 if not available\n'
+			'        - border | int: Flag indicating if the island is found at the image border (=1) or not (=0)\n'
+			'        - class_label | str: Astronomical classification label {UNKNOWN,MULTI-CLASS,STAR,YSO,PULSAR,HII,PN,SNR,GALAXY,QSO}. Usually set to UNKNOWN\n'
+			'        - class_score | float: Astronomical classification confidence score. Set to -1 if not available\n'
+			'        - tags | List[str]: List of user flags, usually empty\n'
+			'        - resolved | int: Flag indicating if the island is resolved (=1) or not (=0) according to XXL radio survey criterion\n'
+			'        - beam_area_ratio_par | float: Number of beams in island, set to number of pixels divided by number of pixels in beam\n'
+			'        - circ_ratio_par | float: Circularity ratio parameter (4 x pi x Area/pow(Perymeter,2)) of island contour\n'
+			'        - elongation_par | float: Elongation parameter (1.-BoundingBoxMin/BoundingBoxMaj) of island contour\n'
+			'        - min_bbox_par | float: Smallest dimension of minimum rotated bounding box containing island contour\n'
+			'        - min_size/max_size | float: Min/max island size in pixel. Set to -999 (not evailable).\n'
+			'        - crossmatch_info | List: placeholder container for island cross-matching information, empty by default\n'
+			'        - spectral_info | dict: placeholder container for island spectral data information (e.g. spectral index), empty by default\n'
+			'        - fit_info | dict: Island fitting information, described below. Empty when --fitsources is disabled or when no fit info was found (e.g. failed fitting)\n'
+			'\n'
+			'        *fit_info: Dictionary containing island fitting parameters when computed/found, described below:\n'
+			'            - ncomponents | int: Number of 2D fit components found\n'
+			'            - model | str: Fit component model {"gaus"}\n'
+			'            - ndata | int: Number of island pixels used in fitting\n'
+			'            - npars | int: Total number of parameters used in island fitting\n'
+			'            - npars_free | int: Number of parameters kept free during island fitting\n'
+			'            - chi2 | float: Fit chi2 parameter\n'
+			'            - ndf | int: Fit number of degrees of freedom parameter\n'
+			'            - cov_matrix | List[float]: Fit parameter covariance matrix\n'
+			'            - fit_quality | str: Fit quality flag {UNKNOWN,BAD,LOW,MEDIUM,HIGH}\n'
+			'            - flux | float: Island integrated flux from component superposition (unit: Jy)\n'
+			'            - flux_err | float: Error on island integrated flux (unit: Jy)\n'
+			'            - components | List(dict): Collection of fit component parameters, described below\n'
+			'\n'
+			'            *components: List of dictionaries, each containing individual component fit info, described below:\n'
+			'                - iau_name | str: Component name in IAU notation\n'
+			'                - x/y | float: Component centroid position in image coordinates\n'
+			'                - x_err/y_err | float: Error on component centroid position in image coordinates\n'
+			'                - ra/dec | float: Component centroid position in sky WCS coordinates (unit: deg)\n'
+			'                - ra_err/dec_err | float: Error on component centroid position in sky WCS coordinates (unit: deg)\n'
+			'                - Speak/Speak_err | float: Component peak flux parameter and its error (unit: Jy/beam)\n'
+			'                - S/S_err | float: Component integrated flux density (already divided by beam area) and its error (unit: Jy)\n'
+			'                - sx/sx_err | float: Component sigmaX parameter and its error (unit: Jy/beam)\n'
+			'                - sy/sy_err | float: Component sigmaY parameter and its error (unit: Jy/beam)\n'
+			'                - theta/theta_err | float: Component theta parameter and its error (unit: deg)\n'
+			'                - bmaj/bmin/pa | float: Component fit ellipse major/minor axis and rotation angle in deg\n'
+			'                - bmaj_err/bmin_err/pa_err | float: Errors on fit ellipse parameters\n'
+			'                - bmaj_deconv/bmin_deconv/pa_deconv | float: Parameters of beam-deconvolved fit ellipse\n'
+			'                - morph_label | str: Component morphology label {UNKNOWN-MORPH,COMPACT,EXTENDED,COMPACT-EXTENDED,DIFFUSE}\n'\n'
+			'                - sourceness_label | str: Component sourceness label {REAL,CANDIDATE,FALSE}\n'
+			'                - sourceness_score | float: Component sourceness confidence score in range [0,1]. Set to -1 if not available\n'
+			'                - resolved | int: Flag indicating if the component is resolved (=1) or not (=0) according to XXL radio survey criterion\n'
+			'                - eccentricity_ratio | float: Ratio between fit ellipse & beam ellipse eccentricities\n'
+			'                - area_ratio | float: Ratio between component fit ellipse and beam ellipse areas\n'
+			'                - rot_angle_vs_beam | float: Difference between component fit ellipse and beam ellipse rotation angles (unit: deg)\n'
+		)
+			
+		json_fitcomp_catalog_out_desc= (
+			'Dictionary containing list of fitted components for all extracted sources, following the structure of the example below: \n\n'
+			'{\n'
+			'  "components" : [\n'
+			'      {\n'
+			'        "A" : 0.07,\n'
+			'        "Aerr" : 0.001,\n'
+			'        ...\n'
+			'      },\n'
+			'      ...\n'
+			'  ]\n'
+			'}\n'
+			'where each dictionary contains fitted component parameters (peak amplitude, ellipse pars, flux densities, etc).'
+		)	
+			
+		ascii_catalog_out_desc= (
+			'Ascii tabular data file containing extracted source islands. Each row is a source island, while columns represent island parameters, described in the header below:\n'
+			'- Col 1: name | str: Source name assigned by finder\n'
+			'- Col 2: iauName | str: Source name in IAU notation\n'
+			'- Col 3: npix | int: Number of pixels in island\n'
+			'- Col 4: nComponents | int: Number of fitted components (=0 if fit not performed or failed)\n'
+			'- Col 5: nNested | int: Number of nested sources found in island\n'
+			'- Col 6-7: x/y | float: Island centroid along x/y axis in image coordinates\n'
+			'- Col 8-9: x_w/y_w | float: Island centroid along x/y axis in image coordinates, weighted by pixel fluxes\n'
+			'- Col 10-11: x_wcs/y_wcs | float: Island centroid in selected sky WCS coordinate along x/y axis (unit: deg)\n'
+			'- Col 12-13: x_w_wcs/y_w_wcs | float: Island centroid in selected sky WCS coordinate along x/y axis, weighted by pixel fluxes (unit: deg)\n'
+			'- Col 14-17: xmin/xmax/ymin/ymax | float: Min/max coordinates of island bounding box rectangle in image coordinates\n'
+			'- Col 18-21: xmin_wcs/xmax_wcs/ymin_wcs/ymax_wcs | float: Min/max coordinates of island bounding box rectangle in sky WCS coordinates (unit: deg)\n'
+			'- Col 22: nu | float: Spectral axis value extracted from image header. If frequency it is given in GHz units.\n'
+			'- Col 23: Stot | float: Sum of island pixel brightness (unit: Jy/beam)\n'
+			'- Col 24: Smax | float: Max pixel brightness in island (unit: Jy/beam)\n'
+			'- Col 25-26: S/Serr | float: Island fitted flux brightness (not corrected by beam area) and its error (unit: Jy/beam)\n'
+			'- Col 27: beamArea | float: Number of pixels in beam. Used to convert flux parameters from Jy/beam to Jy/pixel (e.g. Jy/pixel=Jy/beam/beamarea)\n'
+			'- Col 28: bkgSum | float: Background estimator summed over all island pixels (unit: Jy/beam)\n'
+			'- Col 29: rmsSum | float: Noise (rms) estimator summed over all island pixels (unit: Jy/beam)\n'
+			'- Col 30: morphId | int: Island morphology flag {1=COMPACT,2=POINT-LIKE, 3=EXTENDED,4=COMPACT-EXTENDED}\n'
+			'- Col 31: sourcenessId | int: Sourceness flag {1=REAL,2=CANDIDATE,3=FAKE}\n'
+			'- Col 32: isGoodSource | int: Flag indicating if source was tagged as good (=1) or bad (=0) in finding process\n'
+			'- Col 33: sourceNestedLevel | int: Island depth level flag {0=mother/parent island,1=nested source,...}'
+		)
 		
-		}
+		ascii_fitcomp_catalog_out_desc= (
+			'Ascii tabular data file containing fitted components from extracted source islands. Each row is a fitted component, while columns represent component parameters, described in the header below:\n'
+			'- Col 1: name | str: Island source name assigned by finder\n'
+			'- Col 2: npix | int: Number of pixels in island\n'
+			'- Col 3: componentId | int: Fitted component id\n'
+			'- Col 4: iauName | str: Fitted component name in IAU notation\n'
+			'- Col 5-6: x/y | float: Fitted component centroid in image coordinates along x/y axis\n'
+			'- Col 7-8: x_err/y_err | float: Fitted component centroid error in image coordinates along x/y axis\n'
+			'- Col 9-10: x_wcs/y_wcs | float: Fitted component centroid in selected sky WCS coordinates along x/y axis (unit: deg)\n'
+			'- Col 11-12: x_wcs_err/y_wcs_err | float: Fitted component centroid error in selected sky WCS coordinate along x/y axis (unit: deg)\n'
+			'- Col 13: nu | float: Spectral axis value extracted from image header. If frequency it is given in GHz units\n'
+			'- Col 14-15: Speak/Speak_err | float: Fitted component peak brightness and its error (unit: Jy/beam)\n'
+			'- Col 16-17: S/S_err | float: Fitted component brightness (not corrected by beam area) and its error (unit: Jy/beam)\n'
+			'- Col 18-19: S_island/S_island_err | float: Island brightness (not corrected by beam area) and its error (unit: Jy/beam)\n'
+			'- Col 20: beamArea | float: Number of pixels in beam. Used to convert flux parameters from Jy/beam to Jy/pixel (e.g. Jy/pixel=Jy/beam/beamarea).\n'
+			'- Col 21-23: bmaj/bmin/pa | float: Fitted component ellipse major/minor axis and position angle (unit: deg, measured counterclock-wise from North) in image coordinates\n'
+			'- Col 24-26: bmaj_err/bmin_err/pa_err | float: Errors on fitted component ellipse pars in image coordinates\n'
+			'- Col 27-29: bmaj_wcs/bmin_wcs/pa_wcs | float: Fitted component ellipse major/minor axis (unit: arcsec) and position angle (unit: deg, measured counterclock-wise from North) in selected sky WCS coordinates\n'
+			'- Col 30-32: bmaj_wcs_err/bmin_wcs_err/pa_wcs_err | float: Errors on fitted component ellipse pars in sky WCS coordinates\n'
+			'- Col 33-35: bmaj_beam/bmin_beam/pa_beam | float: Beam ellipse major/minor axis (unit: arcsec) and position angle (unit: deg) in sky WCS coordinates\n'
+			'- Col 36-38: bmaj_deconv_wcs/bmin_deconv_wcs/pa_deconv_wcs | float: Fitted component beam-deconvolved ellipse major/minor axis (unit: arcsec) and position angle (unit: deg, measured counterclock-wise from North) in sky WCS coordinates\n'
+			'- Col 39: eccentricity_ratio | float: Ratio between fit ellipse & beam ellipse eccentricities\n'
+			'- Col 40: area_ratio | float: Ratio between component fit ellipse and beam ellipse areas\n'
+			'- Col 41: rot_angle_vs_beam | float: Difference between component fit ellipse and beam ellipse rotation angles (unit: deg)\n'
+			'- Col 42: bkgSum | float: Background estimator summed over all island pixels (unit: Jy/beam)\n'
+			'- Col 43: rmsSum | float: Noise (rms) estimator summed over all island pixels (unit: Jy/beam)\n'
+			'- Col 44-45: chi2/ndf | float: Source island fit chisquare and degrees of freedom\n'
+			'- Col 46: fit_quality | int: Fit quality flag {0=BAD,1=LOW,2=MEDIUM,3=HIGH}\n'
+			'- Col 47: sourcenessId | int: Component sourceness flag {1=REAL,2=CANDIDATE,3=FAKE}\n'
+			'- Col 48: morphId | int: Component morphology flag {0=UNKNOWN,1=COMPACT,2=POINT-LIKE,3=EXTENDED, 4=COMPACT-EXTENDED}'
+		)
+		
+		root_catalog_out_desc= (
+			'ROOT binary file containing full caesar output with different stored objects (depending on the activated options), described below:\n'
+			'* SourceInfo ROOT TTree: containing caesar Source object collections, each containing summary parameters plus detailed information at pixel level (see Source API section);\n'
+			'* PerformanceInfo ROOT TTree: containing list of run parameters (runtimes at different stages, used memory, etc);\n'
+			'* Input map: stored as a caesar Image object (see Image API section)\n'
+			'* Background, noise and significance maps: stored as caesar Image objects\n'
+			'* Residual map: stored as a caesar Image object\n'
+			'* Segmentation and saliency maps: stored as a caesar Image object'
+		)
+
+
+		# - Define job outputs		
+		self.job_outputs= {
+			"catalog_json": {
+				"path": None,
+				"glob": "catalog-*.json",
+				"type": "application/json",
+				"role": "primary_result",
+				"description": json_catalog_out_desc,
+				"parser": "json",
+				"required": True,
+				"notes": (
+					"The json catalog output file is only produced with option --save-catalog-to-json"
+				)
+			},
+			"catalog_components_json": {
+				"path": None,
+				"glob": "catalog_fitcomp-*.json",
+				"type": "application/json",
+				"role": "catalog",
+				"description": json_fitcomp_catalog_out_desc,
+				"parser": "json",
+				"required": False,
+				"notes": (
+					"The json component catalog output file is only produced with option --save-catalog-to-json and --fitsources"
+				)
+			},
+			"catalog_ascii": {
+				"path": None,
+				"glob": "catalog-*.dat",
+				"type": "text/plain",
+				"description": ascii_catalog_out_desc,
+				"parser": "text",
+				"required": True,
+				"notes": (
+					"The ascii island catalog output file is produced when 'saveToCatalogFile' caesar INI configuration option is enabled. Always enabled."
+				)
+			},
+			"catalog_components_ascii": {
+				"path": None,
+				"glob": "catalog_fitcomp-*.dat",
+				"type": "text/plain",
+				"description": ascii_fitcomp_catalog_out_desc,
+				"parser": "text",
+				"required": False,
+				"notes": (
+					"The ascii component catalog output file is is produced when 'saveToCatalogFile' caesar INI configuration option is enabled (always) AND also with option --fitsources enabled"
+				)
+			},
+			"catalog_root": {
+				"path": None,
+				"glob": "out_*.root",
+				"type": "application/x-root",
+				"description": root_catalog_out_desc,
+				"parser": "text",
+				"required": True,
+				"notes": (
+					"ROOT output is produced when 'saveToFile' caesar INI configuration option is enabled. Always enabled."
+				)
+			},
+			"plot": {
+				"path": None,
+				"glob": "plot_*.png",
+				"type": "image/png",
+				"role": "visualization",
+				"description": "Image with detections overlaid.",
+				"parser": "image",
+				"required": False,
+				"notes": (
+					"The plot output filename is only produced with option --save-summaryplot"
+				)
+			},
+			"region": {
+				"path": None,
+				"glob": "ds9-*.reg",
+				"type": "application/x-ds9",
+				"role": "visualization",
+				"description": "A DS9 region file containing detected sources as colored and tagged polygon regions.",
+				"parser": "ds9",
+				"required": False,
+				"notes": (
+					"The region output filename is only produced with option --save-regions"
+				)
+			},
+			"region_components": {
+				"path": None,
+				"glob": "ds9_fitcomp-*.reg",
+				"type": "application/x-ds9",
+				"role": "visualization",
+				"description": "A DS9 region file containing fitted components inside detected sources as colored and tagged ellipse regions.",
+				"parser": "ds9",
+				"required": False,
+				"notes": (
+					"The region output filename is only produced with option --save-regions and --fitsources"
+				)
+			},
+			"script": {
+				"path": None,
+				"glob": "*.sh",
+				"type": "text/plain",
+				"role": "diagnostic",
+				"description": "Caesar bash run script file that was executed to produce the provided output",
+				"parser": "text",
+				"required": False,
+				"notes": (
+					""
+				)
+			},
+			"config": {
+				"path": None,
+				"glob": "*.cfg",
+				"type": "text/plain",
+				"role": "diagnostic",
+				"description": "Caesar configuration file with run options in INI format.",
+				"parser": "text",
+				"required": False,
+				"notes": (
+					""
+				)
+			},
+			"log": {
+				"path": None,
+				"glob": "*.log",
+				"type": "text/plain",
+				"role": "diagnostic",
+				"description": "Execution log.",
+				"parser": "text",
+				"required": False,
+				"notes": (
+					""
+				)
+			}
+		
+		} ## close job outputs
 
 		# - Define option value transformers
 		self.option_value_transformer= {
@@ -1611,8 +1937,6 @@ class CaesarAppConfigurator(AppConfigurator):
 		self.cmd_args.append("--save-catalog-to-json ")
 
 
-
-	
 	def set_data_input_option_value(self):
 		""" Set app input option value """
 
