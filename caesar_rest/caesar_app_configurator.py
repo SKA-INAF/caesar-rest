@@ -1688,7 +1688,7 @@ class CaesarAppConfigurator(AppConfigurator):
 			'                - bmaj/bmin/pa | float: Component fit ellipse major/minor axis and rotation angle in deg\n'
 			'                - bmaj_err/bmin_err/pa_err | float: Errors on fit ellipse parameters\n'
 			'                - bmaj_deconv/bmin_deconv/pa_deconv | float: Parameters of beam-deconvolved fit ellipse\n'
-			'                - morph_label | str: Component morphology label {UNKNOWN-MORPH,COMPACT,EXTENDED,COMPACT-EXTENDED,DIFFUSE}\n'\n'
+			'                - morph_label | str: Component morphology label {UNKNOWN-MORPH,COMPACT,EXTENDED,COMPACT-EXTENDED,DIFFUSE}\n'
 			'                - sourceness_label | str: Component sourceness label {REAL,CANDIDATE,FALSE}\n'
 			'                - sourceness_score | float: Component sourceness confidence score in range [0,1]. Set to -1 if not available\n'
 			'                - resolved | int: Flag indicating if the component is resolved (=1) or not (=0) according to XXL radio survey criterion\n'
