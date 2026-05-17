@@ -46,10 +46,10 @@ class CaesarAppConfigurator(AppConfigurator):
 
 		# - Describe app
 		self.description = (
-			"Run a source finder tool on astronomical radio-continuum images. "
+			"Run caesar source finder tool on astronomical radio-continuum images. "
 			"The tool supports both point-like/compact and extended source extraction. "
 			"It also supports measurement of point-like/compact source and nested component parameters (flux density, position, extension, morphological flags) through 2D gaussian mixture fitting. "
-			"The app expects input image-like astronomical data, in either FITS or PNG format. "
+			"The app expects input image-like astronomical data, in FITS format. "
 		)
 		
 		self.input_requirements = {
