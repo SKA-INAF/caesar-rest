@@ -1905,7 +1905,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				"glob": "*.log",
 				"type": "text/plain",
 				"role": "diagnostic",
-				"description": "Execution log.",
+				"description": "Execution logs.",
 				"parser": "text",
 				"required": False,
 				"notes": (

@@ -501,17 +501,17 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			'Below, we report a description of each dictionary field: \n'
 			'* filepath | str: Input image filename (base path, not absolute path).\n'
 			'* sname | str: Input image identifier, usually set to filepath without file extension.\n'
-			'* sources | list(dict): List of detected object parameters, where each object dictionary contains the following information: \n'
-			'      - class_id | int: Object class identifier with these possible values: 0-->spurious, 1-->compact, 2-->extended, 3-->extended-multisland, 4-->flagged \n'
-			'      - class_name | str: Object class label with these possible values: spurious, compact, extended, extended-multisland, flagged \n'
-			'      - edge | int: Boolean flag indicating if the detected source is at the border (=1) of the image or not (=0) \n'
-			'      - merged | int: Boolean flag indicating if the detected source was assembled from connected objects detected at the border of adjacent image tiles (=1) or not (=0). This flag is only set in parallel runs where the input image is partitioned into sub-tiles. \n'
-			'      - name | str: A string identifier for the detected object, usually with an "S" prefix followed by an integer \n'
+			'* sources | list(dict): List of detected object parameters, where each object dictionary contains the following information:\n'
+			'      - class_id | int: Object class identifier with these possible values: 0-->spurious, 1-->compact, 2-->extended, 3-->extended-multisland, 4-->flagged\n'
+			'      - class_name | str: Object class label with these possible values: spurious, compact, extended, extended-multisland, flagged\n'
+			'      - edge | int: Boolean flag indicating if the detected source is at the border (=1) of the image or not (=0)\n'
+			'      - merged | int: Boolean flag indicating if the detected source was assembled from connected objects detected at the border of adjacent image tiles (=1) or not (=0). This flag is only set in parallel runs where the input image is partitioned into sub-tiles.\n'
+			'      - name | str: A string identifier for the detected object, usually with an "S" prefix followed by an integer\n'
 			'      - score | float: Object detection confidence probability in range [0,1] \n'
-			'      - x1 | float: Minimum x-value of the object bounding box rectangle in image coordinates \n'
-			'      - x2 | float: Maximum x-value of the object bounding box rectangle in image coordinates \n'
-			'      - y1 | float: Minimum y-value of the object bounding box rectangle in image coordinates  \n'
-			'      - y2 | float: Maximum y-value of the object bounding box rectangle in image coordinates  \n'
+			'      - x1 | float: Minimum x-value of the object bounding box rectangle in image coordinates\n'
+			'      - x2 | float: Maximum x-value of the object bounding box rectangle in image coordinates\n'
+			'      - y1 | float: Minimum y-value of the object bounding box rectangle in image coordinates\n'
+			'      - y2 | float: Maximum y-value of the object bounding box rectangle in image coordinates'
 		)
 				
 		self.job_outputs= {
@@ -556,7 +556,7 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				"glob": "*.log",
 				"type": "text/plain",
 				"role": "diagnostic",
-				"description": "Execution log.",
+				"description": "Execution logs.",
 				"parser": "text",
 				"required": False,
 				"notes": (
