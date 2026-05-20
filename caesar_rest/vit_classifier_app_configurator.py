@@ -170,6 +170,7 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 				"notes": (
 					""
 				)
+			}
 		}
 		
 		# - Define option value transformers
