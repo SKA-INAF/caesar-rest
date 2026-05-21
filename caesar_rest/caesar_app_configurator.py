@@ -55,9 +55,7 @@ class CaesarAppConfigurator(AppConfigurator):
 		self.input_requirements = {
 			"expected_data": "Single radio-continuum astronomical image",
 			"supported_formats": ["fits"],
-			#"notes": [
-			#	"The method is most suited for radio-continuum images."
-			#]
+			"notes": [],
 		}
 		
 		self.limitations = [

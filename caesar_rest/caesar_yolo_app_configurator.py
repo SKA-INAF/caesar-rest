@@ -57,10 +57,8 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 		
 		self.input_requirements = {
 			"supported_formats": ["fits", "png"],
-			"expected_data": "Single radio-continuum astronomical image.",
-			#"notes": [
-			#	"The method is most suited for radio-continuum images."
-			#]
+			"expected_data": "Single radio-continuum astronomical image",
+			"notes": [],
 		}
 
 		self.limitations = [

@@ -45,7 +45,7 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 		
 		# - Describe app
 		self.description = (
-			"Run a pre-trained vision transformer (ViT) classifier model on astronomical radio-continuum images to predict class label. "
+			"Run a pre-trained vision transformer (ViT) classifier model on radio astronomical images to predict classification labels. "
 			"The app supports different classifier models, described below: \n\n",
 			"* 'smorphclass_multilabel': Multi-label multi-class classification of radio images into one or more of these six possible classes: \n"
 			"    - BACKGROUND: if image is purely background noise, e.g. no sources are visible, like for image frames located at the map borders\n"
@@ -67,16 +67,16 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 		
 		self.input_requirements = {
 			"supported_formats": ["fits", "png"],
-			"expected_data": "Single astronomical image suitable for source classification. The image is expected to be centred and zoomed-in on a source for some classification tasks/models ('smorphclass_singlelabel_rgz') or having a larger field of view and including more than one source for other classification tasks ('smorphclass_multilabel')",
+			"expected_data": "Single radio-continuum astronomical image",
 			"notes": [
-				"The method is most suited for radio-continuum images."
+				"The image is expected to be centred and zoomed-in on a source for some classification tasks/models ('smorphclass_singlelabel_rgz') or having a larger field of view and including more than one source for other classification tasks ('smorphclass_multilabel')"
 			]
 		}
 		
 		self.limitations = [
 			"The app is for source classification only, NOT for source detection (e.g. not providing any bounding box or segmentation mask).",
 			"Classification accuracy depends on the selected pretrained model, image preprocessing, survey parameters (e.g. resolution/noise) and size of the input image.",
-			"The app can in principle be used to classify sources in astronomical images (FITS/PNG) from other domains (e.g. optical, infrared, gamma-rays) but we anticipate sub-optimal performance as the model was trained/tested on radio images only."
+			"The app can be used with input images from different astronomical domains but we anticipate sub-optimal performance as the model was trained/tested on radio images only."
 		]
 		
 		# - Define dictionary with allowed options
