@@ -46,25 +46,25 @@ class CaesarAppConfigurator(AppConfigurator):
 
 		# - Describe app
 		self.description = (
-			"Run caesar source finder tool on astronomical radio-continuum images. "
-			"The tool supports both point-like/compact and extended source extraction. "
-			"It also supports measurement of point-like/compact source and nested component parameters (flux density, position, extension, morphological flags) through 2D gaussian mixture fitting. "
-			"The app expects input image-like astronomical data, in FITS format. "
+			"Run caesar source finder tool on radio astronomical images to extract point-like/compact and extended sources. "
+			#"The tool supports both point-like/compact and extended source extraction. "
+			"The tool also supports characterization of extracted compact sources, including component identification and measurement of source/component parameters (flux density, position, extension, morphological flags) through 2D gaussian mixture fitting. "
+			#"The app expects input image-like astronomical data, in FITS format. "
 		)
 		
 		self.input_requirements = {
+			"expected_data": "Single radio-continuum astronomical image",
 			"supported_formats": ["fits"],
-			"expected_data": "Single astronomical image suitable for source detection.",
-			"notes": [
-				"The method is most suited for radio-continuum images."
-			]
+			#"notes": [
+			#	"The method is most suited for radio-continuum images."
+			#]
 		}
 		
 		self.limitations = [
-			"Compact source detection quality depends on background estimation parameters and detection thresholds.",
-			"Extended source detection quality depends on background estimation parameters and on the extended source detection algorithm chosen."
+			"Compact source detection accuracy depends on background estimation parameters and detection thresholds.",
+			"Extended source detection accuracy depends on background estimation parameters and on the extended source detection algorithm chosen."
 			"Processing of very large images (>10000 pixels) is supported but it may be computationally expensive unless the tiling and parallel run mode is activated (see options).",
-			"The app can in principle be used to detect sources in astronomical images (FITS) from other domains (e.g. optical, infrared, gamma-rays) but we anticipate sub-optimal performance as the tool was specifically tested on radio images and relative image metadata only."
+			"The app can be used with input images from different astronomical domains (e.g. infrared) but we anticipate sub-optimal performance as the tool was specifically tested on radio images and relative image metadata only."
 		]
 
 		# - Define dictionary with allowed options
@@ -1586,7 +1586,11 @@ class CaesarAppConfigurator(AppConfigurator):
 
 		# - Define dictionary with job outputs produced
 		json_catalog_out_desc= (
-			'Dictionary containing list of detected sources, following the structure of the example below: \n\n'
+			'JSON dictionary containing list of detected sources, islands and fitted components along with their measured parameters'
+		)
+		
+		json_catalog_out_format= (
+			'JSON dictionary follows the format below: \n\n'
 			'{\n'
 			'  "metadata": {...}\n'
 			'  "sources": [\n'
@@ -1698,7 +1702,11 @@ class CaesarAppConfigurator(AppConfigurator):
 		)
 			
 		json_fitcomp_catalog_out_desc= (
-			'Dictionary containing list of fitted components for all extracted sources, following the structure of the example below: \n\n'
+			'JSON dictionary containing list of fitted components for all extracted source islands along with their measured parameters'
+		)	
+			
+		json_fitcomp_catalog_out_format= (
+			'JSON dictionary follows the format below: \n\n'
 			'{\n'
 			'  "components" : [\n'
 			'      {\n'
@@ -1713,7 +1721,11 @@ class CaesarAppConfigurator(AppConfigurator):
 		)	
 			
 		ascii_catalog_out_desc= (
-			'Ascii tabular data file containing extracted source islands. Each row is a source island, while columns represent island parameters, described in the header below:\n'
+			'Ascii tabular data file containing extracted source islands (rows), and their measured parameters (columns)'
+		)
+			
+		ascii_catalog_out_format= (
+			'Ascii tabular data file follows this format: each row is a source island, while columns represent island parameters, described below:\n'
 			'- Col 1: name | str: Source name assigned by finder\n'
 			'- Col 2: iauName | str: Source name in IAU notation\n'
 			'- Col 3: npix | int: Number of pixels in island\n'
@@ -1739,7 +1751,11 @@ class CaesarAppConfigurator(AppConfigurator):
 		)
 		
 		ascii_fitcomp_catalog_out_desc= (
-			'Ascii tabular data file containing fitted components from extracted source islands. Each row is a fitted component, while columns represent component parameters, described in the header below:\n'
+			'Ascii tabular data file containing fitted components (rows) found in extracted source islands, , and their measured parameters (columns)'
+		)
+		
+		ascii_fitcomp_catalog_out_format= (
+			'Ascii tabular data file follows this format: each row is a fitted component, while columns represent component parameters, described below:\n'
 			'- Col 1: name | str: Island source name assigned by finder\n'
 			'- Col 2: npix | int: Number of pixels in island\n'
 			'- Col 3: componentId | int: Fitted component id\n'
@@ -1771,7 +1787,11 @@ class CaesarAppConfigurator(AppConfigurator):
 		)
 		
 		root_catalog_out_desc= (
-			'ROOT binary file containing full caesar output with different stored objects (depending on the activated options), described below:\n'
+			'ROOT binary file containing full raw tool output with different stored objects'
+		)
+		
+		root_catalog_out_format= (
+			'ROOT binary file contains the following objects (depending on the activated options):\n'
 			'* SourceInfo ROOT TTree: containing caesar Source object collections, each containing summary parameters plus detailed information at pixel level (see Source API section);\n'
 			'* PerformanceInfo ROOT TTree: containing list of run parameters (runtimes at different stages, used memory, etc);\n'
 			'* Input map: stored as a caesar Image object (see Image API section)\n'
@@ -1789,6 +1809,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				"type": "application/json",
 				"role": "primary_result",
 				"description": json_catalog_out_desc,
+				"format": json_catalog_out_format,
 				"parser": "json",
 				"required": True,
 				"notes": (
@@ -1801,6 +1822,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				"type": "application/json",
 				"role": "catalog",
 				"description": json_fitcomp_catalog_out_desc,
+				"format": json_fitcomp_catalog_out_format,
 				"parser": "json",
 				"required": False,
 				"notes": (
@@ -1813,8 +1835,9 @@ class CaesarAppConfigurator(AppConfigurator):
 				"type": "text/plain",
 				"role": "catalog",
 				"description": ascii_catalog_out_desc,
+				"format": ascii_catalog_out_format,
 				"parser": "text",
-				"required": True,
+				"required": False,
 				"notes": (
 					"The ascii island catalog output file is produced when 'saveToCatalogFile' caesar INI configuration option is enabled. Always enabled."
 				)
@@ -1825,6 +1848,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				"type": "text/plain",
 				"role": "catalog",
 				"description": ascii_fitcomp_catalog_out_desc,
+				"format": ascii_fitcomp_catalog_out_format,
 				"parser": "text",
 				"required": False,
 				"notes": (
@@ -1837,6 +1861,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				"type": "application/x-root",
 				"role": "catalog",
 				"description": root_catalog_out_desc,
+				"format": root_catalog_out_format,
 				"parser": "text",
 				"required": True,
 				"notes": (
@@ -1849,6 +1874,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				"type": "image/png",
 				"role": "visualization",
 				"description": "Image with detections overlaid.",
+				"format": "",
 				"parser": "image",
 				"required": False,
 				"notes": (
@@ -1861,6 +1887,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				"type": "application/x-ds9",
 				"role": "visualization",
 				"description": "A DS9 region file containing detected sources as colored and tagged polygon regions.",
+				"format": "",
 				"parser": "ds9",
 				"required": False,
 				"notes": (
@@ -1873,6 +1900,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				"type": "application/x-ds9",
 				"role": "visualization",
 				"description": "A DS9 region file containing fitted components inside detected sources as colored and tagged ellipse regions.",
+				"format": "",
 				"parser": "ds9",
 				"required": False,
 				"notes": (
@@ -1885,6 +1913,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				"type": "text/plain",
 				"role": "diagnostic",
 				"description": "Caesar bash run script file that was executed to produce the provided output",
+				"format": "",
 				"parser": "text",
 				"required": False,
 				"notes": (
@@ -1897,6 +1926,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				"type": "text/plain",
 				"role": "diagnostic",
 				"description": "Caesar configuration file with run options in INI format.",
+				"format": "",
 				"parser": "text",
 				"required": False,
 				"notes": (
@@ -1909,6 +1939,7 @@ class CaesarAppConfigurator(AppConfigurator):
 				"type": "text/plain",
 				"role": "diagnostic",
 				"description": "Execution logs.",
+				"format": "",
 				"parser": "text",
 				"required": False,
 				"notes": (

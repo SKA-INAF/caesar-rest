@@ -45,30 +45,29 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 		
 		# - Describe app
 		self.description = (
-			"Run a pre-trained YOLO object detection model on astronomical radio-continuum images. "
-			"The app detects candidate radio sources and classifies them as: \n",
+			"Run a pre-trained YOLO object detection model on radio astronomical images to DETECT candidate radio sources and also CLASSIFY them in the following morphological classes: \n",
 			"- 'SPURIOUS': imaging artefacts, usually found around bright sources and with a ring-like or elongated compact morphology;\n",
 			"- 'COMPACT': single-island isolated point- or slightly resolved compact radio sources, eventually hosting one or more blended components, each with morphology resembling the synthesized beam shape;\n"
 			"- 'EXTENDED': radio sources with a single-island extended morphology, eventually hosting one or more blended components, with some deviating from the synthesized beam shape;\n"
 			"- 'EXTENDED-MULTISLAND': radio sources with an extended morphology, consisting of more (point-like or extended) islands, each one eventually hosting one or more blended components;\n"
 			"- 'FLAGGED': single-island bright radio sources, with compact or extended morphology, that are poorly imaged and cannot be separated from close imaging artefacts.\n"			
-			"The app expects input image-like astronomical data, in either FITS or PNG format. "
-			"Results are returned as a JSON catalog of detections and optional diagnostic plots."
+			#"The app expects input image-like astronomical data, in either FITS or PNG format. "
+			#"Results are returned as a JSON catalog of detections and optional diagnostic plots."
 		)
 		
 		self.input_requirements = {
 			"supported_formats": ["fits", "png"],
-			"expected_data": "Single astronomical image suitable for source/object detection and morphology classification.",
-			"notes": [
-				"The method is most suited for radio-continuum images."
-			]
+			"expected_data": "Single radio-continuum astronomical image.",
+			#"notes": [
+			#	"The method is most suited for radio-continuum images."
+			#]
 		}
 
 		self.limitations = [
-			"Source detection quality depends on the selected pretrained model, image preprocessing, survey parameters (e.g. resolution/noise) of the input image, and detection parameters choices ('score-thr', 'iou-thr').",
+			"Source detection accuracy depends on the selected pretrained model, image preprocessing, survey parameters (e.g. resolution/noise) of the input image, and detection parameters choices ('score-thr', 'iou-thr').",
 			"For better detection performance, set model and imgsize to the same value (e.g. yolov11l_imgsize640, imgsize=640), as closest as possible to original input image size.",
 			"Processing of very large images (>1024 pixels) is supported but it requires enabling the tiling and parallel run mode (see options).",
-			"The app can in principle be used to detect sources in astronomical images (FITS/PNG) from other domains (e.g. optical, infrared, gamma-rays) but we anticipate sub-optimal performance as the model was trained/tested on radio images only."
+			"The app can be used with input images from different astronomical domains (e.g. infrared) but we anticipate sub-optimal performance as the model was trained/tested on radio images only."
 		]
 		
 		# - Define dictionary with allowed options
@@ -478,8 +477,11 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 		
 		# - Define dictionary with job outputs produced
 		catalog_out_desc= (
-			'Dictionary containing list of detected objects/sources with class labels, confidence scores, bounding-box rectangle coordinates and various flags. '
-			'When the input data is an image, the format of the returned dictionary follows the structure of the example below: \n\n'
+			'JSON dictionary containing list of detected objects/sources with class labels, confidence scores, bounding-box rectangle coordinates and various flags.'
+		)
+		
+		catalog_out_format= (
+			'JSON dictionary follows the format below: \n\n'
 			'{\n'
 			'  "filepath": "f572b6faffb34f5680bccb12c02aacf5.fits", \n'
 			'  "sname": "f572b6faffb34f5680bccb12c02aacf5", \n'
@@ -498,7 +500,7 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			'  ] \n'
 			'} \n'
 			'\n'
-			'Below, we report a description of each dictionary field: \n'
+			'where: \n'
 			'* filepath | str: Input image filename (base path, not absolute path).\n'
 			'* sname | str: Input image identifier, usually set to filepath without file extension.\n'
 			'* sources | list(dict): List of detected object parameters, where each object dictionary contains the following information:\n'
@@ -521,6 +523,7 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				"type": "application/json",
 				"role": "primary_result",
 				"description": catalog_out_desc,
+				"format": catalog_out_format,
 				"parser": "json",
 				"required": True,
 				"notes": (
@@ -533,6 +536,7 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				"type": "image/png",
 				"role": "visualization",
 				"description": "Image with detections overlaid.",
+				"format": "",
 				"parser": "image",
 				"required": False,
 				"notes": (
@@ -545,6 +549,7 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				"type": "application/x-ds9",
 				"role": "visualization",
 				"description": "A DS9 region file containing detected sources as colored and tagged box regions.",
+				"format": "",
 				"parser": "ds9",
 				"required": False,
 				"notes": (
@@ -557,6 +562,7 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				"type": "text/plain",
 				"role": "diagnostic",
 				"description": "Execution logs.",
+				"format": "",
 				"parser": "text",
 				"required": False,
 				"notes": (

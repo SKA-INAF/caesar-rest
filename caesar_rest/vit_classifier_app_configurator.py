@@ -122,8 +122,11 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 		
 		# - Define dictionary with job outputs produced
 		catalog_out_desc= (
-			'Dictionary containing image classification labels (depending on classification task/model) and relative probability/confidence score. '
-			'When the input data is an image, the format of the returned dictionary follows the structure of the example below for multi-label classification tasks: \n\n'
+			'JSON dictionary containing image classification labels (depending on classification task/model) and relative probability/confidence score. '
+		)
+		
+		catalog_out_format= (
+			'For multi-label classification, the returned JSON dictionary follows the format below: \n\n'
 			'{\n'		
 			'  "filepath": "f572b6faffb34f5680bccb12c02aacf5.fits",\n'
 			'  "sname": "f572b6faffb34f5680bccb12c02aacf5",\n'
@@ -131,7 +134,7 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 			'  "prob_pred": [0.606,0.754]\n'
 			'}\n'
 			'\n'
-			'In the case of single-label classification task, the returned dictionary follows the structure below:\n\n'
+			'For single-label classification, the returned dictionary follows the format below:\n\n'
 			'{\n'		
 			'  "filepaths": "f572b6faffb34f5680bccb12c02aacf5.fits",\n'
 			'  "sname": "f572b6faffb34f5680bccb12c02aacf5",\n'
@@ -153,6 +156,7 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 				"type": "application/json",
 				"role": "primary_result",
 				"description": catalog_out_desc,
+				"format": catalog_out_format,
 				"parser": "json",
 				"required": True,
 				"notes": (
@@ -165,6 +169,7 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 				"type": "text/plain",
 				"role": "diagnostic",
 				"description": "Execution logs.",
+				"format": "",
 				"parser": "text",
 				"required": False,
 				"notes": (
