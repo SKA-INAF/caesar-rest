@@ -1177,9 +1177,9 @@ class CaesarAppConfigurator(AppConfigurator):
 			# == EXTENDED SOURCE SEARCH OPTIONS ==
 			'no-extendedsearch' : Option(
 				name='no-extendedsearch', 
-				description='Do not search extended sources. If True, extended sources are searched with --extsfinder selected method',
+				description='Do not search extended sources. If False, extended sources are searched with --extsfinder selected method',
 				category='EXTENDED-SOURCES',
-				default_value=False
+				default_value=True
 			),
 			'extsfinder' : EnumValueOption(
 				name='extsfinder',
