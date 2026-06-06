@@ -45,7 +45,7 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 		
 		# - Describe app
 		self.description = (
-			"Run a pre-trained vision transformer (ViT) classifier model on radio astronomical images to predict classification labels. "
+			"Run a pre-trained vision transformer classifier model (ViT or ResNet-based) on radio astronomical images to predict classification labels. "
 			"The app supports different classifier models, described below: \n\n",
 			"* 'smorphclass_multilabel': Multi-label multi-class classification of radio images into one or more of these six possible classes: \n"
 			"    - BACKGROUND: if image is purely background noise, e.g. no sources are visible, like for image frames located at the map borders\n"
@@ -61,7 +61,14 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 			"    - 2C-2P: source formed by two disjoint islands, each hosting a single flux intensity peak\n"
 			"    - 2C-3P: source formed by two disjoint islands, where one has a single flux intensity peak and the other one has two intensity peaks\n"
 			"    - 3C-3P: source formed by three disjoint islands, each hosting a single flux intensity peak\n"
-			"    The labelling schema is taken from the Radio Galaxy Zoo (RGZ) project, where 'C' stands for source 'components', while 'P' for 'peaks'. This classifier is intended to be run on images zoomed in around a source, typically having original size <128x128 pixels."
+			"    The labelling schema is taken from the Radio Galaxy Zoo (RGZ) project, where 'C' stands for source 'components', while 'P' for 'peaks'. This classifier is intended to be run on images zoomed in around a source, typically having original size <128x128 pixels.\n"
+			"* 'smorphclass_singlelabel_lotss': Single-label multi-class classification of radio galaxy images into one of these five possible morphological classes: \n"
+			"    - FR-I: radio-loud galaxies characterized by a jet-dominated structure where the radio emissions are strongest close to the galaxy's center and diminish with distance from the core\n"
+			"    - FR-II: radio-loud galaxies characterized by a edge-brightened radio structure, where the radio emissions are more prominent in lobes located far from the galaxy's core, with hotspots at the ends of powerful, well-collimated jets\n"
+			"    - HYBRID: radio-loud galaxies exhibiting both FR-I and FR-II characteristics, typically with an FR-I-like morphology on one side of the nucleus and an FR-II-like morphology on the other\n"
+			"    - SPIRAL: radio galaxies hosted by spiral galaxies, indicating the morphology of the optical host rather than the radio emission structure itself\n"
+			"    - RELAXED-DOUBLE: double-lobed radio galaxies with diffuse and relatively featureless lobes, lacking strong jets or hotspots and often representing a more evolved or remnant stage of radio-source activity.\n"
+			"    The labelling schema is from Horton et al, 2025 and training data from the LOFAR LoTSS survey. This classifier is intended to be run on images zoomed in around a source, typically having original size <256x256 pixels."
 		)
 		
 		
@@ -90,7 +97,7 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 				description='Classifier model to be used. See app description.',
 				category='MODEL',
 				default_value='smorphclass_multilabel',
-				allowed_values=['smorphclass_multilabel', 'smorphclass_singlelabel_rgz']
+				allowed_values=['smorphclass_multilabel', 'smorphclass_singlelabel_rgz', 'smorphclass_singlelabel_lotss']
 			),
 
 			# == PRE-PROCESSING OPTIONS ==
@@ -107,6 +114,22 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 				description='zscale contrast applied to all channels',
 				category='PREPROCESSING',
 				default_value=0.25
+			),
+			'norm-min' : ValueOption(
+				name='norm-min',
+				value='',
+				value_type=float, 
+				description='Image normalization min value',
+				category='PREPROCESSING',
+				default_value=0.0
+			),
+			'norm-max' : ValueOption(
+				name='norm-max',
+				value='',
+				value_type=float, 
+				description='Image normalization max value',
+				category='PREPROCESSING',
+				default_value=1.0
 			),
 			
 			# == RUN OPTIONS ==
