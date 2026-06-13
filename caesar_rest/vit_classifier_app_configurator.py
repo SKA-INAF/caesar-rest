@@ -68,7 +68,13 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 			"    - HYBRID: radio-loud galaxies exhibiting both FR-I and FR-II characteristics, typically with an FR-I-like morphology on one side of the nucleus and an FR-II-like morphology on the other\n"
 			"    - SPIRAL: radio galaxies hosted by spiral galaxies, indicating the morphology of the optical host rather than the radio emission structure itself\n"
 			"    - RELAXED-DOUBLE: double-lobed radio galaxies with diffuse and relatively featureless lobes, lacking strong jets or hotspots and often representing a more evolved or remnant stage of radio-source activity.\n"
-			"    The labelling schema is from Horton et al, 2025 and training data from the LOFAR LoTSS survey. This classifier is intended to be run on images zoomed in around a source, typically having original size <256x256 pixels."
+			"    The labelling schema is from Horton et al, 2025 and training data from the LOFAR LoTSS survey. This classifier is intended to be run on images zoomed in around a source, typically having original size <256x256 pixels.\n"
+			"* 'anomalyclass_singlelabel': Single-label multi-class classification of the peculiarity/anomaly degree of a radio astronomical image into these three possible classes: \n"
+			"    - ORDINARY: image containing only point-like or slightly-resolved compact radio sources superimposed over the sky background or imaging artefact patterns; \n" 
+			"    - COMPLEX: image containing one or more radio sources with extended or diffuse morphology; \n" 
+			"    - PECULIAR: image containing one or more radio sources with anomalous or peculiar extended morphology, often having diffuse edges, complex irregular shapes, covering a large portion of the image.\n"
+			"* 'artefactdet_singlelabel': Binary classifier, predicting if the input radio image contains one or more imaging artefact (YES) or none (NO)\n"
+			"* 'radiogaldet_singlelabel': Binary classifier, predicting if the input radio image contains one or more candidate radio galaxies with extended morphology (YES) or none (NO)\n"
 		)
 		
 		
@@ -76,7 +82,7 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 			"supported_formats": ["fits", "png"],
 			"expected_data": "Single radio-continuum astronomical image",
 			"notes": [
-				"The image is expected to be centred and zoomed-in on a source for some classification tasks/models ('smorphclass_singlelabel_rgz') or having a larger field of view and including more than one source for other classification tasks ('smorphclass_multilabel')"
+				"The image is expected to be centred and zoomed-in on a source for some classification tasks/models ('smorphclass_singlelabel_rgz', 'smorphclass_singlelabel_lotss') or having a larger field of view and including more than one source for other classification tasks ('smorphclass_multilabel', 'anomalyclass_singlelabel', 'artefactdet_singlelabel', 'radiogaldet_singlelabel')"
 			]
 		}
 		
