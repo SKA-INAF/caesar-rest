@@ -103,7 +103,7 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 				description='Classifier model to be used. See app description.',
 				category='MODEL',
 				default_value='smorphclass_multilabel',
-				allowed_values=['smorphclass_multilabel', 'smorphclass_singlelabel_rgz', 'smorphclass_singlelabel_lotss']
+				allowed_values=['smorphclass_multilabel', 'smorphclass_singlelabel_rgz', 'smorphclass_singlelabel_lotss', 'anomalyclass_singlelabel', 'artefactdet_singlelabel', 'radiogaldet_singlelabel']
 			),
 
 			# == PRE-PROCESSING OPTIONS ==
