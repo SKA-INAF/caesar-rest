@@ -322,6 +322,7 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
 			return None
 
 	# - Set job options
+	app_mode= ""
 	if app_name=="caesar":
 		image= current_app.config['CAESAR_JOB_IMAGE']
 		job_label= 'caesar-job'
@@ -345,6 +346,12 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
 	elif app_name=="classifier-vit":
 		image= current_app.config['VIT_CLASSIFIER_JOB_IMAGE']
 		job_label= 'vit_classifier-job'
+		app_mode= 'image'
+		
+	elif app_name=="classifier-vit-catalog":
+		image= current_app.config["VIT_CLASSIFIER_JOB_IMAGE"]
+		job_label= "vit_classifier_catalog-job"
+		app_mode= 'catalog'
 		
 	elif app_name=="umap":
 		image= current_app.config['UMAP_JOB_IMAGE']
@@ -382,7 +389,8 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
 			rclone_storage_name=rclone_storage_name, 
 			rclone_secret_name=rclone_secret_name, 
 			rclone_storage_path=rclone_storage_path, 
-			rclone_mount_path=mount_vol_path
+			rclone_mount_path=mount_vol_path,
+			app_mode=app_mode,
 		)
 
 	else:
@@ -440,6 +448,7 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_o
 
 	# - Set job options
 	image= ''
+	app_mode= ''
 	if app_name=="caesar":
 		image= current_app.config['SLURM_CAESAR_JOB_IMAGE']
 
@@ -457,7 +466,12 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_o
 		
 	elif app_name=="classifier-vit":
 		image= current_app.config['SLURM_VIT_CLASSIFIER_JOB_IMAGE']
+		app_mode = "image"
 	
+	elif app_name=="classifier-vit-catalog":
+		image= current_app.config["SLURM_VIT_CLASSIFIER_JOB_IMAGE"]
+		app_mode = "catalog"
+		
 	elif app_name=="umap":
 		image= current_app.config['SLURM_UMAP_JOB_IMAGE']
 		
@@ -484,7 +498,8 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_o
 		inputfile=inputfile,
 		job_name=job_id, 
 		job_outdir=job_dir,
-		job_run_opts=run_opts
+		job_run_opts=run_opts,
+		app_mode=app_mode,
 	)
 	
 	if job is None or job=="":
