@@ -87,7 +87,8 @@ class ViTClassifierCatalogAppConfigurator(AppConfigurator):
 				"Caesar/Aegean catalogs are usually processed at island level by default.",
 				"Caesar-YOLO catalogs are processed as object-level bounding-box detections.",
 				"The output is an enhanced copy of the input catalog, not a standalone image-level classifier result.",
-				"The app exposes only source-centric classifier models. Field-level classifiers such as anomaly, artefact, radio-galaxy detection, and multi-label scene classification are intentionally not exposed because they require larger image context."
+				"The base input catalog schema is preserved; see the corresponding Caesar, Aegean, or Caesar-YOLO app output contract for the original non-enhancement fields.",
+				"The app exposes only source-centric classifier models. Field-level classifiers such as anomaly, artefact, radio-galaxy detection, and multi-label scene classification are intentionally not exposed because they require larger image context. "
 			]
 		}
 
