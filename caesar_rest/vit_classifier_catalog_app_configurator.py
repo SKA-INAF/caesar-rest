@@ -93,7 +93,8 @@ class ViTClassifierCatalogAppConfigurator(AppConfigurator):
 		}
 
 		self.limitations = [
-			"The app assumes that catalog coordinates are expressed in the same image pixel frame, or that valid WCS/RA/Dec information is available for sky-coordinate cutouts.",
+			#"The app assumes that catalog coordinates are expressed in the same image pixel frame, or that valid WCS/RA/Dec information is available for sky-coordinate cutouts.",
+			"The app extracts pixel-space cutouts around catalogued sources. The input catalog must therefore refer to the same image pixel coordinate system.",
 			"The app does not perform source detection; it only classifies sources already present in the input catalog.",
 			"Classification quality depends on the selected model, cutout size, source extent, image resolution, and catalog quality."
 		]		
@@ -124,72 +125,82 @@ class ViTClassifierCatalogAppConfigurator(AppConfigurator):
 				default_value="auto",
 				allowed_values=["auto", "source", "island", "component"]
 			),
-			"coordinate-mode": EnumValueOption(
-				name="coordinate-mode",
-				value="",
-				value_type=str,
-				description="Coordinate mode used to extract cutouts.",
-				category="CUTOUT",
-				default_value="auto",
-				allowed_values=["auto", "pixel", "sky"]
-			),
+			#"coordinate-mode": EnumValueOption(
+			#	name="coordinate-mode",
+			#	value="",
+			#	value_type=str,
+			#	description="Coordinate mode used to extract cutouts.",
+			#	category="CUTOUT",
+			#	default_value="auto",
+			#	allowed_values=["auto", "pixel", "sky"]
+			#),
+			#"size-mode": EnumValueOption(
+			#	name="size-mode",
+			#	value="",
+			#	value_type=str,
+			#	description="Cutout size mode.",
+			#	category="CUTOUT",
+			#	default_value="auto",
+			#	allowed_values=["auto", "fixed", "bbox", "bbox_factor"]
+			#),
 			"size-mode": EnumValueOption(
 				name="size-mode",
 				value="",
 				value_type=str,
-				description="Cutout size mode.",
+				description="Cutout size mode. Use 'bbox' to crop around the source bounding box plus optional pixel margin, or 'bbox_factor' to scale the bounding box size by cutout-margin-factor.",
 				category="CUTOUT",
-				default_value="auto",
-				allowed_values=["auto", "fixed", "bbox", "bbox_factor"]
+				default_value="bbox_factor",
+				allowed_values=["bbox", "bbox_factor"]
 			),
 			"cutout-size": ValueOption(
 				name="cutout-size",
 				value="",
 				value_type=int,
-				description="Minimum/fixed square cutout size in pixels.",
+				description="Minimum cutout size in pixels. When the selected bbox-based cutout is smaller than this value, it is symmetrically enlarged to at least this square size before classification.",
 				category="CUTOUT",
-				default_value=128,
-				min_value=1,
-				max_value=4096
+				default_value=32,
+				min_value=16,
+				max_value=128
 			),
-			"cutout-size-arcsec": ValueOption(
-				name="cutout-size-arcsec",
-				value="",
-				value_type=float,
-				description="Optional sky cutout size in arcsec when coordinate-mode is sky.",
-				category="CUTOUT",
-				default_value=0.0,
-				min_value=0.0,
-				max_value=36000.0,
-				advanced=True
-			),
+			
+			#"cutout-size-arcsec": ValueOption(
+			#	name="cutout-size-arcsec",
+			#	value="",
+			#	value_type=float,
+			#	description="Optional sky cutout size in arcsec when coordinate-mode is sky.",
+			#	category="CUTOUT",
+			#	default_value=0.0,
+			#	min_value=0.0,
+			#	max_value=36000.0,
+			#	advanced=True
+			#),
 			"cutout-margin": ValueOption(
 				name="cutout-margin",
 				value="",
 				value_type=int,
-				description="Extra padding in pixels around bbox-based cutouts.",
+				description="Extra padding in pixels around the catalogued source bounding box. Use 0 for no additional margin.",
 				category="CUTOUT",
-				default_value=10,
+				default_value=0,
 				min_value=0,
-				max_value=4096
+				max_value=128
 			),
 			"cutout-margin-factor": ValueOption(
 				name="cutout-margin-factor",
 				value="",
 				value_type=float,
-				description="Multiplicative factor applied to the largest bbox side in bbox-factor mode.",
+				description="Multiplicative factor applied to the bbox-derived cutout size when size-mode='bbox_factor'. Values >1 enlarge the cutout around the source.",
 				category="CUTOUT",
 				default_value=1.2,
 				min_value=1.0,
-				max_value=20.0
+				max_value=2.0
 			),
-			"save-cutouts": Option(
-				name="save-cutouts",
-				description="Save generated source cutouts for debugging.",
-				category="CUTOUT",
-				default_value=False,
-				advanced=True
-			),
+			#"save-cutouts": Option(
+			#	name="save-cutouts",
+			#	description="Save generated source cutouts for debugging.",
+			#	category="CUTOUT",
+			#	default_value=False,
+			#	advanced=True
+			#),
 			"overwrite-class-fields": Option(
 				name="overwrite-class-fields",
 				description="Overwrite existing class/morph fields in the source catalog.",
@@ -276,22 +287,19 @@ class ViTClassifierCatalogAppConfigurator(AppConfigurator):
 			"* cutout | dict: Information on the extracted source cutout used for inference.\n\n"
 
 			"cutout fields:\n"
-			"* coordinate_mode | str: Actual coordinate mode used for the cutout, usually pixel or sky.\n"
-			"* center_source | str: Origin of the cutout center, e.g. centroid, bbox_center, catalog_radec.\n"
-			"* center_pixel | dict: Pixel center used for the cutout, with x/y values when available.\n"
-			"* center_sky | dict: Sky center used or reported for the cutout, with ra/dec values when available.\n"
-			"* size_pixels | List[int]: Actual extracted cutout array size.\n"
-			"* size_pixels_requested | int: Requested pixel cutout size before edge clipping.\n"
-			"* size_arcsec | float or null: Requested sky cutout size when sky mode is used.\n"
-			"* bounds_original | List[int] or null: Cutout bounds in the original image pixel frame, reported as [xmin, xmax, ymin, ymax] when available.\n"
-			"* cutout_path | str or null: Saved cutout path when save-cutouts is enabled; otherwise null.\n\n"
-
+			"* coordinate_mode | str: Coordinate system used for cutout extraction. The current app always uses 'pixel'.\n"
+			"* center_source | str: Method used to determine the cutout center (e.g. centroid, bbox_center).\n"
+			"* center_pixel | dict: Pixel coordinates of the cutout center.\n"
+			"* bounds_original | List[int]: Bounding box of the extracted cutout in the original image pixel frame, reported as [xmin, xmax, ymin, ymax].\n"
+			"* size_pixels | List[int]: Actual cutout dimensions after clipping to the image boundaries.\n"
+			"* size_pixels_requested | int: Requested pixel cutout size after applying size-mode, minimum cutout size, bbox scaling, and margin.\n\n"
+			
 			"Fields added to parent records when child-level objects are classified:\n"
 			"* classifier_child_results | List[dict]: List of compact child classifier results propagated from classified islands/components. Each entry contains the classifier prediction block plus child_level and child_name. This does not imply that the parent itself was independently classified.\n\n"
 
 			"Top-level summary fields:\n"
 			"* classifier_summary | dict: Execution summary with status, n_sources_normalized, n_sources_classified, n_sources_skipped, results, and skipped.\n"
-			"* metadata.sclassifier_vit_catalog_enhancement | dict: Run metadata including inputfile, catalogfile, model, label_schema, catalog_level, coordinate_mode, size_mode, cutout_size, cutout margins, and processed/skipped counters."
+			"* metadata.sclassifier_vit_catalog_enhancement | dict: Run metadata including inputfile, catalogfile, model, label_schema, catalog_level, size_mode, minimum cutout size, cutout margin, cutout margin factor, and processed/skipped counters."
 		)
 
 		self.job_outputs = {
@@ -328,6 +336,7 @@ class ViTClassifierCatalogAppConfigurator(AppConfigurator):
 		logger.debug("Adding some options by default ...", action="submitjob")
 		self.cmd_args.append("--run")
 		self.cmd_args.append("--save-base-path")
+		self.cmd_args.append("--coordinate-mode=pixel") # force coordinate mode=pixel
 
 	def validate(self, job_options, data_inputs):
 		""" Validate app inputs before generic option validation """
