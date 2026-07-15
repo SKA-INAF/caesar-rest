@@ -238,6 +238,7 @@ class AegeanAppConfigurator(AppConfigurator):
 			'                - uuid | str: Universally unique identifier for this component\n'
 			'                - x_wcs/y_wcs | float: Component centroid position in sky WCS coordinates (unit: deg). Coordinate system reported in "cs" field \n'
 			'                - x_wcs_err/y_wcs_err | float: Error on component centroid position in sky WCS coordinates (unit: deg)\n'
+			'                - cs | str: Sky coordinate system {"fk5","galactic"}. "fk5" is J2000 RightAscension/Declination\n'
 			'                - Speak/Speak_err | float: Component peak flux parameter and its error (unit: Jy/beam)\n'
 			'                - S/S_err | float: Component integrated flux density (already divided by beam area) and its error (unit: Jy)\n'
 			'                - bkg | float: Background flux density (unit: Jy/beam)\n'
