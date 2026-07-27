@@ -166,33 +166,38 @@ class SFForecasterAppConfigurator(AppConfigurator):
 		
 		} ## close valid options
 		
+		
+#		{
+#  "data": [
+#    {
+#      "sname": "05e98706da8b461e9233a7c95d4e9575",
+#      "label_pred": "M+",
+#     "prob_pred": 0.8321312665939331,
+#      "filepath": "05e98706da8b461e9233a7c95d4e9575.png"
+#    }
+#  ]
+#}
+
+
 		# - Define dictionary with job outputs produced
 		catalog_out_desc= (
-			'JSON dictionary containing image classification labels (depending on classification task/model) and relative probability/confidence score. '
+			'JSON dictionary containing forecasting predicted labels (depending on forecasting model) and relative probability/confidence score. '
 		)
 		
 		catalog_out_format= (
-			'For multi-label classification, the returned JSON dictionary follows the format below: \n\n'
+			'The returned dictionary follows the format below:\n\n'
 			'{\n'		
-			'  "filepath": "f572b6faffb34f5680bccb12c02aacf5.fits",\n'
-			'  "sname": "f572b6faffb34f5680bccb12c02aacf5",\n'
-			'  "label_pred": ["RADIO-GALAXY", "EXTENDED"],\n'
-			'  "prob_pred": [0.606,0.754]\n'
-			'}\n'
-			'\n'
-			'For single-label classification, the returned dictionary follows the format below:\n\n'
-			'{\n'		
-			'  "filepaths": "f572b6faffb34f5680bccb12c02aacf5.fits",\n'
-			'  "sname": "f572b6faffb34f5680bccb12c02aacf5",\n'
-			'  "label_pred": "1C-1P",\n'
-			'  "prob_pred": 0.85\n'
+			'  "filepath": "05e98706da8b461e9233a7c95d4e9575.png",\n'
+			'  "sname": "05e98706da8b461e9233a7c95d4e9575",\n'
+			'  "label_pred": "M+",\n'
+			'  "prob_pred": 0.83\n'
 			'}\n'
 			'\n'
 			'Below, we report a description of each dictionary field: \n'
 			'* filepath | str: Input image filename (base path, not absolute path).\n'
 			'* sname | str: Input image identifier, usually set to filepath without file extension.\n'
-			'* label_pred | str or List[str]: Predicted classification label for single-label class tasks, or list of labels for multi-label class tasks\n'
-			'* prob_pred | float or List[float]: Classification probability for predicted class label in single-label class tasks, or list of probabilities for each predicted label in multi-label class tasks'
+			'* label_pred | str or List[str]: Predicted forecasting class label, e.g. M+ or NONE for binary forecasting model\n'
+			'* prob_pred | float or List[float]: Probability for predicted forecasting class label'
 		)
 		
 		self.job_outputs= {
