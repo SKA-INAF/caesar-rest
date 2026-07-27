@@ -84,7 +84,7 @@ class SFForecasterAppConfigurator(AppConfigurator):
 				description='Forecasting model to be used. See app description.',
 				category='MODEL',
 				default_value='image_M+24h',
-				allowed_values=['image_M+24h', 'video_fstep36m_M+24h', 'video_fstep72m_M+24h', 'ts_M+24h']
+				allowed_values=['image_M+24h', 'video_n16_dt36m_M+24h', 'video_n16_dt72m_M+24h', 'ts_n1440_dt1m_M+24h']
 			),
 			'binary-thr' : ValueOption(
 				name='binary-thr',
