@@ -35,6 +35,7 @@ from caesar_rest.outlier_finder_app_configurator import OutlierFinderAppConfigur
 from caesar_rest.hdbscan_app_configurator import HDBSCANAppConfigurator
 from caesar_rest.simsearch_app_configurator import SimilaritySearchAppConfigurator
 from caesar_rest.caesar_yolo_app_configurator import CaesarYoloAppConfigurator
+from caesar_rest.sfforecaster_app_configurator import SFForecasterAppConfigurator
 
 # Get logger
 from caesar_rest import logger
@@ -62,6 +63,7 @@ class JobConfigurator(object):
 			'similarity-search': SimilaritySearchAppConfigurator,
 			'caesar-mrcnn': MaskRCNNAppConfigurator,
 			'caesar-yolo': CaesarYoloAppConfigurator,
+			'sfforecaster': SFForecasterAppConfigurator,
 		}
 		
 		

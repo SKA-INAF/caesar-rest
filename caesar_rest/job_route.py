@@ -373,6 +373,10 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
 		image= current_app.config['CAESAR_YOLO_JOB_IMAGE']
 		job_label= 'caesar-yolo-job'
 
+	elif app_name=="sfforecaster":
+		image= current_app.config['SFFORECASTER_JOB_IMAGE']
+		job_label= 'sfforecaster-job'
+		
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)
 		return None
@@ -487,6 +491,9 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_o
 	elif app_name=="caesar-yolo":
 		image= current_app.config['SLURM_CAESAR_YOLO_JOB_IMAGE']
 		
+	elif app_name=="sfforecaster":
+		image= current_app.config['SLURM_SFFORECASTER_JOB_IMAGE']
+			
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)
 		return None
