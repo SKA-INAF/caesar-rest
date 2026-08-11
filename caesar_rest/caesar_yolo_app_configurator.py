@@ -63,7 +63,8 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 
 		self.limitations = [
 			"Source detection accuracy depends on the selected pretrained model, image preprocessing, survey parameters (e.g. resolution/noise) of the input image, and detection parameters choices ('score-thr', 'iou-thr').",
-			"For better detection performance, set model and imgsize to the same value (e.g. yolov11l_imgsize640, imgsize=640), as closest as possible to original input image size.",
+			#"For better detection performance, set model and imgsize to the same value (e.g. yolov11l_imgsize640, imgsize=640), as closest as possible to original input image size.",
+			"For best detection performance, use the imgsize associated with the selected pretrained model (e.g. yolov11l_imgsize256 with imgsize=256). Model/input-size selection should follow the training configuration of the pretrained model rather than simply choosing the size closest to the original image dimensions.",
 			"Processing of very large images (>1024 pixels) is supported but it requires enabling the tiling and parallel run mode (see options).",
 			"The app can be used with input images from different astronomical domains (e.g. infrared) but we anticipate sub-optimal performance as the model was trained/tested on radio images only."
 		]
