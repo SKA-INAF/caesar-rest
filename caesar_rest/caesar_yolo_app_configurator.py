@@ -50,7 +50,7 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			"- 'COMPACT': single-island isolated point- or slightly resolved compact radio sources, eventually hosting one or more blended components, each with morphology resembling the synthesized beam shape;\n"
 			"- 'EXTENDED': radio sources with a single-island extended morphology, eventually hosting one or more blended components, with some deviating from the synthesized beam shape;\n"
 			"- 'EXTENDED-MULTISLAND': radio sources with an extended morphology, consisting of more (point-like or extended) islands, each one eventually hosting one or more blended components;\n"
-			"- 'FLAGGED': single-island bright radio sources, with compact or extended morphology, that are poorly imaged and cannot be separated from close imaging artefacts.\n"			
+			"- 'FLAGGED': single-island bright radio sources, with compact or extended morphology, that are poorly imaged and cannot be separated from close imaging artefacts.\n"		
 			#"The app expects input image-like astronomical data, in either FITS or PNG format. "
 			#"Results are returned as a JSON catalog of detections and optional diagnostic plots."
 		)
