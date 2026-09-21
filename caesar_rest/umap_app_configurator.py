@@ -335,6 +335,7 @@ class UMAPAppConfigurator(AppConfigurator):
 				"notes": (
 					""
 				)
+			}
 		}
 		
 		# - Define option value transformers
