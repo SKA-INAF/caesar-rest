@@ -49,7 +49,7 @@ class UMAPAppConfigurator(AppConfigurator):
 		)
 		
 		input_json_format= (
-			'Input JSON tabular file has this format: \n\n'
+			'Input JSON file has this format: \n\n'
 			'{\n'
 			'  "data": [\n'
 			'    {\n'
@@ -218,8 +218,123 @@ class UMAPAppConfigurator(AppConfigurator):
 		} ## close valid options
 		
 		# - Define dictionary with job outputs produced
-		self.job_outputs= {
+		json_out_desc= (
+			'JSON file containing the input data embeddings produced by UMAP in unsupervised run mode.'
+		)
 		
+		json_out_format= (
+			'Output JSON embeddings file has this format: \n\n'
+			'{\n'
+			'  "data": [\n'
+			'    {\n'
+			'      "sname": "f572b6faffb34f5680bccb12c02aacf5", \n'
+			'      "id": "2", \n'
+			'      "label": "EXTENDED", \n'
+			'      "feats": [0.9604316353797913, 2.2406632900238037], \n'
+			'    } \n'
+			'} \n'
+			'\n'
+			'where: \n'
+			'* sname | str: Observation identifier, usually set to filepath/uid without file extension \n'
+			'* id | int or list(int): Class identifier(s) \n'
+			'* label | str or list(str): Class label(s) \n'
+			'* feats | list(float): Feature parameters produced by UMAP (low-D embeddings) \n'
+			'Additional metadata fields present in the input dataset will be preserved in the json output format.'
+		)
+		
+		ascii_out_desc= (
+			'Ascii tabular file containing the input data embeddings produced by UMAP in unsupervised run mode.'
+		)
+		ascii_sup_out_desc= (
+			'Ascii tabular file containing the input data embeddings produced by UMAP in supervised run mode.'
+		)
+		
+		ascii_out_format= (
+			'Output ascii tabular data file has this format:\n'
+			'- First row: header, starting with #, e.g. # sname z1 z2 id \n'
+			'- Col 1: sname | str: Observation identifier, usually set to filepath/uid without file extension \n'
+			'- Col 2,3,...,M+1: feats | float: M feature parameters produced by UMAP (low-D embedding) for the observation \n'
+			'- Col M+2: id | int or label | str: Class identifier (if int) or class label (if str) for the observation'
+		)
+				
+		self.job_outputs= {
+			"embeddings-json": {
+				"path": None,
+				"glob": "*.json",
+				"type": "application/json",
+				"role": "primary_result",
+				"description": json_out_desc,
+				"format": json_out_format,
+				"parser": "json",
+				"required": True,
+				"notes": (
+					"The embeddings json output filename produced by UMAP in unsupervised run mode is by default set to 'latent_data_umap_unsupervised.json', but it can be configured by the user with the option 'outfile-unsup-json'"
+				)
+			},
+			"embeddings-ascii": {
+				"path": None,
+				"glob": "*.dat",
+				"type": "text/plain",
+				"role": "primary_result",
+				"description": ascii_out_desc,
+				"format": ascii_out_format,
+				"parser": "text",
+				"required": True,
+				"notes": (
+					"The embeddings ascii output filename produced by UMAP in unsupervised run mode is by default set to 'latent_data_umap_unsupervised.dat', but it can be configured by the user with the option 'outfile-unsup'"
+				)
+			},
+			"embeddings-ascii-supervised": {
+				"path": None,
+				"glob": "*.dat",
+				"type": "text/plain",
+				"role": "primary_result",
+				"description": ascii_sup_out_desc,
+				"format": ascii_out_format,
+				"parser": "text",
+				"required": False,
+				"notes": (
+					"The embeddings ascii output filename produced by UMAP in supervised run mode is by default set to 'latent_data_umap_supervised.dat', but it can be configured by the user with the option 'outfile-sup'"
+				)
+			},
+			"datascaler": {
+				"path": None,
+				"glob": "datascaler.sav",
+				"type": "application/octet-stream",
+				"role": "model",
+				"description": "A scikit-learn data scaler used to pre-process the input data.",
+				"format": "",
+				"parser": "scikit-learn",
+				"required": False,
+				"notes": (
+					""
+				)
+			},
+			"model": {
+				"path": None,
+				"glob": "umap_model.sav",
+				"type": "application/octet-stream",
+				"role": "model",
+				"description": "A scikit-learn model file including trained UMAP model.",
+				"format": "",
+				"parser": "scikit-learn",
+				"required": False,
+				"notes": (
+					""
+				)
+			},
+			"log": {
+				"path": None,
+				"glob": "*.log",
+				"type": "text/plain",
+				"role": "diagnostic",
+				"description": "Execution logs.",
+				"format": "",
+				"parser": "text",
+				"required": False,
+				"notes": (
+					""
+				)
 		}
 		
 		# - Define option value transformers
