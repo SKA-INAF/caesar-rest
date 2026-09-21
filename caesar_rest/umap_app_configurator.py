@@ -148,7 +148,7 @@ class UMAPAppConfigurator(AppConfigurator):
 				default_value=True
 			),
 			'ids-excluded-in-train' : ValueOption(
-				name='selcols',
+				name='ids-excluded-in-train',
 				value='',
 				value_type=str, 
 				description='List of observation ids (separated by colons) not included for training supervised UMAP as they are considered unknown classes (default=-1:0)',
