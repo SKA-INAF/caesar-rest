@@ -181,6 +181,7 @@ class AppConfigurator(object):
 		d= {
 			"name": self.app_name,
 			"description": self.description,
+			"tool_categories": self.tool_categories,
 			"input_requirements": self.input_requirements,
 			"job_options": {},
 			"job_outputs": self.job_outputs,
