@@ -57,6 +57,7 @@ class SFForecasterAppConfigurator(AppConfigurator):
 			"  Each time-series cover a time interval of 24 hours, equivalent to 1440 points at 1 min cadence.\n"
 		)
 		
+		self.tool_categories= ["image", "video", "time-series"]
 		
 		self.input_requirements = {
 			"supported_formats": ["fits", "png", "json", "csv"],

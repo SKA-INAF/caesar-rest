@@ -52,6 +52,8 @@ class CaesarAppConfigurator(AppConfigurator):
 			#"The app expects input image-like astronomical data, in FITS format. "
 		)
 		
+		self.tool_categories= ["image"]
+		
 		self.input_requirements = {
 			"expected_data": "Single radio-continuum astronomical image",
 			"supported_formats": ["fits"],

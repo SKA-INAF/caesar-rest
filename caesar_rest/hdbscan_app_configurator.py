@@ -48,6 +48,8 @@ class HDBSCANAppConfigurator(AppConfigurator):
 			""
 		)
 		
+		self.tool_categories= ["tabular"]
+		
 		self.input_requirements = {
 			"supported_formats": ["uid", "abspath", "dataset"],
 			"expected_data": "TBD",

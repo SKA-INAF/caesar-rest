@@ -68,6 +68,8 @@ class ViTClassifierCatalogAppConfigurator(AppConfigurator):
 			"    - RELAXED-DOUBLE: double-lobed radio galaxies with diffuse and relatively featureless lobes, lacking strong jets or hotspots and often representing a more evolved or remnant stage of radio-source activity.\n"
 			"    The labelling schema is from Horton et al, 2025 and training data from the LOFAR LoTSS survey. This classifier is intended to be run on images zoomed in around a source, typically having original size <256x256 pixels.\n"
 		)
+		
+		self.tool_categories= ["image"]
 
 		self.input_requirements = {
 			"supported_formats": {

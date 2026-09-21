@@ -55,6 +55,8 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 			#"Results are returned as a JSON catalog of detections and optional diagnostic plots."
 		)
 		
+		self.tool_categories= ["image"]
+		
 		self.input_requirements = {
 			"supported_formats": ["fits", "png"],
 			"expected_data": "Single radio-continuum astronomical image",

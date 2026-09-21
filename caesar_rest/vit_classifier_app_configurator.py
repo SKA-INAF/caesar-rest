@@ -77,6 +77,7 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 			"* 'radiogaldet_singlelabel': Binary classifier, predicting if the input radio image contains one or more candidate radio galaxies with extended morphology (YES) or none (NO)\n"
 		)
 		
+		self.tool_categories= ["image"]
 		
 		self.input_requirements = {
 			"supported_formats": ["fits", "png"],

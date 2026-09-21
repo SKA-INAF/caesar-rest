@@ -169,6 +169,7 @@ class AppConfigurator(object):
 		}
 		self.job_outputs= {}
 		self.description= ""
+		self.tool_categories= []
 		self.input_requirements= {}
 		self.limitations= []
 

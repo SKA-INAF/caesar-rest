@@ -48,6 +48,8 @@ class UMAPAppConfigurator(AppConfigurator):
 			"Run UMAP data dimensionality reduction tool to produce a low-dimensional embedding of a dataset (N observations, M features → K<M embedding features)."	
 		)
 		
+		self.tool_categories= ["tabular"]
+		
 		input_json_format= (
 			'Input JSON file has this format: \n\n'
 			'{\n'
