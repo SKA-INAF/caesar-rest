@@ -103,7 +103,7 @@ class UMAPAppConfigurator(AppConfigurator):
 				name='selcols',
 				value='',
 				value_type=str, 
-				description='Data column ids to be selected from input data, separated by commas (default=all columns)',
+				description='Data column indices to be selected from input data, separated by colons. If empty, all columns are selected.',
 				category='INPUT',
 				default_value=''
 			),
@@ -142,28 +142,36 @@ class UMAPAppConfigurator(AppConfigurator):
 
 			# == PRE-PROCESSING OPTIONS ==
 			'normalize' : Option(
-				name='normalize_minmax', 
-				description='Normalize feature data in range [0,1] before applying UMAP. If features have very different units or numerical ranges, features with larger scales will completely dominate the distance calculations, so it is suggested to normalize in that case.', 
+				name='normalize', 
+				description='If True, normalize feature data in range [0,1] before applying UMAP. If features have very different units or numerical ranges, features with larger scales will completely dominate the distance calculations, so it is suggested to normalize in that case.', 
 				category='PREPROCESSING',
 				default_value=True
+			),
+			'ids-excluded-in-train' : ValueOption(
+				name='selcols',
+				value='',
+				value_type=str, 
+				description='List of observation ids (separated by colons) not included for training supervised UMAP as they are considered unknown classes (default=-1:0)',
+				category='INPUT',
+				default_value='-1:0'
 			),
 			
 			# == SAVE OPTIONS ==
 			'no-save-ascii' : Option(
 				name='no-save-ascii', 
-				description='Do not save output in ascii format', 
+				description='If True, disable saving outputs to ascii format', 
 				category='OUTPUT',
 				default_value=False
 			),
 			'no-save-json' : Option(
 				name='no-save-json', 
-				description='Do not save output in json format', 
+				description='If True, disable saving outputs to json format', 
 				category='OUTPUT',
 				default_value=False
 			),
 			'no-save-model' : Option(
 				name='no-save-model', 
-				description='Do not save model', 
+				description='If True, disable saving UMAP leaned model', 
 				category='OUTPUT',
 				default_value=False
 			),
