@@ -49,6 +49,8 @@ class AegeanAppConfigurator(AppConfigurator):
 			"The tool also supports characterization of extracted compact sources, including component identification and measurement of source/component parameters (flux density, position, extension) through 2D gaussian mixture fitting. "
 		)
 		
+		self.tool_categories= ["image"]
+		
 		self.input_requirements = {
 			"expected_data": "Single radio-continuum astronomical image",
 			"supported_formats": ["fits"],
