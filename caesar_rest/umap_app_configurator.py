@@ -105,7 +105,7 @@ class UMAPAppConfigurator(AppConfigurator):
 				name='selcols',
 				value='',
 				value_type=str, 
-				description='Data column indices to be selected from input data, separated by colons. If empty, all columns are selected.',
+				description='Data column indices to be selected from input data, separated by dashes. If empty, all columns are selected.',
 				category='INPUT',
 				default_value=''
 			),
