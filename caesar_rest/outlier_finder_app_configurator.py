@@ -166,7 +166,7 @@ class OutlierFinderAppConfigurator(AppConfigurator):
 			# == PRE-PROCESSING OPTIONS ==
 			'normalize' : Option(
 				name='normalize', 
-				description='If True, normalize feature data in range [0,1] before applying UMAP. If features have very different units or numerical ranges, features with larger scales will completely dominate the distance calculations, so it is suggested to normalize in that case.', 
+				description='If True, normalize feature data in range [0,1] before applying outlier search. If features have very different units or numerical ranges, features with larger scales will completely dominate the distance calculations, so it is suggested to normalize in that case.', 
 				category='PREPROCESSING',
 				default_value=True
 			),
@@ -229,7 +229,7 @@ class OutlierFinderAppConfigurator(AppConfigurator):
 		)
 		
 		json_out_format= (
-			'Output JSON embeddings file has this format: \n\n'
+			'Output JSON file with inlier/outlier classification has this format: \n\n'
 			'{\n'
 			'  "data": [\n'
 			'    {\n'
@@ -246,7 +246,7 @@ class OutlierFinderAppConfigurator(AppConfigurator):
 			'* sname | str: Observation identifier, usually set to filepath/uid without file extension \n'
 			'* id | int or list(int): Class identifier(s) \n'
 			'* label | str or list(str): Class label(s) \n'
-			'* feats | list(float): Feature parameters produced by UMAP (low-D embeddings) \n'
+			'* feats | list(float): Input feature parameters (if no-save-features option is False)\n'
 			'* is_outlier | int: Binary flag indicating if the observation is an inlier (=0) or outlier (=1) given the chosen outlier score threshold \n'
 			'* outlier_score | float: Outlier score (if outlier_score>thr the observation is marked as outlier) \n'
 			'Additional metadata fields present in the input dataset will be preserved in the json output format.'
@@ -257,10 +257,10 @@ class OutlierFinderAppConfigurator(AppConfigurator):
 		)
 		
 		ascii_out_format= (
-			'Output ascii tabular data file has this format:\n'
+			'Output ascii tabular data file with inlier/outlier classification has this format:\n'
 			'- First row: header, starting with #, e.g. # sname z1 z2 id is_outlier outlier_score \n'
 			'- Col 1: sname | str: Observation identifier, usually set to filepath/uid without file extension \n'
-			'- Col 2,3,...,M+1: feats | float: M feature parameters produced by UMAP (low-D embedding) for the observation \n'
+			'- Col 2,3,...,M+1: feats | float: M input feature parameters for the observation (if no-save-features option is False)\n'
 			'- Col M+2: id | int or label | str: Class identifier (if int) or class label (if str) for the observation \n'
 			'- Col M+3: is_outlier | int: Binary flag indicating if the observation is an inlier (=0) or outlier (=1) given the chosen outlier score threshold \n'
 			'- Col M+4: outlier_score | float: Outlier score (if outlier_score>thr the observation is marked as outlier) \n'
@@ -311,7 +311,7 @@ class OutlierFinderAppConfigurator(AppConfigurator):
 				"glob": "outlier_model.sav",
 				"type": "application/octet-stream",
 				"role": "model",
-				"description": "A scikit-learn model file including trained UMAP model.",
+				"description": "A scikit-learn model file including trained IsolationForest model.",
 				"format": "",
 				"parser": "scikit-learn",
 				"required": False,
