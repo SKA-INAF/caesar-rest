@@ -148,8 +148,8 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				category='PREPROCESSING',
 				default_value=True
 			),
-			'normmin' : ValueOption(
-				name='normmin',
+			'norm-min' : ValueOption(
+				name='norm-min',
 				value='',
 				value_type=float, 
 				description='Normalization min value',
@@ -158,8 +158,8 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				min_value=-1.0,
 				max_value=0.0
 			),
-			'normmax' : ValueOption(
-				name='normmax',
+			'norm-max' : ValueOption(
+				name='norm-max',
 				value='',
 				value_type=float, 
 				description='Normalization max value',

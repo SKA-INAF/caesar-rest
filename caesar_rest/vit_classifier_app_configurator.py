@@ -80,8 +80,8 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 		self.tool_categories= ["image"]
 		
 		self.input_requirements = {
-			"supported_formats": ["fits", "png"],
-			"expected_data": "Single radio-continuum astronomical image",
+			"supported_formats": ["fits", "png", "json"],
+			"expected_data": "Single radio-continuum astronomical image (PNG/FITS) or JSON datalist of images",
 			"notes": [
 				"The image is expected to be centred and zoomed-in on a source for some classification tasks/models ('smorphclass_singlelabel_rgz', 'smorphclass_singlelabel_lotss') or having a larger field of view and including more than one source for other classification tasks ('smorphclass_multilabel', 'anomalyclass_singlelabel', 'artefactdet_singlelabel', 'radiogaldet_singlelabel')"
 			]
@@ -219,9 +219,19 @@ class ViTClassifierAppConfigurator(AppConfigurator):
 		self.cmd_args.append("--run")
 		self.cmd_args.append("--save-base-path") # do not expose internal paths to clients
 		
+	
 	def set_data_input_option_value(self):
-		""" Set app input option value """
+		inputfile = self.data_inputs
 
-		input_opt= "".join("--inputfile=%s" % self.data_inputs)
-		self.cmd_args.append(input_opt)
+		if isinstance(inputfile, list):
+			if len(inputfile) != 1:
+				raise ValueError(
+					"classifier-vit expects exactly one input image or one JSON datalist"
+				)
+			inputfile = inputfile[0]
+
+		if str(inputfile).lower().endswith(".json"):
+			self.cmd_args.append("--datalist=%s" % inputfile)
+		else:
+			self.cmd_args.append("--inputfile=%s" % inputfile)	
 		
