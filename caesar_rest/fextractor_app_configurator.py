@@ -100,8 +100,8 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				default_value="",
 				allowed_values=["default", "simclr_radio"]
 			),
-			'normmin' : ValueOption(
-				name='normmin',
+			'norm-min' : ValueOption(
+				name='norm-min',
 				value='',
 				value_type=float, 
 				description='Normalization min value (default=0)',
@@ -110,8 +110,8 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				min_value=-1.0,
 				max_value=0.0
 			),
-			'normmax' : ValueOption(
-				name='normmax',
+			'norm-max' : ValueOption(
+				name='norm-max',
 				value='',
 				value_type=float, 
 				description='Normalization max value (default=1)',
