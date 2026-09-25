@@ -164,7 +164,7 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 				value_type=float, 
 				description='Normalization max value',
 				category='PREPROCESSING',
-				default_value=1.0,
+				default_value=255.0,
 				min_value=1.0,
 				max_value=255.0
 			),
