@@ -165,7 +165,8 @@ class AppConfigurator(object):
 		self.batch_processing_support= False
 		self.run_options= {
 			"ncores": 1,
-			"nproc": 1
+			"nproc": 1,
+			"container_variant": ""
 		}
 		self.job_outputs= {}
 		self.description= ""

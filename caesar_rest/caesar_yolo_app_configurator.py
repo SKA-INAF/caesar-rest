@@ -586,6 +586,17 @@ class CaesarYoloAppConfigurator(AppConfigurator):
 	def set_data_input_option_value(self):
 		""" Set app input option value """
 
-		input_opt= "".join("--inputfile=%s" % self.data_inputs)
-		self.cmd_args.append(input_opt)
+		if isinstance(self.data_inputs, list):
+			if len(self.data_inputs) != 1:
+				raise ValueError(
+					"fextractor expects exactly one input image or one JSON datalist"
+				)
+			inputfile = self.data_inputs[0]
+		else:
+			inputfile = self.data_inputs
+
+		self.cmd_args.append(
+			"--inputfile=%s" % inputfile
+		)	
 		
+	

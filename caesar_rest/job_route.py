@@ -89,8 +89,6 @@ def get_dataset_names():
 #=================================
 #===      JOB SUBMIT 
 #=================================
-
-
 @job_bp.route('/job', methods=['POST'])
 @custom_require_login
 def submit_job():
@@ -188,7 +186,7 @@ def submit_job():
 		submit_res= submit_job_celery(app_name, cmd, cmd_args, job_top_dir, username, mongo_dbhost, mongo_dbport, mongo_dbname)
 	
 	elif job_scheduler=='kubernetes':
-		submit_res= submit_job_kubernetes(app_name, cmd_args, job_top_dir, username)
+		submit_res= submit_job_kubernetes(app_name, cmd_args, job_top_dir, username, run_opts)
 
 	elif job_scheduler=='slurm':
 		submit_res= submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_opts)
@@ -291,7 +289,7 @@ def submit_job_celery(app_name, cmd, cmd_args, job_top_dir, username, mongo_dbho
 #=================================
 #===    SUBMIT JOB KUBERNETES
 #=================================
-def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
+def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username, run_opts):
 	""" Submit job to Kubernetes scheduler """
 
 	# - Init response
@@ -376,6 +374,33 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username):
 	elif app_name=="sfforecaster":
 		image= current_app.config['SFFORECASTER_JOB_IMAGE']
 		job_label= 'sfforecaster-job'
+		
+	elif app_name=="fextractor":
+		container_variant= run_opts.get(
+			"container_variant",
+			"",
+		)
+
+		if container_variant=="tf":
+			image= current_app.config[
+				'FEXTRACTOR_TF_JOB_IMAGE'
+			]
+
+		elif container_variant=="torch":
+			image= current_app.config[
+				'FEXTRACTOR_TORCH_JOB_IMAGE'
+			]
+
+		else:
+			logger.warn(
+				"Unknown fextractor container variant '%s'!" %
+				container_variant,
+				action="submitjob",
+				user=username,
+			)
+			return None
+
+		job_label= 'fextractor-job'	
 		
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)
@@ -493,6 +518,31 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_o
 		
 	elif app_name=="sfforecaster":
 		image= current_app.config['SLURM_SFFORECASTER_JOB_IMAGE']
+			
+	elif app_name=="fextractor":
+		container_variant= run_opts.get(
+			"container_variant",
+			"",
+		)
+
+		if container_variant=="tf":
+			image= current_app.config[
+				'SLURM_FEXTRACTOR_TF_JOB_IMAGE'
+			]
+
+		elif container_variant=="torch":
+			image= current_app.config[
+				'SLURM_FEXTRACTOR_TORCH_JOB_IMAGE'
+			]
+
+		else:
+			logger.warn(
+				"Unknown fextractor container variant '%s'!" %
+				container_variant,
+				action="submitjob",
+				user=username,
+			)
+			return None		
 			
 	else:
 		logger.warn("Unknown/unsupported app %s!" % app_name, action="submitjob", user=username)

@@ -72,7 +72,9 @@ class Config(object):
 	SLURM_SIMSEARCH_JOB_IMAGE= '/opt/containers/sclassifier/similarity-search_latest.sif'
 	SLURM_CAESAR_YOLO_JOB_IMAGE= '/opt/containers/caesar-yolo/caesar-yolo-job_latest.sif'
 	SLURM_SFFORECASTER_JOB_IMAGE= '/opt/containers/sfforecaster/sfforecaster-job_latest.sif'
-	
+	SLURM_FEXTRACTOR_TF_JOB_IMAGE= '/opt/containers/fextractor/fextractor-tf_latest.sif'
+	SLURM_FEXTRACTOR_TORCH_JOB_IMAGE= '/opt/containers/fextractor/fextractor-torch_latest.sif'
+
 	SLURM_MAX_CORE_PER_JOB= 4 # Maximum number of cores reserved for a job
 	
 	# - AAI options
@@ -125,6 +127,11 @@ class Config(object):
 	# - SFFORECASTER app options
 	SFFORECASTER_JOB_IMAGE= 'sriggi/sfforecaster-job:latest'
 	
+	# - FEXTRACTOR app options
+	FEXTRACTOR_TF_JOB_IMAGE= 'sriggi/fextractor-tf:latest'
+	FEXTRACTOR_TORCH_JOB_IMAGE= 'sriggi/fextractor-torch:latest'
+
+
 	# - DATASET app options
 	#   NB: paths are to be configured at app deployment phase.
 	DATASETS= {

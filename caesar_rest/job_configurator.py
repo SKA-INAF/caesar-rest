@@ -36,6 +36,7 @@ from caesar_rest.hdbscan_app_configurator import HDBSCANAppConfigurator
 from caesar_rest.simsearch_app_configurator import SimilaritySearchAppConfigurator
 from caesar_rest.caesar_yolo_app_configurator import CaesarYoloAppConfigurator
 from caesar_rest.sfforecaster_app_configurator import SFForecasterAppConfigurator
+from caesar_rest.fextractor_app_configurator import FeatExtractorAppConfigurator
 
 # Get logger
 from caesar_rest import logger
@@ -64,6 +65,7 @@ class JobConfigurator(object):
 			'caesar-mrcnn': MaskRCNNAppConfigurator,
 			'caesar-yolo': CaesarYoloAppConfigurator,
 			'sfforecaster': SFForecasterAppConfigurator,
+			'fextractor': FeatExtractorAppConfigurator,
 		}
 		
 		

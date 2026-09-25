@@ -136,6 +136,8 @@ def get_args():
 	parser.add_argument('-simsearch_container','--simsearch_container', dest='simsearch_container', default='/opt/containers/sclassifier/similarity-search_latest.sif', required=False, type=str, help='Path to Similarity Search Singularity container (default=/opt/containers/sclassifier/similarity-search_latest.sif)')
 	parser.add_argument('-caesar_yolo_container','--caesar_yolo_container', dest='caesar_yolo_container', default='/opt/containers/caesar-yolo/caesar-yolo-job_latest.sif', required=False, type=str, help='Path to CAESAR-YOLO Singularity container (default=/opt/containers/caesar-yolo/caesar-yolo-job_latest.sif)')
 	parser.add_argument('-sfforecaster_container','--sfforecaster_container', dest='sfforecaster_container', default='/opt/containers/sfforecaster/sfforecaster-job_latest.sif', required=False, type=str, help='Path to Solar Flare Forecaster Singularity container (default=/opt/containers/sfforecaster/sfforecaster-job_latest.sif)')
+	parser.add_argument('-fextractor_tf_container', '--fextractor_tf_container', dest='fextractor_tf_container', default='/opt/containers/fextractor/fextractor-tf_latest.sif', required=False, type=str, help='Path to TensorFlow fextractor Singularity container')
+	parser.add_argument('-fextractor_torch_container', '--fextractor_torch_container', dest='fextractor_torch_container', default='/opt/containers/fextractor/fextractor-torch_latest.sif', required=False, type=str, help='Path to PyTorch fextractor Singularity container')
 	
 	# - Dataset options
 	parser.add_argument('-dataset_smgps','--dataset_smgps', dest='dataset_smgps', default='', required=False, type=str, help='Path to smgps dataset json filelist')
@@ -292,6 +294,8 @@ hdbscan_container= args.hdbscan_container
 simsearch_container= args.simsearch_container
 caesar_yolo_container= args.caesar_yolo_container
 sfforecaster_container= args.sfforecaster_container
+fextractor_tf_container= args.fextractor_tf_container
+fextractor_torch_container= args.fextractor_torch_container
 
 # - Dataset options
 dataset_smgps= args.dataset_smgps
@@ -372,6 +376,8 @@ config.SLURM_HDBSCAN_JOB_IMAGE= hdbscan_container
 config.SLURM_SIMSEARCH_JOB_IMAGE= simsearch_container
 config.SLURM_CAESAR_YOLO_JOB_IMAGE= caesar_yolo_container
 config.SLURM_SFFORECASTER_JOB_IMAGE= sfforecaster_container
+config.SLURM_FEXTRACTOR_TF_JOB_IMAGE= fextractor_tf_container
+config.SLURM_FEXTRACTOR_TORCH_JOB_IMAGE= fextractor_torch_container
 
 # - Create data manager (DEPRECATED BY MONGO)
 ##logger.info("Creating data manager ...")

@@ -93,7 +93,9 @@ class SFForecasterAppConfigurator(AppConfigurator):
 				value_type=float, 
 				description='Binary threshold applied to select flares (>=thr) vs non-flares (<thr)',
 				category='PREPROCESSING',
-				default_value=0.5
+				default_value=0.5,
+				min_value=0.0,
+				max_value=1.0
 			),
 			
 			# == IMAGE PRE-PROCESSING OPTIONS ==
@@ -109,7 +111,9 @@ class SFForecasterAppConfigurator(AppConfigurator):
 				value_type=float, 
 				description='zscale contrast applied to all channels',
 				category='PREPROCESSING',
-				default_value=0.25
+				default_value=0.25,
+				min_value=0.0,
+				max_value=1.0
 			),
 			#'norm-min' : ValueOption(
 			#	name='norm-min',
