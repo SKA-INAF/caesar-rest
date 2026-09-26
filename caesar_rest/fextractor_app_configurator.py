@@ -93,11 +93,13 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				value="",
 				value_type=str,
 				description=(
-					"Image preprocessing profile. If omitted, the default profile "
-					"associated with the selected model is used."
+					"Scientific image preprocessing profile applied before model-specific "
+					"preprocessing. The default profile provides common preprocessing "
+					"settings suitable for cross-model embedding comparison."
 				),
 				category="PREPROCESSING",
-				default_value="",
+				#default_value="",
+				default_value="default",
 				allowed_values=["default", "simclr_radio"]
 			),
 			'norm-min' : ValueOption(
