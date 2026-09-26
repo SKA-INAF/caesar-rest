@@ -138,6 +138,7 @@ def get_args():
 	parser.add_argument('-sfforecaster_container','--sfforecaster_container', dest='sfforecaster_container', default='/opt/containers/sfforecaster/sfforecaster-job_latest.sif', required=False, type=str, help='Path to Solar Flare Forecaster Singularity container (default=/opt/containers/sfforecaster/sfforecaster-job_latest.sif)')
 	parser.add_argument('-fextractor_tf_container', '--fextractor_tf_container', dest='fextractor_tf_container', default='/opt/containers/fextractor/fextractor-tf_latest.sif', required=False, type=str, help='Path to TensorFlow fextractor Singularity container')
 	parser.add_argument('-fextractor_torch_container', '--fextractor_torch_container', dest='fextractor_torch_container', default='/opt/containers/fextractor/fextractor-torch_latest.sif', required=False, type=str, help='Path to PyTorch fextractor Singularity container')
+	parser.add_argument('-fextractor_chronos_container', '--fextractor_chronos_container', dest='fextractor_chronos_container', default='/opt/containers/fextractor/fextractor-chronos_latest.sif', required=False, type=str, help='Path to Chronos fextractor Singularity container')
 	
 	# - Dataset options
 	parser.add_argument('-dataset_smgps','--dataset_smgps', dest='dataset_smgps', default='', required=False, type=str, help='Path to smgps dataset json filelist')
@@ -296,6 +297,7 @@ caesar_yolo_container= args.caesar_yolo_container
 sfforecaster_container= args.sfforecaster_container
 fextractor_tf_container= args.fextractor_tf_container
 fextractor_torch_container= args.fextractor_torch_container
+fextractor_chronos_container= args.fextractor_chronos_container
 
 # - Dataset options
 dataset_smgps= args.dataset_smgps
@@ -378,6 +380,7 @@ config.SLURM_CAESAR_YOLO_JOB_IMAGE= caesar_yolo_container
 config.SLURM_SFFORECASTER_JOB_IMAGE= sfforecaster_container
 config.SLURM_FEXTRACTOR_TF_JOB_IMAGE= fextractor_tf_container
 config.SLURM_FEXTRACTOR_TORCH_JOB_IMAGE= fextractor_torch_container
+config.SLURM_FEXTRACTOR_CHRONOS_JOB_IMAGE= fextractor_chronos_container
 
 # - Create data manager (DEPRECATED BY MONGO)
 ##logger.info("Creating data manager ...")

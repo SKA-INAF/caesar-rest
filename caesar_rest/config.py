@@ -74,6 +74,7 @@ class Config(object):
 	SLURM_SFFORECASTER_JOB_IMAGE= '/opt/containers/sfforecaster/sfforecaster-job_latest.sif'
 	SLURM_FEXTRACTOR_TF_JOB_IMAGE= '/opt/containers/fextractor/fextractor-tf_latest.sif'
 	SLURM_FEXTRACTOR_TORCH_JOB_IMAGE= '/opt/containers/fextractor/fextractor-torch_latest.sif'
+	SLURM_FEXTRACTOR_CHRONOS_JOB_IMAGE= '/opt/containers/fextractor/fextractor-chronos_latest.sif'
 
 	SLURM_MAX_CORE_PER_JOB= 4 # Maximum number of cores reserved for a job
 	
@@ -130,6 +131,7 @@ class Config(object):
 	# - FEXTRACTOR app options
 	FEXTRACTOR_TF_JOB_IMAGE= 'sriggi/fextractor-tf:latest'
 	FEXTRACTOR_TORCH_JOB_IMAGE= 'sriggi/fextractor-torch:latest'
+	FEXTRACTOR_CHRONOS_JOB_IMAGE= 'sriggi/fextractor-chronos:latest'
 
 
 	# - DATASET app options
