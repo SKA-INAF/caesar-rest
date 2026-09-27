@@ -268,7 +268,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				value='',
 				value_type=str,
 				description=(
-					'Comma-separated time-series value columns. '
+					'Colon-separated time-series value columns. '
 					'The container wrapper converts them to CLI arguments.'
 				),
 				category='TIMESERIES',
@@ -279,7 +279,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				name='error-columns',
 				value='',
 				value_type=str,
-				description='Comma-separated uncertainty/error columns',
+				description='Colon-separated uncertainty/error columns',
 				category='TIMESERIES',
 				default_value=''
 			),
@@ -288,7 +288,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				name='value-prefixes',
 				value='',
 				value_type=str,
-				description='Comma-separated value prefixes for wide-layout input',
+				description='Colon-separated value prefixes for wide-layout input',
 				category='TIMESERIES',
 				default_value=''
 			),
@@ -297,7 +297,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				name='channel-names',
 				value='',
 				value_type=str,
-				description='Comma-separated names assigned to time-series channels',
+				description='Colon-separated names assigned to time-series channels',
 				category='TIMESERIES',
 				default_value=''
 			),
@@ -315,7 +315,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				name='metadata-columns',
 				value='',
 				value_type=str,
-				description='Comma-separated additional sample-level metadata columns',
+				description='Colon-separated additional sample-level metadata columns',
 				category='TIMESERIES',
 				default_value=''
 			),
