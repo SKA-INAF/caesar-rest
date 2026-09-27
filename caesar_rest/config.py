@@ -75,6 +75,7 @@ class Config(object):
 	SLURM_FEXTRACTOR_TF_JOB_IMAGE= '/opt/containers/fextractor/fextractor-tf_latest.sif'
 	SLURM_FEXTRACTOR_TORCH_JOB_IMAGE= '/opt/containers/fextractor/fextractor-torch_latest.sif'
 	SLURM_FEXTRACTOR_CHRONOS_JOB_IMAGE= '/opt/containers/fextractor/fextractor-chronos_latest.sif'
+	SLURM_FEXTRACTOR_MOIRAI_JOB_IMAGE= '/opt/containers/fextractor/fextractor-moirai_latest.sif'
 
 	SLURM_MAX_CORE_PER_JOB= 4 # Maximum number of cores reserved for a job
 	
@@ -132,6 +133,7 @@ class Config(object):
 	FEXTRACTOR_TF_JOB_IMAGE= 'sriggi/fextractor-tf:latest'
 	FEXTRACTOR_TORCH_JOB_IMAGE= 'sriggi/fextractor-torch:latest'
 	FEXTRACTOR_CHRONOS_JOB_IMAGE= 'sriggi/fextractor-chronos:latest'
+	FEXTRACTOR_MOIRAI_JOB_IMAGE= 'sriggi/fextractor-moirai:latest'
 
 
 	# - DATASET app options

@@ -39,6 +39,7 @@ MODEL_CONTAINER_VARIANTS = {
 	"siglip": "torch",
 	"siglip2": "torch",
 	"chronos2": "chronos",
+	"moirai2": "moirai",
 }
 
 class FeatExtractorAppConfigurator(AppConfigurator):
@@ -82,7 +83,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			),
 			"notes": [
 				"Image and time-series models use different runtime containers.",
-				"Chronos-2 supports uni- and multivariate time series.",
+				"Chronos-2 and Moirai-2 support uni- and multivariate time series.",
 				"Time-series inputs may use long, wide, or inline JSON representations.",
 			]
 		}
@@ -112,6 +113,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 					'siglip',
 					'siglip2',
 					'chronos2',
+					'moirai2',
 				]
 			),
 
@@ -412,6 +414,38 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				min_value=1
 			),
 			
+			'patching-mode' : EnumValueOption(
+				name='patching-mode',
+				value='',
+				value_type=str,
+				description=(
+					'Moirai-2 patching mode. '
+					'If omitted, the backend default is used.'
+				),
+				category='REPRESENTATION',
+				default_value='',
+				allowed_values=[
+					'time_only',
+					'time_variate',
+				]
+			),
+
+			'token-order' : EnumValueOption(
+				name='token-order',
+				value='',
+				value_type=str,
+				description=(
+					'Moirai-2 token ordering used with time_variate patching. '
+					'If omitted, the backend default is used.'
+				),
+				category='REPRESENTATION',
+				default_value='',
+				allowed_values=[
+					'by_variate',
+					'interleave_time',
+				]
+			),
+			
 			# == SAVE OPTIONS ==
 			'outfile' : ValueOption(
 				name='outfile',
@@ -497,7 +531,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				
 				
 		# - Convert CAESAR boolean regularize=False to the negative
-		#   command-line option expected by the Chronos wrapper.
+		#   command-line option expected by time-series wrappers.
 		if "regularize" in self.job_options:
 			regularize = self.job_options["regularize"]
 
@@ -521,6 +555,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 
 		timeseries_models = {
 			"chronos2",
+			"moirai2",
 		}
 
 		image_only_options = {
@@ -553,6 +588,18 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"aggregation",
 			"context-length",
 			"batch-size",
+			"patching-mode",
+			"token-order",
+		}
+		
+		chronos_only_options = {
+			"context-length",
+			"batch-size",
+		}
+
+		moirai_only_options = {
+			"patching-mode",
+			"token-order",
 		}
 
 		if model in timeseries_models:
@@ -579,6 +626,79 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 
 				return False
 
+		# - Check time-series preprocessing profile
+		if (
+			model in timeseries_models
+			and self.job_options.get(
+				"preproc-profile",
+				"default",
+			) != "default"
+		):
+			self.validation_status = (
+				"Time-series model '%s' currently supports only the "
+				"'default' preprocessing profile"
+				% model
+			)
+
+			logger.warning(
+				self.validation_status,
+				action="submitjob",
+			)
+
+			return False
+
+
+		# - Check chronos options
+		if model == "chronos2":
+			invalid_options = (
+				requested_options
+				& moirai_only_options
+			)
+
+			if invalid_options:
+				self.validation_status = (
+					"Moirai-2-only option(s) not supported by model '%s': %s"
+					% (
+						model,
+						", ".join(
+							sorted(invalid_options)
+						),
+					)
+				)
+
+				logger.warning(
+					self.validation_status,
+					action="submitjob",
+				)
+
+				return False
+
+		# - Check moirai options
+		if model == "moirai2":
+			invalid_options = (
+				requested_options
+				& chronos_only_options
+			)
+
+			if invalid_options:
+				self.validation_status = (
+					"Chronos-2-only option(s) not supported by model '%s': %s"
+					% (
+						model,
+						", ".join(
+							sorted(invalid_options)
+						),
+					)
+				)
+
+				logger.warning(
+					self.validation_status,
+					action="submitjob",
+				)
+
+				return False
+
+		# - Check image model options
 		if model in image_models:
 			invalid_options = (
 				requested_options
@@ -604,26 +724,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				return False
 
 	
-		if (
-			model == "chronos2"
-			and self.job_options.get(
-				"preproc-profile",
-				"default",
-			) != "default"
-		):
-			self.validation_status = (
-				"Chronos-2 currently supports only the 'default' "
-				"time-series preprocessing profile"
-			)
-
-			logger.warning(
-				self.validation_status,
-				action="submitjob",
-			)
-
-			return False
-
-
+		# - Check model container image variants
 		if model not in MODEL_CONTAINER_VARIANTS:
 			self.validation_status = (
 				"Cannot determine container variant for model '%s'" % model
