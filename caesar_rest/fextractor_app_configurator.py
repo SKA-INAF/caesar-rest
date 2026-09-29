@@ -696,6 +696,24 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			),
 			
 			# == TIME SERIES REPRESENTATION OPTIONS ==
+			'input-sample-policy' : EnumValueOption(
+				name='input-sample-policy',
+				value='',
+				value_type=str,
+				description=(
+					'Samples from the prepared time series passed to the '
+					'extractor. "observed" uses only measured/bin-observed '
+					'samples; "completed" also uses interpolated and '
+					'GP-predicted samples.'
+				),
+				category='REPRESENTATION',
+				default_value='observed',
+				allowed_values=[
+					'observed',
+					'completed',
+				]
+			),
+			
 			'aggregation' : EnumValueOption(
 				name='aggregation',
 				value='',
@@ -1072,6 +1090,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"feature-set",
 			"invalid-feature-policy",
 			"min-samples",
+			"input-sample-policy",
 		}
 		
 		chronos_only_options = {
@@ -1121,6 +1140,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"feature-set",
 			"invalid-feature-policy",
 			"min-samples",
+			"input-sample-policy",
 		}
 
 		
@@ -1275,6 +1295,35 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				)
 
 				return False
+
+
+
+
+			input_sample_policy = self.job_options.get(
+				"input-sample-policy",
+				"observed",
+			)
+
+			if (
+				regularize
+				and regularization_method == "gp"
+				and input_sample_policy == "observed"
+			):
+				self.validation_status = (
+					"GP regularization requires "
+					"'input-sample-policy=completed' because the "
+					"regularized series consists of GP predictions."
+				)
+
+				logger.warning(
+					self.validation_status,
+					action="submitjob",
+				)
+
+				return False
+
+
+
 
 		# - Check chronos options
 		if model == "chronos2":
