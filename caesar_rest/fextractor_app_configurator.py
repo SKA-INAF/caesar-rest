@@ -656,6 +656,31 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				min_value=0.0
 			),
 			
+			'timeseries-plot' : EnumValueOption(
+				name='timeseries-plot',
+				value='',
+				value_type=str,
+				description=(
+					'Time-series diagnostic plot mode. '
+					"'input' plots the original input series; "
+					"'processed' plots the series effectively passed to "
+					"the embedding model after preprocessing; "
+					"'both' plots input and processed series side by side; "
+					"'none' disables diagnostic plotting. "
+					'Plots contain one row per channel, with sample/bin '
+					'index on the lower x-axis and physical time on the '
+					'upper x-axis.'
+				),
+				category='TIMESERIES',
+				default_value='none',
+				allowed_values=[
+					'none',
+					'input',
+					'processed',
+					'both',
+				]
+			),
+			
 			# == TIME SERIES REPRESENTATION OPTIONS ==
 			'aggregation' : EnumValueOption(
 				name='aggregation',
@@ -897,6 +922,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"gp-sigma",
 			"gp-rho",
 			"gp-jitter",
+			"timeseries-plot",
 		}
 		
 		chronos_only_options = {
@@ -928,6 +954,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"token-order",
 			"device",
 			"skip-errors",
+			"timeseries-plot",
 		}
 
 		
