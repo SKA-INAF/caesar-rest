@@ -141,7 +141,7 @@ def get_args():
 	parser.add_argument('-fextractor_chronos_container', '--fextractor_chronos_container', dest='fextractor_chronos_container', default='/opt/containers/fextractor/fextractor-chronos_latest.sif', required=False, type=str, help='Path to Chronos fextractor Singularity container')
 	parser.add_argument('-fextractor_moirai_container', '--fextractor_moirai_container', dest='fextractor_moirai_container', default='/opt/containers/fextractor/fextractor-moirai_latest.sif', required=False, type=str, help='Path to Moirai fextractor Singularity container')
 	parser.add_argument('-fextractor_fats_container', '--fextractor_fats_container', dest='fextractor_fats_container', default='/opt/containers/fextractor/fextractor-fats_latest.sif', required=False, type=str, help='Path to FATS fextractor Singularity container')
-	
+	parser.add_argument('-fextractor_licu_container', '--fextractor_licu_container', dest='fextractor_licu_container', default='/opt/containers/fextractor/fextractor-licu_latest.sif', required=False, type=str, help='Path to LightCurve (LICU) fextractor Singularity container')
 	
 	# - Dataset options
 	parser.add_argument('-dataset_smgps','--dataset_smgps', dest='dataset_smgps', default='', required=False, type=str, help='Path to smgps dataset json filelist')
@@ -303,6 +303,7 @@ fextractor_torch_container= args.fextractor_torch_container
 fextractor_chronos_container= args.fextractor_chronos_container
 fextractor_moirai_container= args.fextractor_moirai_container
 fextractor_fats_container= args.fextractor_fats_container
+fextractor_licu_container= args.fextractor_licu_container
 
 # - Dataset options
 dataset_smgps= args.dataset_smgps
@@ -388,6 +389,7 @@ config.SLURM_FEXTRACTOR_TORCH_JOB_IMAGE= fextractor_torch_container
 config.SLURM_FEXTRACTOR_CHRONOS_JOB_IMAGE= fextractor_chronos_container
 config.SLURM_FEXTRACTOR_MOIRAI_JOB_IMAGE= fextractor_moirai_container
 config.SLURM_FEXTRACTOR_FATS_JOB_IMAGE= fextractor_fats_container
+config.SLURM_FEXTRACTOR_LICU_JOB_IMAGE= fextractor_licu_container
 
 # - Create data manager (DEPRECATED BY MONGO)
 ##logger.info("Creating data manager ...")

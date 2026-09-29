@@ -40,6 +40,7 @@ MODEL_CONTAINER_VARIANTS = {
 	"siglip2": "torch",
 	"chronos2": "chronos",
 	"moirai2": "moirai",
+	"licu": "licu",
 	"fats": "fats",
 }
 
@@ -189,11 +190,16 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"expected_data": input_data_expected,
 			"notes": [
 				"Chronos-2 and Moirai-2 support uni- and multivariate time series.",
+				"LiCu extracts handcrafted statistical/time-domain features "
+				"independently from each value channel and concatenates the "
+				"resulting vectors.",
+				"LiCu naturally supports irregularly sampled time series and "
+				"does not require regularization.",
 				"FATS processes each value channel independently and concatenates "
 				"the resulting feature vectors; cross-channel relationships are "
 				"not modeled.",
-				"Measurement uncertainties are optional. FATS can use one "
-				"uncertainty series per value channel.",
+				"Measurement uncertainties are optional. LiCu and FATS can use "
+				"one uncertainty series per value channel.",
 				"Available input and preprocessing options depend on the selected backend.",
 			],
 		}
@@ -204,6 +210,13 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"Chronos-2 requires regularly sampled time series unless "
 			"regularization is enabled.",
 
+			"LiCu handcrafted features are computed independently for each "
+			"time-series value channel; cross-channel relationships are not "
+			"modeled by the current LiCu backend.",
+
+			"LiCu does not currently use learned-representation aggregation, "
+			"context-length, batch-size, or Moirai-specific patching options.",
+			
 			"FATS processes each time-series value channel independently; "
 			"cross-variable relationships are not modeled.",
 
@@ -237,6 +250,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 					'siglip2',
 					'chronos2',
 					'moirai2',
+					'licu',
 					'fats',
 				]
 			),
@@ -712,6 +726,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				min_value=1
 			),
 
+			# - MOIRAI backend options
 			'batch-size' : ValueOption(
 				name='batch-size',
 				value='',
@@ -752,6 +767,58 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 					'by_variate',
 					'interleave_time',
 				]
+			),
+			
+			# - LICU backend options
+			'feature-set' : EnumValueOption(
+				name='feature-set',
+				value='',
+				value_type=str,
+				description=(
+					'LiCu handcrafted feature set. '
+					"'basic' selects a compact set of statistical/time-domain "
+					"features; 'default' selects the standard fextractor LiCu "
+					"feature set; 'full' enables the extended handcrafted "
+					"feature set."
+				),
+				category='REPRESENTATION',
+				default_value='',
+				allowed_values=[
+					'basic',
+					'default',
+					'full',
+				]
+			),
+
+			'invalid-feature-policy' : EnumValueOption(
+				name='invalid-feature-policy',
+				value='',
+				value_type=str,
+				description=(
+					'LiCu policy applied when a selected feature returns a '
+					'non-finite value. '
+					"'zero' replaces the value with 0 and records it in '
+					'extraction metadata; 'error' aborts extraction.'
+				),
+				category='REPRESENTATION',
+				default_value='',
+				allowed_values=[
+					'zero',
+					'error',
+				]
+			),
+
+			'min-samples' : ValueOption(
+				name='min-samples',
+				value='',
+				value_type=int,
+				description=(
+					'Minimum number of valid observed samples required per '
+					'time-series channel by the LiCu handcrafted-feature backend.'
+				),
+				category='REPRESENTATION',
+				default_value='',
+				min_value=1
 			),
 			
 			# == SAVE OPTIONS ==
@@ -926,6 +993,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 		timeseries_models = {
 			"chronos2",
 			"moirai2",
+			"licu",
 			"fats",
 		}
 
@@ -935,6 +1003,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			model in {
 				"chronos2",
 				"moirai2",
+				"licu"
 			}
 			and "regularize" in self.job_options
 		):
@@ -1002,6 +1071,9 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"gp-rho",
 			"gp-jitter",
 			"timeseries-plot",
+			"feature-set",
+			"invalid-feature-policy",
+			"min-samples",
 		}
 		
 		chronos_only_options = {
@@ -1010,6 +1082,20 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 		}
 
 		moirai_only_options = {
+			"patching-mode",
+			"token-order",
+		}
+		
+		licu_only_options = {
+			"feature-set",
+			"invalid-feature-policy",
+			"min-samples",
+		}
+
+		licu_unsupported_options = {
+			"aggregation",
+			"context-length",
+			"batch-size",
 			"patching-mode",
 			"token-order",
 		}
@@ -1034,6 +1120,9 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"device",
 			"skip-errors",
 			"timeseries-plot",
+			"feature-set",
+			"invalid-feature-policy",
+			"min-samples",
 		}
 
 		
@@ -1071,6 +1160,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			model in {
 				"chronos2",
 				"moirai2",
+				"licu",
 			}
 			and self.job_options.get(
 				"preproc-profile",
@@ -1090,10 +1180,11 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 
 			return False
 
-		# - Check regularization for both moirai/chronos
+		# - Check common time-series regularization options
 		if model in {
 			"chronos2",
 			"moirai2",
+			"licu",
 		}:
 			regularization_method = self.job_options.get(
 				"regularization-method",
@@ -1191,12 +1282,15 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 		if model == "chronos2":
 			invalid_options = (
 				requested_options
-				& moirai_only_options
+				& (
+					moirai_only_options
+					| licu_only_options
+				)
 			)
-
+					
 			if invalid_options:
 				self.validation_status = (
-					"Moirai-2-only option(s) not supported by model '%s': %s"
+					"Option(s) not supported by model '%s': %s"
 					% (
 						model,
 						", ".join(
@@ -1204,7 +1298,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 						),
 					)
 				)
-
+				
 				logger.warning(
 					self.validation_status,
 					action="submitjob",
@@ -1216,17 +1310,44 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 		if model == "moirai2":
 			invalid_options = (
 				requested_options
-				& chronos_only_options
+				& (
+					chronos_only_options
+					| licu_only_options
+				)
 			)
-
+			
 			if invalid_options:
 				self.validation_status = (
-					"Chronos-2-only option(s) not supported by model '%s': %s"
+					"Option(s) not supported by model '%s': %s"
 					% (
 						model,
 						", ".join(
 							sorted(invalid_options)
 						),
+					)
+				)
+				
+				logger.warning(
+					self.validation_status,
+					action="submitjob",
+				)
+
+				return False
+
+		
+		# - Check LiCu options
+		if model == "licu":
+			invalid_options = (
+				requested_options
+				& licu_unsupported_options
+			)
+
+			if invalid_options:
+				self.validation_status = (
+					"Option(s) not supported by LiCu handcrafted "
+					"feature extraction: %s"
+					% ", ".join(
+						sorted(invalid_options)
 					)
 				)
 
@@ -1235,8 +1356,8 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 					action="submitjob",
 				)
 
-				return False
-
+				return False		
+	
 		
 		# - Check FATS options
 		if model == "fats":

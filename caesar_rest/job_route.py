@@ -405,6 +405,11 @@ def submit_job_kubernetes(app_name, cmd_args, job_top_dir, username, run_opts):
 			image= current_app.config[
 				'FEXTRACTOR_FATS_JOB_IMAGE'
 			]
+			
+		elif container_variant=="licu":
+			image= current_app.config[
+				'FEXTRACTOR_LICU_JOB_IMAGE'
+			]
 
 		else:
 			logger.warn(
@@ -563,6 +568,11 @@ def submit_job_slurm(app_name, inputfile, cmd_args, job_top_dir, username, run_o
 		elif container_variant=="fats":
 			image= current_app.config[
 				'SLURM_FEXTRACTOR_FATS_JOB_IMAGE'
+			]
+			
+		elif container_variant=="licu":
+			image= current_app.config[
+				'SLURM_FEXTRACTOR_LICU_JOB_IMAGE'
 			]
 
 		else:
