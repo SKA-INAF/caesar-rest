@@ -791,9 +791,88 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 		
 		
 		# - Define dictionary with job outputs produced
+		embedding_out_desc = (
+			'JSON dictionary containing the input data representation '
+			'(embedding/features) extracted by the selected fextractor backend. '
+			'For JSON datalist input, the original entries are preserved and '
+			'the extracted representation is added to each processed entry.'
+		)
+
+		embedding_out_format = (
+			'Output JSON follows the general format below:\n\n'
+			'{\n'
+			'  "data": [\n'
+			'    {\n'
+			'      "...": "... original input metadata ...",\n'
+			'      "feats": [0.12, -0.34, 0.56, ...]\n'
+			'    },\n'
+			'    ...\n'
+			'  ],\n'
+			'  "metadata": {\n'
+			'    "...": "... extraction and preprocessing metadata ..."\n'
+			'  }\n'
+			'}\n'
+			'\n'
+			'where:\n'
+			'* data | list(dict): Processed input entries.\n'
+			'* feats | list(float): Extracted fixed-size feature/embedding vector.\n'
+			'* metadata | dict: Extraction configuration and preprocessing metadata.'
+		)
+
 		self.job_outputs= {
+			"embeddings-json": {
+				"path": None,
+				"glob": "*.json",
+				"type": "application/json",
+				"role": "primary_result",
+				"description": embedding_out_desc,
+				"format": embedding_out_format,
+				"parser": "json",
+				"required": True,
+				"notes": (
+					"The output JSON filename is by default "
+					"'fextractor_results.json', but it can be configured "
+					"with the option 'outfile'."
+				)
+			},
+
+			"timeseries-plot": {
+				"path": None,
+				"glob": "*_timeseries.png",
+				"type": "image/png",
+				"role": "visualization",
+				"description": (
+					"Diagnostic visualization of time-series input and/or "
+					"preprocessed model input for all channels."
+				),
+				"format": "",
+				"parser": "image",
+				"required": False,
+				"notes": (
+					"Time-series diagnostic PNG files are produced only when "
+					"'timeseries-plot' is set to 'input', 'processed', or 'both'. "
+					"For datalist input, one PNG file is produced per processed "
+					"time-series entry."
+				)
+			},
+
+			"log": {
+				"path": None,
+				"glob": "*.log",
+				"type": "text/plain",
+				"role": "diagnostic",
+				"description": "Execution logs.",
+				"format": "",
+				"parser": "text",
+				"required": False,
+				"notes": (
+					"No explicit fextractor log file is produced when "
+					"'no-logredir' is enabled."
+				)
+			}
+		}		
 		
-		}
+		
 		
 		# - Define option value transformers
 		self.option_value_transformer= {
