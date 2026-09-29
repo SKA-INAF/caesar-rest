@@ -795,10 +795,8 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				value='',
 				value_type=str,
 				description=(
-					'LiCu policy applied when a selected feature returns a '
-					'non-finite value. '
-					"'zero' replaces the value with 0 and records it in '
-					'extraction metadata; 'error' aborts extraction.'
+					'LiCu policy applied when a selected feature returns a non-finite value. '
+					'"zero" replaces the value with 0 and records it in extraction metadata; "error" aborts extraction.'
 				),
 				category='REPRESENTATION',
 				default_value='',
