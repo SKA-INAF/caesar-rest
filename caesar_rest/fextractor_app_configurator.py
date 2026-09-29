@@ -210,6 +210,10 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"FATS does not support learned-representation aggregation, "
 			"context-length, batch-size, regularization, or "
 			"Moirai-specific patching options.",
+			
+			"FATS uses its legacy native preprocessing path and does not "
+			"support the common fextractor time-series regularization, "
+			"interpolation, or Gaussian-Process preprocessing options.",
 		]
 		
 		# - Define dictionary with allowed options
@@ -257,7 +261,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				min_value=1
 			),
 		
-			# == PRE-PROCESSING OPTIONS ==
+			# == IMAGE PRE-PROCESSING OPTIONS ==
 			"preproc-profile": EnumValueOption(
 				name="preproc-profile",
 				value="",
@@ -522,37 +526,135 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			'regularize' : Option(
 				name='regularize',
 				description=(
-					'Enable or disable regularization onto a fixed time grid. '
-					'If omitted, the preprocessing profile default is used.'
+					'Enable or disable projection of the input time series '
+					'onto a regular temporal grid. The selected '
+					'regularization-method controls how grid values are '
+					'constructed.'
 				),
 				category='TIMESERIES',
-				default_value=None
+				default_value=False
 			),
 
 			'cadence' : ValueOption(
 				name='cadence',
 				value='',
 				value_type=float,
-				description='Regularization cadence in timestamp units',
+				description=(
+					'Target regularization cadence in the same units as '
+					'the input timestamps. GP regularization currently '
+					'requires an explicit cadence.'
+				),
 				category='TIMESERIES',
 				default_value='',
 				min_value=0.0
 			),
-
+			
 			'missing-strategy' : EnumValueOption(
 				name='missing-strategy',
 				value='',
 				value_type=str,
-				description='Missing-value strategy after regularization',
+				description=(
+					'Missing-bin strategy used with bin regularization. '
+					"'nan' leaves gaps unchanged; 'linear' performs linear "
+					"interpolation; 'pchip' uses shape-preserving cubic "
+					"interpolation; 'akima' uses Akima interpolation; "
+					"'cubic' uses a cubic spline. Interpolation is limited "
+					"to internal gaps and does not extrapolate outside the "
+					"observed range."
+				),
 				category='TIMESERIES',
 				default_value='',
 				allowed_values=[
 					'nan',
 					'linear',
+					'pchip',
+					'akima',
+					'cubic',
 				]
 			),
 			
-			
+			'regularization-method' : EnumValueOption(
+				name='regularization-method',
+				value='',
+				value_type=str,
+				description=(
+					'Regularization method used to project a time series '
+					'onto a regular grid. '
+					"'bin' assigns observations to cadence bins and optionally "
+					'interpolates missing bins; '
+					"'gp' fits a Gaussian Process directly to the observed "
+					'timestamps and predicts the regularized series on the '
+					'target grid.'
+				),
+				category='TIMESERIES',
+				default_value='',
+				allowed_values=[
+					'bin',
+					'gp',
+				]
+			),
+
+			'bin-aggregation' : EnumValueOption(
+				name='bin-aggregation',
+				value='',
+				value_type=str,
+				description=(
+					'Aggregation applied when multiple observations fall '
+					'into the same regularization bin. '
+					"'mean' uses the arithmetic mean; "
+					"'inverse-variance' weights measurements by their "
+					'uncertainties and therefore requires finite positive '
+					'measurement errors.'
+				),
+				category='TIMESERIES',
+				default_value='',
+				allowed_values=[
+					'mean',
+					'inverse-variance',
+				]
+			),
+
+			'gp-sigma' : ValueOption(
+				name='gp-sigma',
+				value='',
+				value_type=float,
+				description=(
+					'Gaussian Process kernel amplitude. '
+					'If omitted, it is inferred independently for each '
+					'time-series channel.'
+				),
+				category='TIMESERIES',
+				default_value='',
+				min_value=0.0
+			),
+
+			'gp-rho' : ValueOption(
+				name='gp-rho',
+				value='',
+				value_type=float,
+				description=(
+					'Gaussian Process Matern-3/2 correlation length scale '
+					'in timestamp units. If omitted, it is inferred '
+					'independently for each time-series channel.'
+				),
+				category='TIMESERIES',
+				default_value='',
+				min_value=0.0
+			),
+
+			'gp-jitter' : ValueOption(
+				name='gp-jitter',
+				value='',
+				value_type=float,
+				description=(
+					'Gaussian Process noise floor used when measurement '
+					'uncertainties are unavailable. If omitted, the '
+					'fextractor default is used.'
+				),
+				category='TIMESERIES',
+				default_value='',
+				min_value=0.0
+			),
 			
 			# == TIME SERIES REPRESENTATION OPTIONS ==
 			'aggregation' : EnumValueOption(
@@ -790,6 +892,11 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"batch-size",
 			"patching-mode",
 			"token-order",
+			"regularization-method",
+			"bin-aggregation",
+			"gp-sigma",
+			"gp-rho",
+			"gp-jitter",
 		}
 		
 		chronos_only_options = {
@@ -807,8 +914,13 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"label-column",
 			"metadata-columns",
 			"regularize",
+			"regularization-method",
 			"cadence",
 			"missing-strategy",
+			"bin-aggregation",
+			"gp-sigma",
+			"gp-rho",
+			"gp-jitter",
 			"aggregation",
 			"context-length",
 			"batch-size",
@@ -872,6 +984,102 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 
 			return False
 
+		# - Check regularization for both moirai/chronos
+		if model in {
+			"chronos2",
+			"moirai2",
+		}:
+			regularization_method = self.job_options.get(
+				"regularization-method",
+				"bin",
+			)
+
+			if not regularization_method:
+				regularization_method = "bin"
+
+			gp_only_options = {
+				"gp-sigma",
+				"gp-rho",
+				"gp-jitter",
+			}
+
+			invalid_options = (
+				requested_options
+				& gp_only_options
+			)
+
+			if (
+				invalid_options
+				and regularization_method != "gp"
+			):
+				self.validation_status = (
+					"Gaussian-Process option(s) require "
+					"'regularization-method=gp': %s"
+					% ", ".join(
+						sorted(invalid_options)
+					)
+				)
+
+				logger.warning(
+					self.validation_status,
+					action="submitjob",
+				)
+
+				return False
+				
+
+			bin_only_options = {
+				"missing-strategy",
+				"bin-aggregation",
+			}
+
+			invalid_options = (
+				requested_options
+				& bin_only_options
+			)
+
+			if (
+				invalid_options
+				and regularization_method == "gp"
+			):
+				self.validation_status = (
+					"Bin-regularization option(s) are not used with "
+					"'regularization-method=gp': %s"
+					% ", ".join(
+						sorted(invalid_options)
+					)
+				)
+
+				logger.warning(
+					self.validation_status,
+					action="submitjob",
+				)
+
+				return False
+				
+				
+			regularize = self.job_options.get(
+				"regularize",
+				False,
+			)
+
+			if (
+				regularization_method == "gp"
+				and regularize
+				and not self.job_options.get(
+					"cadence"
+				)
+			):
+				self.validation_status = (
+					"GP regularization requires an explicit 'cadence'"
+				)
+
+				logger.warning(
+					self.validation_status,
+					action="submitjob",
+				)
+
+				return False
 
 		# - Check chronos options
 		if model == "chronos2":
