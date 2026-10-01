@@ -40,8 +40,14 @@ MODEL_CONTAINER_VARIANTS = {
 	"siglip2": "torch",
 	"chronos2": "chronos",
 	"moirai2": "moirai",
-	"licu": "licu",
 	"fats": "fats",
+	"licu": "licu",	
+	"astromer1": "licu",
+	"astromer1-ztfdr20": "licu",
+	"astromer2": "licu",
+	"moment1-small": "licu",
+	"moment1-base": "licu",
+	"moment1-large": "licu",
 }
 
 class FeatExtractorAppConfigurator(AppConfigurator):
@@ -65,6 +71,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"Time-series inputs can be supplied as CSV tables or JSON datalists. Both regularly and irregularly sampled time series are supported, depending on the selected backend. "
 			"Time-series data may contain one or multiple value channels and optional measurement uncertainties."
 		)
+		
 		
 		
 		self.tool_categories = [
@@ -190,16 +197,22 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"expected_data": input_data_expected,
 			"notes": [
 				"Chronos-2 and Moirai-2 support uni- and multivariate time series.",
-				"LiCu extracts handcrafted statistical/time-domain features "
-				"independently from each value channel and concatenates the "
-				"resulting vectors.",
-				"LiCu naturally supports irregularly sampled time series and "
-				"does not require regularization.",
+				"LiCu handcrafted feature extraction processes each value channel "
+				"independently and concatenates the resulting feature vectors.",
+				"LiCu ML embedding models currently include Astromer 1, Astromer 1 "
+				"ZTF DR20, Astromer 2, and MOMENT-1 small/base/large. Each input "
+				"value channel is embedded independently and the resulting vectors "
+				"are concatenated.",
+				"Astromer models use timestamps and naturally support irregularly "
+				"sampled time series. MOMENT-1 consumes the ordered value sequence.",
+				"Measurement uncertainties are optional for the common time-series "
+				"input representation. The current LiCu ML single-channel embedders "
+				"do not consume measurement uncertainties.",
 				"FATS processes each value channel independently and concatenates "
 				"the resulting feature vectors; cross-channel relationships are "
 				"not modeled.",
-				"Measurement uncertainties are optional. LiCu and FATS can use "
-				"one uncertainty series per value channel.",
+				"Measurement uncertainties are optional. LiCu handcrafted feature "
+				"extraction and FATS can use one uncertainty series per value channel.",
 				"Available input and preprocessing options depend on the selected backend.",
 			],
 		}
@@ -210,12 +223,18 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"Chronos-2 requires regularly sampled time series unless "
 			"regularization is enabled.",
 
-			"LiCu handcrafted features are computed independently for each "
-			"time-series value channel; cross-channel relationships are not "
-			"modeled by the current LiCu backend.",
+			"LiCu handcrafted and current single-channel ML embedding models "
+			"process each time-series value channel independently; cross-channel "
+			"relationships are not modeled.",
 
-			"LiCu does not currently use learned-representation aggregation, "
-			"context-length, batch-size, or Moirai-specific patching options.",
+			"LiCu handcrafted feature extraction does not use learned-representation "
+			"aggregation, context-length, batch-size, or Moirai-specific patching "
+			"options.",
+
+			"LiCu ML embedding models support model-native output/reduction options. "
+			"Sequence embeddings can additionally use the common aggregation option. "
+			"Context-length, batch-size, and Moirai-specific patching options are "
+			"not supported.",
 			
 			"FATS processes each time-series value channel independently; "
 			"cross-variable relationships are not modeled.",
@@ -250,8 +269,14 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 					'siglip2',
 					'chronos2',
 					'moirai2',
-					'licu',
 					'fats',
+					'licu',
+					'astromer1',
+					'astromer1-ztfdr20',
+					'astromer2',
+					'moment1-small',
+					'moment1-base',
+					'moment1-large',
 				]
 			),
 
@@ -744,7 +769,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				min_value=1
 			),
 
-			# - MOIRAI backend options
+			# - Backend representation options
 			'batch-size' : ValueOption(
 				name='batch-size',
 				value='',
@@ -755,6 +780,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				min_value=1
 			),
 			
+			# - MOIRAI backend options
 			'patching-mode' : EnumValueOption(
 				name='patching-mode',
 				value='',
@@ -829,13 +855,51 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				value='',
 				value_type=int,
 				description=(
-					'Minimum number of valid observed samples required per '
-					'time-series channel by the LiCu handcrafted-feature backend.'
+					'Minimum number of valid selected samples required per '
+					'time-series channel by LiCu handcrafted and ML embedding backends.'
 				),
 				category='REPRESENTATION',
 				default_value='',
 				min_value=1
 			),
+			
+			'licu-embed-output' : EnumValueOption(
+				name='licu-embed-output',
+				value='',
+				value_type=str,
+				description=(
+					'Output representation exposed by LiCu ML embedding models. '
+					'"mean" returns the model pooled mean representation; '
+					'"max" is available for Astromer models; '
+					'"sequence" returns contextual embeddings that are reduced '
+					'using the aggregation option.'
+				),
+				category='REPRESENTATION',
+				default_value='',
+				allowed_values=[
+					'mean',
+					'max',
+					'sequence',
+				]
+			),
+
+			'licu-embed-reduction' : EnumValueOption(
+				name='licu-embed-reduction',
+				value='',
+				value_type=str,
+				description=(
+					'Observation reduction/windowing strategy used by LiCu ML '
+					'embedding models. If omitted, the selected model default is used.'
+				),
+				category='REPRESENTATION',
+				default_value='',
+				allowed_values=[
+					'beginning',
+					'end',
+					'middle',
+					'non-overlapping-windows',
+				]
+			),			
 			
 			# == SAVE OPTIONS ==
 			'outfile' : ValueOption(
@@ -1006,21 +1070,33 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"siglip2",
 		}
 
+		licu_embed_models = {
+			"astromer1",
+			"astromer1-ztfdr20",
+			"astromer2",
+			"moment1-small",
+			"moment1-base",
+			"moment1-large",
+		}
+
 		timeseries_models = {
 			"chronos2",
 			"moirai2",
 			"licu",
 			"fats",
-		}
+		} | licu_embed_models
 
 		# - Convert CAESAR boolean regularize=False to the negative
 		#   command-line option expected by time-series wrappers.
 		if (
-			model in {
-				"chronos2",
-				"moirai2",
-				"licu"
-			}
+			(
+				model in {
+					"chronos2",
+					"moirai2",
+					"licu",
+				}
+				or model in licu_embed_models
+			)
 			and "regularize" in self.job_options
 		):
 			regularize = self.job_options[
@@ -1090,6 +1166,8 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"feature-set",
 			"invalid-feature-policy",
 			"min-samples",
+			"licu-embed-output",
+			"licu-embed-reduction",
 			"input-sample-policy",
 		}
 		
@@ -1103,12 +1181,26 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"token-order",
 		}
 		
-		licu_only_options = {
+		licu_handcrafted_only_options = {
 			"feature-set",
 			"invalid-feature-policy",
+		}
+
+		licu_embed_only_options = {
+			"licu-embed-output",
+			"licu-embed-reduction",
+		}
+
+		licu_common_options = {
 			"min-samples",
 		}
 
+		licu_all_options = (
+			licu_handcrafted_only_options
+			| licu_embed_only_options
+			| licu_common_options
+		)
+		
 		licu_unsupported_options = {
 			"aggregation",
 			"context-length",
@@ -1140,6 +1232,8 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"feature-set",
 			"invalid-feature-policy",
 			"min-samples",
+			"licu-embed-output",
+			"licu-embed-reduction",
 			"input-sample-policy",
 		}
 
@@ -1175,11 +1269,14 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 
 		# - Check time-series preprocessing profile
 		if (
-			model in {
-				"chronos2",
-				"moirai2",
-				"licu",
-			}
+			(
+				model in {
+					"chronos2",
+					"moirai2",
+					"licu",
+				}
+				or model in licu_embed_models
+			)
 			and self.job_options.get(
 				"preproc-profile",
 				"default",
@@ -1199,11 +1296,15 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			return False
 
 		# - Check common time-series regularization options
-		if model in {
-			"chronos2",
-			"moirai2",
-			"licu",
-		}:
+		if (
+			model in {
+				"chronos2",
+				"moirai2",
+				"licu",
+			}
+			or model in licu_embed_models
+		):
+		
 			regularization_method = self.job_options.get(
 				"regularization-method",
 				"bin",
@@ -1323,15 +1424,13 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				return False
 
 
-
-
 		# - Check chronos options
 		if model == "chronos2":
 			invalid_options = (
 				requested_options
 				& (
 					moirai_only_options
-					| licu_only_options
+					| licu_all_options
 				)
 			)
 					
@@ -1359,7 +1458,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				requested_options
 				& (
 					chronos_only_options
-					| licu_only_options
+					| licu_all_options
 				)
 			)
 			
@@ -1386,9 +1485,12 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 		if model == "licu":
 			invalid_options = (
 				requested_options
-				& licu_unsupported_options
+				& (
+					licu_unsupported_options
+					| licu_embed_only_options
+				)
 			)
-
+	
 			if invalid_options:
 				self.validation_status = (
 					"Option(s) not supported by LiCu handcrafted "
@@ -1405,6 +1507,63 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 
 				return False		
 	
+		
+		# - Check LiCu ML embedding options
+		if model in licu_embed_models:
+
+			licu_embed_unsupported_options = {
+				"feature-set",
+				"invalid-feature-policy",
+				"context-length",
+				"batch-size",
+				"patching-mode",
+				"token-order",
+			}
+
+			invalid_options = (
+				requested_options
+				& licu_embed_unsupported_options
+			)
+
+			if invalid_options:
+				self.validation_status = (
+					"Option(s) not supported by LiCu ML embedding "
+					"model '%s': %s"
+					% (
+						model,
+						", ".join(
+							sorted(invalid_options)
+						),
+					)
+				)
+
+				logger.warning(
+					self.validation_status,
+					action="submitjob",
+				)
+
+				return False
+				
+			embed_output = self.job_options.get(
+				"licu-embed-output",
+				"",
+			)
+
+			if (
+				model.startswith("moment1-")
+				and embed_output == "max"
+			):
+				self.validation_status = (
+					"'licu-embed-output=max' is not supported by MOMENT-1. "
+					"Use 'mean' or 'sequence'."
+				)
+
+				logger.warning(
+					self.validation_status,
+					action="submitjob",
+				)
+
+				return False
 		
 		# - Check FATS options
 		if model == "fats":
