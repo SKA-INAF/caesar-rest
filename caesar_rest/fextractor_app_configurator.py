@@ -389,15 +389,19 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				"Chronos-2 and Moirai-2 support uni- and multivariate time series.",
 				"LiCu handcrafted feature extraction processes each value channel "
 				"independently and concatenates the resulting feature vectors.",
-				"LiCu ML embedding models currently include Astromer 1, Astromer 1 "
+				"LiCu ML single-channel embedding models include Astromer 1, Astromer 1 "
 				"ZTF DR20, Astromer 2, and MOMENT-1 small/base/large. Each input "
 				"value channel is embedded independently and the resulting vectors "
 				"are concatenated.",
+				"LiCu native multiband embedding models include AstraCLR, ATAT, and "
+				"ATCAT. They consume one value stream together with timestamps and "
+				"a photometric-band label for each observation.",
 				"Astromer models use timestamps and naturally support irregularly "
 				"sampled time series. MOMENT-1 consumes the ordered value sequence.",
 				"Measurement uncertainties are optional for the common time-series "
-				"input representation. The current LiCu ML single-channel embedders "
-				"do not consume measurement uncertainties.",
+				"input representation. LiCu single-channel embedders do not consume "
+				"measurement uncertainties directly; AstraCLR and ATCAT require one "
+				"uncertainty field, while ATAT accepts it optionally.",
 				"FATS processes each value channel independently and concatenates "
 				"the resulting feature vectors; cross-channel relationships are "
 				"not modeled.",
@@ -413,9 +417,10 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"Chronos-2 requires regularly sampled time series unless "
 			"regularization is enabled.",
 
-			"LiCu handcrafted and current single-channel ML embedding models "
-			"process each time-series value channel independently; cross-channel "
-			"relationships are not modeled.",
+			"LiCu handcrafted and single-channel ML embedding models process each "
+			"time-series value channel independently; cross-channel relationships "
+			"are not modeled. AstraCLR, ATAT, and ATCAT instead use native "
+			"multiband observations.",
 
 			"LiCu handcrafted feature extraction does not use learned-representation "
 			"aggregation, context-length, batch-size, or Moirai-specific patching "
