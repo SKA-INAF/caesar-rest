@@ -10,7 +10,6 @@ import datetime
 import logging
 import numpy as np
 import subprocess
-import json
 import ast
 import yaml
 
@@ -48,6 +47,197 @@ MODEL_CONTAINER_VARIANTS = {
 	"moment1-small": "licu",
 	"moment1-base": "licu",
 	"moment1-large": "licu",
+	"astra-clr": "licu",
+	"atat": "licu",
+	"atcat": "licu",
+}
+
+IMAGE_MODELS = {
+	"simclr_radio",
+	"dinov2",
+	"dinov3",
+	"dinov2_legacy",
+	"siglip",
+	"siglip2",
+}
+
+LICU_SINGLE_CHANNEL_EMBED_MODELS = {
+	"astromer1",
+	"astromer1-ztfdr20",
+	"astromer2",
+	"moment1-small",
+	"moment1-base",
+	"moment1-large",
+}
+
+LICU_MULTIBAND_EMBED_MODELS = {
+	"astra-clr",
+	"atat",
+	"atcat",
+}
+
+LICU_EMBED_MODELS = (
+	LICU_SINGLE_CHANNEL_EMBED_MODELS
+	| LICU_MULTIBAND_EMBED_MODELS
+)
+
+TIMESERIES_MODELS = {
+	"chronos2",
+	"moirai2",
+	"licu",
+	"fats",
+} | LICU_EMBED_MODELS
+
+IMAGE_ONLY_OPTIONS = {
+	"norm-min",
+	"norm-max",
+	"imgsize",
+	"nchannels",
+	"clipdata",
+	"zscale",
+	"zscale-contrast",
+	"set-zero-to-min",
+	"reset-meanstd",
+	"reset-rescale",
+}
+
+TIMESERIES_ONLY_OPTIONS = {
+	"timeseries-layout",
+	"time-column",
+	"value-columns",
+	"error-columns",
+	"band-column",
+	"value-prefixes",
+	"error-prefixes",
+	"time-prefix",
+	"time-start-column",
+	"cadence-column",
+	"channel-names",
+	"label-column",
+	"metadata-columns",
+	"time-start-key",
+	"cadence-key",
+	"band-key",
+	"regularize",
+	"cadence",
+	"missing-strategy",
+	"aggregation",
+	"context-length",
+	"batch-size",
+	"patching-mode",
+	"token-order",
+	"regularization-method",
+	"bin-aggregation",
+	"gp-sigma",
+	"gp-rho",
+	"gp-jitter",
+	"timeseries-plot",
+	"feature-set",
+	"invalid-feature-policy",
+	"min-samples",
+	"licu-embed-output",
+	"licu-embed-reduction",
+	"licu-mag-zp",
+	"licu-allow-extra-bands",
+	"input-sample-policy",
+}
+
+CHRONOS_ONLY_OPTIONS = {
+	"context-length",
+	"batch-size",
+}
+
+MOIRAI_ONLY_OPTIONS = {
+	"patching-mode",
+	"token-order",
+}
+
+LICU_HANDCRAFTED_ONLY_OPTIONS = {
+	"feature-set",
+	"invalid-feature-policy",
+}
+
+LICU_EMBED_ONLY_OPTIONS = {
+	"licu-embed-output",
+	"licu-embed-reduction",
+}
+
+LICU_MULTIBAND_ONLY_OPTIONS = {
+	"band-column",
+	"band-key",
+	"licu-mag-zp",
+	"licu-allow-extra-bands",
+}
+
+LICU_COMMON_OPTIONS = {
+	"min-samples",
+}
+
+LICU_ALL_OPTIONS = (
+	LICU_HANDCRAFTED_ONLY_OPTIONS
+	| LICU_EMBED_ONLY_OPTIONS
+	| LICU_MULTIBAND_ONLY_OPTIONS
+	| LICU_COMMON_OPTIONS
+)
+
+LICU_HANDCRAFTED_UNSUPPORTED_OPTIONS = {
+	"aggregation",
+	"context-length",
+	"batch-size",
+	"patching-mode",
+	"token-order",
+}
+
+LICU_EMBED_UNSUPPORTED_OPTIONS = {
+	"feature-set",
+	"invalid-feature-policy",
+	"context-length",
+	"batch-size",
+	"patching-mode",
+	"token-order",
+}
+
+LICU_MODEL_OUTPUTS = {
+	"astromer1": {
+		"mean",
+		"max",
+		"sequence",
+	},
+	"astromer1-ztfdr20": {
+		"mean",
+		"max",
+		"sequence",
+	},
+	"astromer2": {
+		"mean",
+		"max",
+		"sequence",
+	},
+	"moment1-small": {
+		"mean",
+		"sequence",
+	},
+	"moment1-base": {
+		"mean",
+		"sequence",
+	},
+	"moment1-large": {
+		"mean",
+		"sequence",
+	},
+	"astra-clr": {
+		"mean",
+	},
+	"atat": {
+		"token",
+		"mean",
+		"sequence",
+	},
+	"atcat": {
+		"last",
+		"mean",
+		"sequence",
+	},
 }
 
 class FeatExtractorAppConfigurator(AppConfigurator):
@@ -277,6 +467,9 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 					'moment1-small',
 					'moment1-base',
 					'moment1-large',
+					'astra-clr',
+					'atat',
+					'atcat',
 				]
 			),
 
@@ -456,6 +649,19 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				default_value=''
 			),
 
+			'band-column' : ValueOption(
+				name='band-column',
+				value='',
+				value_type=str,
+				description=(
+					'Long-layout column containing one photometric band '
+					'label per observation. Used by LiCu multiband ML '
+					'embedding models.'
+				),
+				category='TIMESERIES',
+				default_value=''
+			),
+
 			'value-prefixes' : ValueOption(
 				name='value-prefixes',
 				value='',
@@ -558,6 +764,19 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				value='',
 				value_type=str,
 				description='Inline JSON field containing the sampling cadence',
+				category='TIMESERIES',
+				default_value=''
+			),
+
+			'band-key' : ValueOption(
+				name='band-key',
+				value='',
+				value_type=str,
+				description=(
+					'Inline JSON field containing one photometric band '
+					'label per observation. Used by LiCu multiband ML '
+					'embedding models.'
+				),
 				category='TIMESERIES',
 				default_value=''
 			),
@@ -869,10 +1088,10 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 				value_type=str,
 				description=(
 					'Output representation exposed by LiCu ML embedding models. '
-					'"mean" returns the model pooled mean representation; '
-					'"max" is available for Astromer models; '
-					'"sequence" returns contextual embeddings that are reduced '
-					'using the aggregation option.'
+					'Supported values are model-specific: Astromer supports '
+					'mean/max/sequence; MOMENT-1 supports mean/sequence; '
+					'AstraCLR supports mean; ATAT supports token/mean/sequence; '
+					'ATCAT supports last/mean/sequence.'
 				),
 				category='REPRESENTATION',
 				default_value='',
@@ -880,6 +1099,8 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 					'mean',
 					'max',
 					'sequence',
+					'token',
+					'last',
 				]
 			),
 
@@ -899,6 +1120,30 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 					'middle',
 					'non-overlapping-windows',
 				]
+			),			
+			
+			'licu-mag-zp' : ValueOption(
+				name='licu-mag-zp',
+				value='',
+				value_type=float,
+				description=(
+					'AB magnitude zero-point associated with input fluxes '
+					'for LiCu ATAT/ATCAT models. If omitted, the model '
+					'default is used.'
+				),
+				category='REPRESENTATION',
+				default_value=''
+			),
+
+			'licu-allow-extra-bands' : Option(
+				name='licu-allow-extra-bands',
+				description=(
+					'Allow LiCu multiband embedding models to ignore '
+					'observations whose band labels are not supported by '
+					'the selected model.'
+				),
+				category='REPRESENTATION',
+				default_value=False
 			),			
 			
 			# == SAVE OPTIONS ==
@@ -1038,178 +1283,475 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 		self.cmd_args.append(input_opt)
 		
 		
-	def validate(self, job_options, data_inputs):
-		"""Validate fextractor inputs and resolve the runtime container."""
+	def _split_colon_option(self, option_name):
+		"""Return a colon-separated option as a stripped list."""
 
-		# - Validate options
-		requested_options = set(
-			job_options.keys()
-		)
+		value = self.job_options.get(option_name, "")
+
+		if not value:
+			return []
+
+		return [item.strip() for item in value.split(":")]
+
 		
-		valid = AppConfigurator.validate(
-			self,
-			job_options,
-			data_inputs,
-		)
+	def _prepare_boolean_command_options(self, model):
+		"""Translate false boolean options to wrapper negative flags."""
 
-		if not valid:
-			return False
+		# - Convert regularize=False to --no-regularize
+		if (
+			model in {
+				"chronos2",
+				"moirai2",
+				"licu",
+			}
+			or model in LICU_EMBED_MODELS
+		):
+			if "regularize" in self.job_options and self.job_options["regularize"] is False:
+				self.cmd_args.append("--no-regularize")
 
+		# - Convert zscale=False to --no-zscale
+		if (
+			model in IMAGE_MODELS
+			and "zscale" in self.job_options
+			and self.job_options["zscale"] is False
+		):
+			self.cmd_args.append("--no-zscale")
 
-		# - Resolve container variant
-		model = self.job_options.get(
-			"model",
-			"simclr_radio",
-		)
-		image_models = {
-			"simclr_radio",
-			"dinov2",
-			"dinov3",
-			"dinov2_legacy",
-			"siglip",
-			"siglip2",
-		}
+	
+	def _validation_error(self, message):
+		"""Set validation error state, log it, and return False."""
 
-		licu_embed_models = {
-			"astromer1",
-			"astromer1-ztfdr20",
-			"astromer2",
-			"moment1-small",
-			"moment1-base",
-			"moment1-large",
-		}
+		self.validation_status = message
+		logger.warning(message, action="submitjob")
 
-		timeseries_models = {
+		return False
+	
+	def _validate_model_modality_options(self, model, requested_options):
+		"""Reject image-only/time-series-only options on the wrong modality."""
+
+		# - Validate time-series models
+		if model in TIMESERIES_MODELS:
+			invalid_options = requested_options & IMAGE_ONLY_OPTIONS
+
+			if invalid_options:
+				return self._validation_error(
+					"Image-only option(s) not supported by model '%s': %s"
+					% (
+						model,
+						", ".join(sorted(invalid_options)),
+					)
+				)
+
+		# - Validate image models
+		if model in IMAGE_MODELS:
+			invalid_options = requested_options & TIMESERIES_ONLY_OPTIONS
+
+			if invalid_options:
+				return self._validation_error(
+					"Time-series-only option(s) not supported by model '%s': %s"
+					% (
+						model,
+						", ".join(sorted(invalid_options)),
+					)
+				)
+
+		return True
+
+		
+	def _validate_timeseries_profile(self, model):
+		"""Validate preprocessing-profile support for time-series models."""
+
+		# - Define models restricted to the default preprocessing profile
+		default_profile_only_models = {
 			"chronos2",
 			"moirai2",
 			"licu",
-			"fats",
-		} | licu_embed_models
+		} | LICU_EMBED_MODELS
 
-		# - Convert CAESAR boolean regularize=False to the negative
-		#   command-line option expected by time-series wrappers.
-		if (
-			(
-				model in {
-					"chronos2",
-					"moirai2",
-					"licu",
-				}
-				or model in licu_embed_models
+		# - Skip validation for unrelated models
+		if model not in default_profile_only_models:
+			return True
+
+		# - Validate preprocessing profile
+		profile = self.job_options.get("preproc-profile", "default")
+
+		if profile != "default":
+			return self._validation_error(
+				"Time-series model '%s' currently supports only the "
+				"'default' preprocessing profile"
+				% model
 			)
-			and "regularize" in self.job_options
-		):
-			regularize = self.job_options[
-				"regularize"
-			]
 
-			if regularize is False:
-				self.cmd_args.append(
-					"--no-regularize"
-				)
+		return True
 
-		# - Convert CAESAR boolean zscale=False to the negative
-		#   command-line option expected by run_fextractor.sh.
-		if (
-			model in image_models
-			and "zscale" in self.job_options
-		):
-			zscale = self.job_options["zscale"]
 
-			if zscale is False:
-				self.cmd_args.append("--no-zscale")
-				
-				
-		# - Define options only available for certain models
-		image_only_options = {
-			"norm-min",
-			"norm-max",
-			"imgsize",
-			"nchannels",
-			"clipdata",
-			"zscale",
-			"zscale-contrast",
-			"set-zero-to-min",
-			"reset-meanstd",
-			"reset-rescale",
+	def _validate_regularization_options(self, model, requested_options):
+		"""Validate common time-series regularization option combinations."""
+
+		# - Define models supporting common regularization options
+		regularization_models = {
+			"chronos2",
+			"moirai2",
+			"licu",
+		} | LICU_SINGLE_CHANNEL_EMBED_MODELS
+
+		# - Skip validation for unrelated models
+		if model not in regularization_models:
+			return True
+
+		# - Resolve regularization method
+		regularization_method = self.job_options.get("regularization-method", "bin")
+
+		if not regularization_method:
+			regularization_method = "bin"
+
+		# - Validate GP-only options
+		gp_only_options = {
+			"gp-sigma",
+			"gp-rho",
+			"gp-jitter",
 		}
 
-		timeseries_only_options = {
-			"timeseries-layout",
-			"time-column",
-			"value-columns",
-			"error-columns",
-			"value-prefixes",
-			"error-prefixes",
-			"time-prefix",
-			"time-start-column",
-			"cadence-column",
-			"channel-names",
-			"label-column",
-			"metadata-columns",
-			"time-start-key",
-			"cadence-key",
-			"regularize",
-			"cadence",
+		invalid_options = requested_options & gp_only_options
+
+		if invalid_options and regularization_method != "gp":
+			return self._validation_error(
+				"Gaussian-Process option(s) require "
+				"'regularization-method=gp': %s"
+				% ", ".join(sorted(invalid_options))
+			)
+
+		# - Validate bin-only options
+		bin_only_options = {
 			"missing-strategy",
-			"aggregation",
-			"context-length",
-			"batch-size",
-			"patching-mode",
-			"token-order",
+			"bin-aggregation",
+		}
+
+		invalid_options = requested_options & bin_only_options
+
+		if invalid_options and regularization_method == "gp":
+			return self._validation_error(
+				"Bin-regularization option(s) are not used with "
+				"'regularization-method=gp': %s"
+				% ", ".join(sorted(invalid_options))
+			)
+
+		# - Validate GP cadence requirement
+		regularize = self.job_options.get("regularize", False)
+
+		if regularization_method == "gp" and regularize and not self.job_options.get("cadence"):
+			return self._validation_error(
+				"GP regularization requires an explicit 'cadence'"
+			)
+
+		# - Validate GP input-sample policy
+		input_sample_policy = self.job_options.get("input-sample-policy", "observed")
+
+		if (
+			regularize
+			and regularization_method == "gp"
+			and input_sample_policy == "observed"
+		):
+			return self._validation_error(
+				"GP regularization requires "
+				"'input-sample-policy=completed' because the "
+				"regularized series consists of GP predictions."
+			)
+
+		return True
+	
+	
+	def _validate_chronos_options(self, model, requested_options):
+		"""Validate Chronos-specific option compatibility."""
+
+		# - Skip validation for unrelated models
+		if model != "chronos2":
+			return True
+
+		# - Validate unsupported options
+		invalid_options = requested_options & (
+			MOIRAI_ONLY_OPTIONS
+			| LICU_ALL_OPTIONS
+		)
+
+		if invalid_options:
+			return self._validation_error(
+				"Option(s) not supported by model '%s': %s"
+				% (
+					model,
+					", ".join(sorted(invalid_options)),
+				)
+			)
+
+		return True
+
+	
+	def _validate_moirai_options(self, model, requested_options):
+		"""Validate Moirai-specific option compatibility."""
+
+		# - Skip validation for unrelated models
+		if model != "moirai2":
+			return True
+
+		# - Validate unsupported options
+		invalid_options = requested_options & (
+			CHRONOS_ONLY_OPTIONS
+			| LICU_ALL_OPTIONS
+		)
+
+		if invalid_options:
+			return self._validation_error(
+				"Option(s) not supported by model '%s': %s"
+				% (
+					model,
+					", ".join(sorted(invalid_options)),
+				)
+			)
+
+		return True
+
+	
+	def _validate_licu_handcrafted_options(self, model, requested_options):
+		"""Validate handcrafted LiCu option compatibility."""
+
+		# - Skip validation for unrelated models
+		if model != "licu":
+			return True
+
+		# - Validate unsupported options
+		invalid_options = requested_options & (
+			LICU_HANDCRAFTED_UNSUPPORTED_OPTIONS
+			| LICU_EMBED_ONLY_OPTIONS
+			| LICU_MULTIBAND_ONLY_OPTIONS
+		)
+
+		if invalid_options:
+			return self._validation_error(
+				"Option(s) not supported by LiCu handcrafted "
+				"feature extraction: %s"
+				% ", ".join(sorted(invalid_options))
+			)
+
+		return True
+
+
+	def _validate_licu_embed_options(self, model, requested_options):
+		"""Validate common LiCu ML embedding options."""
+
+		# - Skip validation for unrelated models
+		if model not in LICU_EMBED_MODELS:
+			return True
+
+		# - Build unsupported option set
+		unsupported_options = set(LICU_EMBED_UNSUPPORTED_OPTIONS)
+
+		if model in LICU_SINGLE_CHANNEL_EMBED_MODELS:
+			unsupported_options |= LICU_MULTIBAND_ONLY_OPTIONS
+
+		# - Validate unsupported options
+		invalid_options = requested_options & unsupported_options
+
+		if invalid_options:
+			return self._validation_error(
+				"Option(s) not supported by LiCu ML embedding "
+				"model '%s': %s"
+				% (
+					model,
+					", ".join(sorted(invalid_options)),
+				)
+			)
+
+		# - Validate model-specific embedding output
+		embed_output = self.job_options.get("licu-embed-output", "")
+
+		if embed_output and embed_output not in LICU_MODEL_OUTPUTS[model]:
+			return self._validation_error(
+				"'licu-embed-output=%s' is not supported by "
+				"LiCu model '%s'. Supported outputs: %s"
+				% (
+					embed_output,
+					model,
+					", ".join(sorted(LICU_MODEL_OUTPUTS[model])),
+				)
+			)
+
+		return True
+		
+	def _validate_licu_multiband_options(self, model, requested_options):
+		"""Validate LiCu multiband model input requirements."""
+
+		# - Skip validation for unrelated models
+		if model not in LICU_MULTIBAND_EMBED_MODELS:
+			return True
+
+		# - Validate time-series layout
+		layout = self.job_options.get("timeseries-layout", "long")
+
+		if not layout:
+			layout = "long"
+
+		if layout != "long":
+			return self._validation_error(
+				"LiCu multiband embedding model '%s' requires "
+				"'timeseries-layout=long'"
+				% model
+			)
+
+		# - Validate value columns
+		value_columns = self.job_options.get("value-columns", "")
+
+		if not value_columns:
+			return self._validation_error(
+				"LiCu multiband embedding model '%s' requires "
+				"exactly one 'value-columns' field"
+				% model
+			)
+
+		value_column_list = self._split_colon_option("value-columns")
+
+		if len(value_column_list) != 1 or not value_column_list[0]:
+			return self._validation_error(
+				"LiCu multiband embedding model '%s' requires "
+				"exactly one value field"
+				% model
+			)
+
+		# - Validate error columns
+		error_columns = self._split_colon_option("error-columns")
+
+		if len(error_columns) > 1 or any(not item for item in error_columns):
+			return self._validation_error(
+				"LiCu multiband embedding model '%s' accepts at most "
+				"one 'error-columns' field"
+				% model
+			)
+
+		if model in {"astra-clr", "atcat"} and len(error_columns) != 1:
+			return self._validation_error(
+				"LiCu multiband embedding model '%s' requires "
+				"exactly one 'error-columns' field"
+				% model
+			)
+
+		# - Validate photometric band input
+		band_column = self.job_options.get("band-column", "")
+		band_key = self.job_options.get("band-key", "")
+
+		if not band_column and not band_key:
+			return self._validation_error(
+				"LiCu multiband embedding model '%s' requires "
+				"'band-column' for tabular input or 'band-key' "
+				"for inline JSON input"
+				% model
+			)
+
+		# - Validate timestamp input
+		time_column = self.job_options.get("time-column", "")
+		time_start_key = self.job_options.get("time-start-key", "")
+		cadence_key = self.job_options.get("cadence-key", "")
+
+		if bool(time_start_key) != bool(cadence_key):
+			return self._validation_error(
+				"'time-start-key' and 'cadence-key' must be supplied together"
+			)
+
+		if time_column and (time_start_key or cadence_key):
+			return self._validation_error(
+				"LiCu multiband input must use either 'time-column' or "
+				"'time-start-key'+'cadence-key', not both"
+			)
+
+		if not time_column and not (time_start_key and cadence_key):
+			return self._validation_error(
+				"LiCu multiband embedding model '%s' requires "
+				"explicit timestamps via 'time-column' or regular "
+				"timestamps via 'time-start-key'+'cadence-key'"
+				% model
+			)
+
+		# - Reject time-series regularization
+		if self.job_options.get("regularize", False):
+			return self._validation_error(
+				"LiCu multiband embedding model '%s' does not support "
+				"time-series regularization"
+				% model
+			)
+
+		# - Reject regularization-specific options
+		regularization_options = {
+			"cadence",
 			"regularization-method",
+			"missing-strategy",
 			"bin-aggregation",
 			"gp-sigma",
 			"gp-rho",
 			"gp-jitter",
-			"timeseries-plot",
-			"feature-set",
-			"invalid-feature-policy",
-			"min-samples",
-			"licu-embed-output",
-			"licu-embed-reduction",
-			"input-sample-policy",
-		}
-		
-		chronos_only_options = {
-			"context-length",
-			"batch-size",
 		}
 
-		moirai_only_options = {
-			"patching-mode",
-			"token-order",
-		}
-		
-		licu_handcrafted_only_options = {
-			"feature-set",
-			"invalid-feature-policy",
-		}
+		invalid_options = requested_options & regularization_options
 
-		licu_embed_only_options = {
-			"licu-embed-output",
-			"licu-embed-reduction",
-		}
+		if invalid_options:
+			return self._validation_error(
+				"Regularization option(s) are not supported by LiCu "
+				"multiband embedding model '%s': %s"
+				% (
+					model,
+					", ".join(sorted(invalid_options)),
+				)
+			)
 
-		licu_common_options = {
-			"min-samples",
-		}
+		# - Validate magnitude zero-point option
+		if "licu-mag-zp" in requested_options and model not in {"atat", "atcat"}:
+			return self._validation_error(
+				"'licu-mag-zp' is supported only by LiCu models "
+				"'atat' and 'atcat'"
+			)
 
-		licu_all_options = (
-			licu_handcrafted_only_options
-			| licu_embed_only_options
-			| licu_common_options
+		return True	
+
+
+	def _validate_fats_options(self, model, requested_options, data_inputs):
+		"""Validate FATS options and input layout."""
+
+		# - Skip validation for unrelated models
+		if model != "fats":
+			return True
+
+		# - Validate common FATS options and input type
+		if not self._validate_fats_common_options(requested_options, data_inputs):
+			return False
+
+		# - Resolve input extension and layout
+		input_ext = os.path.splitext(str(data_inputs))[1].lower()
+		layout = self.job_options.get("timeseries-layout", "long")
+
+		if not layout:
+			layout = "long"
+
+		# - Validate JSON input
+		if input_ext == ".json":
+			return self._validate_fats_json_input(layout)
+
+		# - Validate long-layout CSV input
+		if layout == "long":
+			return self._validate_fats_long_input()
+
+		# - Validate wide-layout CSV input
+		if layout == "wide":
+			return self._validate_fats_wide_input()
+
+		# - Reject unknown layouts
+		return self._validation_error(
+			"Unsupported FATS time-series layout '%s'" % layout
 		)
 		
-		licu_unsupported_options = {
-			"aggregation",
-			"context-length",
-			"batch-size",
-			"patching-mode",
-			"token-order",
-		}
+	
 		
-		fats_unsupported_options = {
+	def _validate_fats_common_options(self, requested_options, data_inputs):
+		"""Validate options and input types common to all FATS layouts."""
+
+		# - Define unsupported options
+		unsupported_options = {
 			"preproc-profile",
 			"label-column",
 			"metadata-columns",
@@ -1234,1215 +1776,344 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			"min-samples",
 			"licu-embed-output",
 			"licu-embed-reduction",
+			"licu-mag-zp",
+			"licu-allow-extra-bands",
+			"band-column",
+			"band-key",
 			"input-sample-policy",
 		}
 
+		# - Validate unsupported options
+		invalid_options = requested_options & unsupported_options
+
+		if invalid_options:
+			return self._validation_error(
+				"Option(s) not supported by FATS: %s"
+				% ", ".join(sorted(invalid_options))
+			)
+
+		# - Validate number of inputs
+		if isinstance(data_inputs, list):
+			return self._validation_error(
+				"FATS expects one input CSV file or one JSON datalist per job"
+			)
+
+		# - Validate input format
+		input_ext = os.path.splitext(str(data_inputs))[1].lower()
+
+		if input_ext not in {".csv", ".json"}:
+			return self._validation_error(
+				"FATS supports CSV or JSON input, got '%s'" % input_ext
+			)
+
+		return True
+
+
+	def _validate_named_list(self, option_name, label, required=False):
+		"""Validate and return one colon-separated option list."""
+
+		# - Read option value
+		value = self.job_options.get(option_name, "")
+
+		# - Handle omitted option
+		if not value:
+			if required:
+				self._validation_error(
+					"%s requires '%s'" % (label, option_name)
+				)
+				return None
+
+			return []
+
+		# - Parse list
+		items = self._split_colon_option(option_name)
+
+		# - Validate empty names
+		if any(not item for item in items):
+			self._validation_error(
+				"%s '%s' contains an empty name" % (label, option_name)
+			)
+			return None
+
+		# - Validate duplicate names
+		if len(set(items)) != len(items):
+			self._validation_error(
+				"%s '%s' contains duplicate names" % (label, option_name)
+			)
+			return None
+
+		return items
 		
-		# ======================================
-		# ==     CHECK TIME-SERIES OPTIONS
-		# ======================================
-		# - Check time series model is not given image-only options
-		if model in timeseries_models:
-			invalid_options = (
-				requested_options
-				& image_only_options
-			)
+	def _validate_fats_json_input(self, layout):
+		"""Validate FATS JSON datalist input options."""
 
-			if invalid_options:
-				self.validation_status = (
-					"Image-only option(s) not supported by model '%s': %s"
-					% (
-						model,
-						", ".join(
-							sorted(invalid_options)
-						),
-					)
-				)
+		# - Validate value fields
+		value_columns = self._validate_named_list("value-columns", "FATS")
 
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False
-
-
-		# - Check time-series preprocessing profile
-		if (
-			(
-				model in {
-					"chronos2",
-					"moirai2",
-					"licu",
-				}
-				or model in licu_embed_models
-			)
-			and self.job_options.get(
-				"preproc-profile",
-				"default",
-			) != "default"
-		):
-			self.validation_status = (
-				"Time-series model '%s' currently supports only the "
-				"'default' preprocessing profile"
-				% model
-			)
-
-			logger.warning(
-				self.validation_status,
-				action="submitjob",
-			)
-
+		if value_columns is None:
 			return False
 
-		# - Check common time-series regularization options
-		if (
-			model in {
-				"chronos2",
-				"moirai2",
-				"licu",
-			}
-			or model in licu_embed_models
-		):
-		
-			regularization_method = self.job_options.get(
-				"regularization-method",
-				"bin",
+		# - Validate error fields
+		error_columns = self._validate_named_list("error-columns", "FATS")
+
+		if error_columns is None:
+			return False
+
+		# - Validate logical channel names
+		channel_names = self._validate_named_list("channel-names", "FATS")
+
+		if channel_names is None:
+			return False
+
+		# - Validate timestamp definition
+		time_column = self.job_options.get("time-column", "")
+		time_start_key = self.job_options.get("time-start-key", "")
+		cadence_key = self.job_options.get("cadence-key", "")
+
+		if bool(time_start_key) != bool(cadence_key):
+			return self._validation_error(
+				"FATS inline JSON requires both "
+				"'time-start-key' and 'cadence-key'"
 			)
 
-			if not regularization_method:
-				regularization_method = "bin"
-
-			gp_only_options = {
-				"gp-sigma",
-				"gp-rho",
-				"gp-jitter",
-			}
-
-			invalid_options = (
-				requested_options
-				& gp_only_options
+		if time_column and (time_start_key or cadence_key):
+			return self._validation_error(
+				"FATS inline JSON must use either "
+				"'time-column' or 'time-start-key'+'cadence-key', not both"
 			)
 
-			if (
-				invalid_options
-				and regularization_method != "gp"
-			):
-				self.validation_status = (
-					"Gaussian-Process option(s) require "
-					"'regularization-method=gp': %s"
-					% ", ".join(
-						sorted(invalid_options)
-					)
+		# - Validate value/error field cardinality
+		if error_columns:
+			if not value_columns:
+				return self._validation_error(
+					"FATS 'error-columns' requires "
+					"'value-columns' for inline JSON input"
 				)
 
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False
-				
-
-			bin_only_options = {
-				"missing-strategy",
-				"bin-aggregation",
-			}
-
-			invalid_options = (
-				requested_options
-				& bin_only_options
-			)
-
-			if (
-				invalid_options
-				and regularization_method == "gp"
-			):
-				self.validation_status = (
-					"Bin-regularization option(s) are not used with "
-					"'regularization-method=gp': %s"
-					% ", ".join(
-						sorted(invalid_options)
-					)
-				)
-
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False
-				
-				
-			regularize = self.job_options.get(
-				"regularize",
-				False,
-			)
-
-			if (
-				regularization_method == "gp"
-				and regularize
-				and not self.job_options.get(
-					"cadence"
-				)
-			):
-				self.validation_status = (
-					"GP regularization requires an explicit 'cadence'"
-				)
-
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False
-
-
-
-
-			input_sample_policy = self.job_options.get(
-				"input-sample-policy",
-				"observed",
-			)
-
-			if (
-				regularize
-				and regularization_method == "gp"
-				and input_sample_policy == "observed"
-			):
-				self.validation_status = (
-					"GP regularization requires "
-					"'input-sample-policy=completed' because the "
-					"regularized series consists of GP predictions."
-				)
-
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False
-
-
-		# - Check chronos options
-		if model == "chronos2":
-			invalid_options = (
-				requested_options
-				& (
-					moirai_only_options
-					| licu_all_options
-				)
-			)
-					
-			if invalid_options:
-				self.validation_status = (
-					"Option(s) not supported by model '%s': %s"
+			if len(error_columns) != len(value_columns):
+				return self._validation_error(
+					"FATS requires one error field per value field "
+					"(%d value fields, %d error fields)"
 					% (
-						model,
-						", ".join(
-							sorted(invalid_options)
-						),
-					)
-				)
-				
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False
-
-		# - Check moirai options
-		if model == "moirai2":
-			invalid_options = (
-				requested_options
-				& (
-					chronos_only_options
-					| licu_all_options
-				)
-			)
-			
-			if invalid_options:
-				self.validation_status = (
-					"Option(s) not supported by model '%s': %s"
-					% (
-						model,
-						", ".join(
-							sorted(invalid_options)
-						),
-					)
-				)
-				
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False
-
-		
-		# - Check LiCu options
-		if model == "licu":
-			invalid_options = (
-				requested_options
-				& (
-					licu_unsupported_options
-					| licu_embed_only_options
-				)
-			)
-	
-			if invalid_options:
-				self.validation_status = (
-					"Option(s) not supported by LiCu handcrafted "
-					"feature extraction: %s"
-					% ", ".join(
-						sorted(invalid_options)
+						len(value_columns),
+						len(error_columns),
 					)
 				)
 
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False		
-	
-		
-		# - Check LiCu ML embedding options
-		if model in licu_embed_models:
-
-			licu_embed_unsupported_options = {
-				"feature-set",
-				"invalid-feature-policy",
-				"context-length",
-				"batch-size",
-				"patching-mode",
-				"token-order",
-			}
-
-			invalid_options = (
-				requested_options
-				& licu_embed_unsupported_options
-			)
-
-			if invalid_options:
-				self.validation_status = (
-					"Option(s) not supported by LiCu ML embedding "
-					"model '%s': %s"
-					% (
-						model,
-						", ".join(
-							sorted(invalid_options)
-						),
+		# - Validate channel-name cardinality
+		if channel_names:
+			if value_columns:
+				if len(channel_names) != len(value_columns):
+					return self._validation_error(
+						"FATS requires one channel name per value field "
+						"(%d value fields, %d channel names)"
+						% (
+							len(value_columns),
+							len(channel_names),
+						)
 					)
-				)
-
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False
-				
-			embed_output = self.job_options.get(
-				"licu-embed-output",
-				"",
-			)
-
-			if (
-				model.startswith("moment1-")
-				and embed_output == "max"
-			):
-				self.validation_status = (
-					"'licu-embed-output=max' is not supported by MOMENT-1. "
-					"Use 'mean' or 'sequence'."
-				)
-
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False
-		
-		# - Check FATS options
-		if model == "fats":
-
-			# - Check for invalid options
-			invalid_options = (
-				requested_options
-				& fats_unsupported_options
-			)
-
-			if invalid_options:
-				self.validation_status = (
-					"Option(s) not supported by FATS: %s"
-					% ", ".join(
-						sorted(invalid_options)
-					)
-				)
-
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False
-
-
-			# - Validate input data
-			if isinstance(
-				data_inputs,
-				list,
-			):
-				self.validation_status = (
-					"FATS expects one input CSV file or one JSON "
-					"datalist per job"
-				)
-
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False
-
-
-			input_ext = os.path.splitext(
-				str(data_inputs)
-			)[1].lower()
-
-			if input_ext not in {
-				".csv",
-				".json",
-			}:
-				self.validation_status = (
-					"FATS supports CSV or JSON input, got '%s'"
-					% input_ext
-				)
-
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False
-
-
-			layout = self.job_options.get(
-				"timeseries-layout",
-				"long",
-			)
-
-			if not layout:
-				layout = "long"
-
-
-			######################################
-			# - Validate JSON input
-			######################################
-
-			if input_ext == ".json":
-
-				value_columns = self.job_options.get(
-					"value-columns",
-					"",
-				)
-
-				error_columns = self.job_options.get(
-					"error-columns",
-					"",
-				)
-
-				channel_names = self.job_options.get(
-					"channel-names",
-					"",
-				)
-
-				time_column = self.job_options.get(
-					"time-column",
-					"",
-				)
-
-				time_start_key = self.job_options.get(
-					"time-start-key",
-					"",
-				)
-
-				cadence_key = self.job_options.get(
-					"cadence-key",
-					"",
-				)
-
-
-				# - Regular inline JSON requires both time keys
-				if bool(
-					time_start_key
-				) != bool(
-					cadence_key
-				):
-					self.validation_status = (
-						"FATS inline JSON requires both "
-						"'time-start-key' and 'cadence-key'"
-					)
-
-					logger.warning(
-						self.validation_status,
-						action="submitjob",
-					)
-
-					return False
-
-
-				# - Explicit irregular time and regular time definition
-				#   are mutually exclusive.
-				if (
-					time_column
-					and (
-						time_start_key
-						or cadence_key
-					)
-				):
-					self.validation_status = (
-						"FATS inline JSON must use either "
-						"'time-column' or "
-						"'time-start-key'+'cadence-key', not both"
-					)
-
-					logger.warning(
-						self.validation_status,
-						action="submitjob",
-					)
-
-					return False
-
-
-				# - If value-columns is specified, validate its syntax.
-				#   It is not mandatory here because a JSON datalist may
-				#   contain file-backed entries instead of inline records.
-				value_column_list = []
-
-				if value_columns:
-					value_column_list = [
-						item.strip()
-						for item in value_columns.split(":")
-					]
-
-					if any(
-						not item
-						for item in value_column_list
-					):
-						self.validation_status = (
-							"FATS 'value-columns' contains "
-							"an empty field name"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-					if (
-						len(set(value_column_list))
-						!= len(value_column_list)
-					):
-						self.validation_status = (
-							"FATS 'value-columns' contains "
-							"duplicate field names"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-
-				# - Optional inline JSON error arrays.
-				if error_columns:
-					if not value_column_list:
-						self.validation_status = (
-							"FATS 'error-columns' requires "
-							"'value-columns' for inline JSON input"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-					error_column_list = [
-						item.strip()
-						for item in error_columns.split(":")
-					]
-
-					if any(
-						not item
-						for item in error_column_list
-					):
-						self.validation_status = (
-							"FATS 'error-columns' contains "
-							"an empty field name"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-					if (
-						len(set(error_column_list))
-						!= len(error_column_list)
-					):
-						self.validation_status = (
-							"FATS 'error-columns' contains "
-							"duplicate field names"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-					if (
-						len(error_column_list)
-						!= len(value_column_list)
-					):
-						self.validation_status = (
-							"FATS requires one error field per value field "
-							"(%d value fields, %d error fields)"
-							% (
-								len(value_column_list),
-								len(error_column_list),
-							)
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-
-				# - Optional logical channel names for inline records.
-				if channel_names:
-					channel_name_list = [
-						item.strip()
-						for item in channel_names.split(":")
-					]
-
-					if any(
-						not item
-						for item in channel_name_list
-					):
-						self.validation_status = (
-							"FATS 'channel-names' contains "
-							"an empty channel name"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-					if (
-						len(set(channel_name_list))
-						!= len(channel_name_list)
-					):
-						self.validation_status = (
-							"FATS 'channel-names' contains "
-							"duplicate names"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-
-					# Inline JSON or long-layout file datalist
-					if value_column_list:
-						if (
-							len(channel_name_list)
-							!= len(value_column_list)
-						):
-							self.validation_status = (
-								"FATS requires one channel name per value field "
-								"(%d value fields, %d channel names)"
-								% (
-									len(value_column_list),
-									len(channel_name_list),
-								)
-							)
-
-							logger.warning(
-								self.validation_status,
-								action="submitjob",
-							)
-
-							return False
-
-
-					# Wide-layout file datalist
-					elif layout == "wide":
-						value_prefixes = self.job_options.get(
-							"value-prefixes",
-							"",
-						)
-
-						if value_prefixes:
-							value_prefix_list = [
-								item.strip()
-								for item in value_prefixes.split(":")
-							]
-
-							if (
-								len(channel_name_list)
-								!= len(value_prefix_list)
-							):
-								self.validation_status = (
-									"FATS requires one channel name per "
-									"value prefix (%d value prefixes, "
-									"%d channel names)"
-									% (
-										len(value_prefix_list),
-										len(channel_name_list),
-									)
-								)
-
-								logger.warning(
-									self.validation_status,
-									action="submitjob",
-								)
-
-								return False
-
-
-			######################################
-			# - Validate CSV long layout
-			######################################
-
-			elif layout == "long":
-
-				value_columns = self.job_options.get(
-					"value-columns",
-					"",
-				)
-
-				if not value_columns:
-					self.validation_status = (
-						"FATS long-layout CSV input requires "
-						"'value-columns'"
-					)
-
-					logger.warning(
-						self.validation_status,
-						action="submitjob",
-					)
-
-					return False
-
-
-				value_column_list = [
-					item.strip()
-					for item in value_columns.split(":")
-				]
-
-				if any(
-					not item
-					for item in value_column_list
-				):
-					self.validation_status = (
-						"FATS 'value-columns' contains "
-						"an empty column name"
-					)
-
-					logger.warning(
-						self.validation_status,
-						action="submitjob",
-					)
-
-					return False
-
-				if (
-					len(set(value_column_list))
-					!= len(value_column_list)
-				):
-					self.validation_status = (
-						"FATS 'value-columns' contains "
-						"duplicate column names"
-					)
-
-					logger.warning(
-						self.validation_status,
-						action="submitjob",
-					)
-
-					return False
-
-
-				error_columns = self.job_options.get(
-					"error-columns",
-					"",
-				)
-
-				if error_columns:
-					if not self.job_options.get(
-						"time-column",
-						"",
-					):
-						self.validation_status = (
-							"FATS requires 'time-column' when "
-							"'error-columns' are provided"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-					error_column_list = [
-						item.strip()
-						for item in error_columns.split(":")
-					]
-
-					if any(
-						not item
-						for item in error_column_list
-					):
-						self.validation_status = (
-							"FATS 'error-columns' contains "
-							"an empty column name"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-					if (
-						len(set(error_column_list))
-						!= len(error_column_list)
-					):
-						self.validation_status = (
-							"FATS 'error-columns' contains "
-							"duplicate column names"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-					if (
-						len(error_column_list)
-						!= len(value_column_list)
-					):
-						self.validation_status = (
-							"FATS requires one error column per value column "
-							"(%d value columns, %d error columns)"
-							% (
-								len(value_column_list),
-								len(error_column_list),
-							)
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-
-				channel_names = self.job_options.get(
-					"channel-names",
-					"",
-				)
-
-				if channel_names:
-					channel_name_list = [
-						item.strip()
-						for item in channel_names.split(":")
-					]
-
-					if any(
-						not item
-						for item in channel_name_list
-					):
-						self.validation_status = (
-							"FATS 'channel-names' contains "
-							"an empty channel name"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-					if (
-						len(set(channel_name_list))
-						!= len(channel_name_list)
-					):
-						self.validation_status = (
-							"FATS 'channel-names' contains duplicate names"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-					if (
-						len(channel_name_list)
-						!= len(value_column_list)
-					):
-						self.validation_status = (
-							"FATS requires one channel name per value column "
-							"(%d value columns, %d channel names)"
-							% (
-								len(value_column_list),
-								len(channel_name_list),
-							)
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-
-			######################################
-			# - Validate CSV wide layout
-			######################################
 
 			elif layout == "wide":
+				value_prefixes = self._split_colon_option("value-prefixes")
 
-				value_prefixes = self.job_options.get(
-					"value-prefixes",
-					"",
-				)
-
-				if not value_prefixes:
-					self.validation_status = (
-						"FATS wide-layout CSV input requires "
-						"'value-prefixes'"
+				if value_prefixes and len(channel_names) != len(value_prefixes):
+					return self._validation_error(
+						"FATS requires one channel name per "
+						"value prefix (%d value prefixes, %d channel names)"
+						% (
+							len(value_prefixes),
+							len(channel_names),
+						)
 					)
 
-					logger.warning(
-						self.validation_status,
-						action="submitjob",
-					)
+		return True							
+	
+	def _validate_fats_long_input(self):
+		"""Validate FATS long-layout CSV input."""
 
-					return False
+		# - Validate value columns
+		value_columns = self._validate_named_list(
+			"value-columns",
+			"FATS",
+			required=True,
+		)
 
-
-				value_prefix_list = [
-					item.strip()
-					for item in value_prefixes.split(":")
-				]
-
-				if any(
-					not item
-					for item in value_prefix_list
-				):
-					self.validation_status = (
-						"FATS 'value-prefixes' contains "
-						"an empty prefix"
-					)
-
-					logger.warning(
-						self.validation_status,
-						action="submitjob",
-					)
-
-					return False
-
-				if (
-					len(set(value_prefix_list))
-					!= len(value_prefix_list)
-				):
-					self.validation_status = (
-						"FATS 'value-prefixes' contains "
-						"duplicate prefixes"
-					)
-
-					logger.warning(
-						self.validation_status,
-						action="submitjob",
-					)
-
-					return False
-
-
-				error_prefixes = self.job_options.get(
-					"error-prefixes",
-					"",
-				)
-
-				if error_prefixes:
-					error_prefix_list = [
-						item.strip()
-						for item in error_prefixes.split(":")
-					]
-
-					if any(
-						not item
-						for item in error_prefix_list
-					):
-						self.validation_status = (
-							"FATS 'error-prefixes' contains "
-							"an empty prefix"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-					if (
-						len(set(error_prefix_list))
-						!= len(error_prefix_list)
-					):
-						self.validation_status = (
-							"FATS 'error-prefixes' contains "
-							"duplicate prefixes"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-					if (
-						len(error_prefix_list)
-						!= len(value_prefix_list)
-					):
-						self.validation_status = (
-							"FATS requires one error prefix per value prefix "
-							"(%d value prefixes, %d error prefixes)"
-							% (
-								len(value_prefix_list),
-								len(error_prefix_list),
-							)
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-
-				channel_names = self.job_options.get(
-					"channel-names",
-					"",
-				)
-
-				if channel_names:
-					channel_name_list = [
-						item.strip()
-						for item in channel_names.split(":")
-					]
-
-					if any(
-						not item
-						for item in channel_name_list
-					):
-						self.validation_status = (
-							"FATS 'channel-names' contains "
-							"an empty channel name"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-					if (
-						len(set(channel_name_list))
-						!= len(channel_name_list)
-					):
-						self.validation_status = (
-							"FATS 'channel-names' contains duplicate names"
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-					if (
-						len(channel_name_list)
-						!= len(value_prefix_list)
-					):
-						self.validation_status = (
-							"FATS requires one channel name per value prefix "
-							"(%d value prefixes, %d channel names)"
-							% (
-								len(value_prefix_list),
-								len(channel_name_list),
-							)
-						)
-
-						logger.warning(
-							self.validation_status,
-							action="submitjob",
-						)
-
-						return False
-
-
-				time_prefix = self.job_options.get(
-					"time-prefix",
-					"",
-				)
-
-				time_start_column = self.job_options.get(
-					"time-start-column",
-					"",
-				)
-
-				cadence_column = self.job_options.get(
-					"cadence-column",
-					"",
-				)
-
-
-				if (
-					time_prefix
-					and (
-						time_start_column
-						or cadence_column
-					)
-				):
-					self.validation_status = (
-						"FATS wide-layout input must use either "
-						"'time-prefix' or "
-						"'time-start-column'+'cadence-column', "
-						"not both"
-					)
-
-					logger.warning(
-						self.validation_status,
-						action="submitjob",
-					)
-
-					return False
-
-
-				if bool(
-					time_start_column
-				) != bool(
-					cadence_column
-				):
-					self.validation_status = (
-						"'time-start-column' and 'cadence-column' "
-						"must be supplied together"
-					)
-
-					logger.warning(
-						self.validation_status,
-						action="submitjob",
-					)
-
-					return False
-
-
-			else:
-				self.validation_status = (
-					"Unsupported FATS time-series layout '%s'"
-					% layout
-				)
-
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False
-		
-		
-		# ======================================
-		# ==     CHECK IMAGE OPTIONS
-		# ======================================
-		# - Check image model options
-		if model in image_models:
-			invalid_options = (
-				requested_options
-				& timeseries_only_options
-			)
-
-			if invalid_options:
-				self.validation_status = (
-					"Time-series-only option(s) not supported by model '%s': %s"
-					% (
-						model,
-						", ".join(
-							sorted(invalid_options)
-						),
-					)
-				)
-
-				logger.warning(
-					self.validation_status,
-					action="submitjob",
-				)
-
-				return False
-
-		# ======================================
-		# ==     CHECK CONTAINER IMAGE OPTIONS
-		# ======================================
-		# - Check model container image variants
-		if model not in MODEL_CONTAINER_VARIANTS:
-			self.validation_status = (
-				"Cannot determine container variant for model '%s'" % model
-			)
-			logger.warning(
-				self.validation_status,
-				action="submitjob",
-			)
+		if value_columns is None:
 			return False
 
-		self.run_options["container_variant"] = (
-			MODEL_CONTAINER_VARIANTS[model]
+		# - Validate error columns
+		error_columns = self._validate_named_list("error-columns", "FATS")
+
+		if error_columns is None:
+			return False
+
+		# - Validate channel names
+		channel_names = self._validate_named_list("channel-names", "FATS")
+
+		if channel_names is None:
+			return False
+
+		# - Validate error-column requirements
+		if error_columns:
+			if not self.job_options.get("time-column", ""):
+				return self._validation_error(
+					"FATS requires 'time-column' when 'error-columns' are provided"
+				)
+
+			if len(error_columns) != len(value_columns):
+				return self._validation_error(
+					"FATS requires one error column per value column "
+					"(%d value columns, %d error columns)"
+					% (
+						len(value_columns),
+						len(error_columns),
+					)
+				)
+
+		# - Validate channel-name cardinality
+		if channel_names and len(channel_names) != len(value_columns):
+			return self._validation_error(
+				"FATS requires one channel name per value column "
+				"(%d value columns, %d channel names)"
+				% (
+					len(value_columns),
+					len(channel_names),
+				)
+			)
+
+		return True
+	
+	def _validate_fats_wide_input(self):
+		"""Validate FATS wide-layout CSV input."""
+
+		# - Validate value prefixes
+		value_prefixes = self._validate_named_list(
+			"value-prefixes",
+			"FATS",
+			required=True,
 		)
+
+		if value_prefixes is None:
+			return False
+
+		# - Validate error prefixes
+		error_prefixes = self._validate_named_list("error-prefixes", "FATS")
+
+		if error_prefixes is None:
+			return False
+
+		# - Validate channel names
+		channel_names = self._validate_named_list("channel-names", "FATS")
+
+		if channel_names is None:
+			return False
+
+		# - Validate error-prefix cardinality
+		if error_prefixes and len(error_prefixes) != len(value_prefixes):
+			return self._validation_error(
+				"FATS requires one error prefix per value prefix "
+				"(%d value prefixes, %d error prefixes)"
+				% (
+					len(value_prefixes),
+					len(error_prefixes),
+				)
+			)
+
+		# - Validate channel-name cardinality
+		if channel_names and len(channel_names) != len(value_prefixes):
+			return self._validation_error(
+				"FATS requires one channel name per value prefix "
+				"(%d value prefixes, %d channel names)"
+				% (
+					len(value_prefixes),
+					len(channel_names),
+				)
+			)
+
+		# - Validate timestamp definition
+		time_prefix = self.job_options.get("time-prefix", "")
+		time_start_column = self.job_options.get("time-start-column", "")
+		cadence_column = self.job_options.get("cadence-column", "")
+
+		if time_prefix and (time_start_column or cadence_column):
+			return self._validation_error(
+				"FATS wide-layout input must use either "
+				"'time-prefix' or "
+				"'time-start-column'+'cadence-column', not both"
+			)
+
+		if bool(time_start_column) != bool(cadence_column):
+			return self._validation_error(
+				"'time-start-column' and 'cadence-column' must be supplied together"
+			)
 
 		return True	
 		
+	def _resolve_container_variant(self, model):
+		"""Resolve and store the runtime container variant."""
+
+		# - Validate model/container mapping
+		if model not in MODEL_CONTAINER_VARIANTS:
+			return self._validation_error(
+				"Cannot determine container variant for model '%s'" % model
+			)
+
+		# - Store resolved container variant
+		self.run_options["container_variant"] = MODEL_CONTAINER_VARIANTS[model]
+
+		return True		
+	
+	def validate(self, job_options, data_inputs):
+		"""Validate fextractor inputs and resolve the runtime container."""
+
+		# - Collect explicitly requested options
+		requested_options = set(job_options.keys())
+
+		# - Run base configurator validation
+		if not AppConfigurator.validate(self, job_options, data_inputs):
+			return False
+
+		# - Resolve selected model
+		model = self.job_options.get("model", "simclr_radio")
+
+		# - Prepare wrapper-specific boolean options
+		self._prepare_boolean_command_options(model)
+
+		# - Validate model modality options
+		if not self._validate_model_modality_options(model, requested_options):
+			return False
+
+		# - Validate time-series preprocessing profile
+		if not self._validate_timeseries_profile(model):
+			return False
+
+		# - Validate common regularization options
+		if not self._validate_regularization_options(model, requested_options):
+			return False
+
+		# - Validate Chronos options
+		if not self._validate_chronos_options(model, requested_options):
+			return False
+
+		# - Validate Moirai options
+		if not self._validate_moirai_options(model, requested_options):
+			return False
+
+		# - Validate handcrafted LiCu options
+		if not self._validate_licu_handcrafted_options(model, requested_options):
+			return False
+
+		# - Validate LiCu ML embedding options
+		if not self._validate_licu_embed_options(model, requested_options):
+			return False
+
+		# - Validate LiCu multiband input options
+		if not self._validate_licu_multiband_options(model, requested_options):
+			return False		
+		
+		# - Validate FATS options and input layout
+		if not self._validate_fats_options(model, requested_options, data_inputs):
+			return False
+
+		# - Resolve runtime container
+		return self._resolve_container_variant(model)
