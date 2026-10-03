@@ -124,24 +124,195 @@ def get_args():
 	parser.add_argument('-rclone_storage_path','--rclone_storage_path', dest='rclone_storage_path', default='.', required=False, type=str, help='rclone remote storage path (default=.)')
 	
 	# - Singularity container app options
-	parser.add_argument('-caesar_container','--caesar_container', dest='caesar_container', default='/opt/containers/caesar/caesar-job_latest.sif', required=False, type=str, help='Path to caesar job Singularity container (default=/opt/containers/caesar/caesar-job_latest.sif)')
-	parser.add_argument('-aegean_container','--aegean_container', dest='aegean_container', default='/opt/containers/aegean/aegean-job_latest.sif', required=False, type=str, help='Path to aegean job Singularity container (default=/opt/containers/aegean/aegean-job_latest.sif)')
-	parser.add_argument('-cutex_container','--cutex_container', dest='cutex_container', default='/opt/containers/cutex/cutex-job_latest.sif', required=False, type=str, help='Path to cutex job Singularity container (default=/opt/containers/cutex/cutex-job_latest.sif)')
-	parser.add_argument('-mrcnn_container','--mrcnn_container', dest='mrcnn_container', default='/opt/containers/mrcnn/mrcnn-detect_latest.sif', required=False, type=str, help='Path to caesar-mrcnn job Singularity container (default=/opt/containers/mrcnn/mrcnn-detect_latest.sif)')
-	parser.add_argument('-cnn_classifier_container','--cnn_classifier_container', dest='cnn_classifier_container', default='/opt/containers/sclassifier/cnn-classifier_latest.sif', required=False, type=str, help='Path to CNN classifier Singularity container (default=/opt/containers/sclassifier/cnn-classifier_latest.sif)')
-	parser.add_argument('-vit_classifier_container','--vit_classifier_container', dest='vit_classifier_container', default='/opt/containers/sclassifier-vit/vit-classifier_latest.sif', required=False, type=str, help='Path to VIT classifier Singularity container (default=/opt/containers/sclassifier/cnn-classifier_latest.sif)')
-	parser.add_argument('-umap_container','--umap_container', dest='umap_container', default='/opt/containers/sclassifier/umap_latest.sif', required=False, type=str, help='Path to UMAP Singularity container (default=/opt/containers/sclassifier/umap_latest.sif)')
-	parser.add_argument('-outlier_finder_container','--outlier_finder_container', dest='outlier_finder_container', default='/opt/containers/sclassifier/outlier_finder_latest.sif', required=False, type=str, help='Path to OutlierFinder Singularity container (default=/opt/containers/sclassifier/outlier_finder_latest.sif)')
-	parser.add_argument('-hdbscan_container','--hdbscan_container', dest='hdbscan_container', default='/opt/containers/sclassifier/hdbscan_latest.sif', required=False, type=str, help='Path to HDBSCAN Singularity container (default=/opt/containers/sclassifier/hdbscan_latest.sif)')
-	parser.add_argument('-simsearch_container','--simsearch_container', dest='simsearch_container', default='/opt/containers/sclassifier/similarity-search_latest.sif', required=False, type=str, help='Path to Similarity Search Singularity container (default=/opt/containers/sclassifier/similarity-search_latest.sif)')
-	parser.add_argument('-caesar_yolo_container','--caesar_yolo_container', dest='caesar_yolo_container', default='/opt/containers/caesar-yolo/caesar-yolo-job_latest.sif', required=False, type=str, help='Path to CAESAR-YOLO Singularity container (default=/opt/containers/caesar-yolo/caesar-yolo-job_latest.sif)')
-	parser.add_argument('-sfforecaster_container','--sfforecaster_container', dest='sfforecaster_container', default='/opt/containers/sfforecaster/sfforecaster-job_latest.sif', required=False, type=str, help='Path to Solar Flare Forecaster Singularity container (default=/opt/containers/sfforecaster/sfforecaster-job_latest.sif)')
-	parser.add_argument('-fextractor_tf_container', '--fextractor_tf_container', dest='fextractor_tf_container', default='/opt/containers/fextractor/fextractor-tf_latest.sif', required=False, type=str, help='Path to TensorFlow fextractor Singularity container')
-	parser.add_argument('-fextractor_torch_container', '--fextractor_torch_container', dest='fextractor_torch_container', default='/opt/containers/fextractor/fextractor-torch_latest.sif', required=False, type=str, help='Path to PyTorch fextractor Singularity container')
-	parser.add_argument('-fextractor_chronos_container', '--fextractor_chronos_container', dest='fextractor_chronos_container', default='/opt/containers/fextractor/fextractor-chronos_latest.sif', required=False, type=str, help='Path to Chronos fextractor Singularity container')
-	parser.add_argument('-fextractor_moirai_container', '--fextractor_moirai_container', dest='fextractor_moirai_container', default='/opt/containers/fextractor/fextractor-moirai_latest.sif', required=False, type=str, help='Path to Moirai fextractor Singularity container')
-	parser.add_argument('-fextractor_fats_container', '--fextractor_fats_container', dest='fextractor_fats_container', default='/opt/containers/fextractor/fextractor-fats_latest.sif', required=False, type=str, help='Path to FATS fextractor Singularity container')
-	parser.add_argument('-fextractor_licu_container', '--fextractor_licu_container', dest='fextractor_licu_container', default='/opt/containers/fextractor/fextractor-licu_latest.sif', required=False, type=str, help='Path to LightCurve (LICU) fextractor Singularity container')
+	parser.add_argument(
+		'-caesar_container',
+		'--caesar_container', 
+		dest='caesar_container', 
+		default='/opt/containers/caesar/caesar-job_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to caesar job Singularity container (default=/opt/containers/caesar/caesar-job_latest.sif)'
+	)
+	
+	parser.add_argument(
+		'-aegean_container',
+		'--aegean_container', 
+		dest='aegean_container', 
+		default='/opt/containers/aegean/aegean-job_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to aegean job Singularity container (default=/opt/containers/aegean/aegean-job_latest.sif)'
+	)
+	
+	parser.add_argument(
+		'-cutex_container',
+		'--cutex_container', 
+		dest='cutex_container', 
+		default='/opt/containers/cutex/cutex-job_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to cutex job Singularity container (default=/opt/containers/cutex/cutex-job_latest.sif)'
+	)
+	
+	parser.add_argument(
+		'-mrcnn_container',
+		'--mrcnn_container', 
+		dest='mrcnn_container', 
+		default='/opt/containers/mrcnn/mrcnn-detect_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to caesar-mrcnn job Singularity container (default=/opt/containers/mrcnn/mrcnn-detect_latest.sif)'
+	)
+	
+	parser.add_argument(
+		'-cnn_classifier_container',
+		'--cnn_classifier_container', 
+		dest='cnn_classifier_container', 
+		default='/opt/containers/sclassifier/cnn-classifier_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to CNN classifier Singularity container (default=/opt/containers/sclassifier/cnn-classifier_latest.sif)'
+	)
+	
+	parser.add_argument(
+		'-vit_classifier_container',
+		'--vit_classifier_container', 
+		dest='vit_classifier_container', 
+		default='/opt/containers/sclassifier-vit/vit-classifier_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to VIT classifier Singularity container (default=/opt/containers/sclassifier/cnn-classifier_latest.sif)'
+	)
+	
+	parser.add_argument(
+		'-umap_container',
+		'--umap_container', 
+		dest='umap_container', 
+		default='/opt/containers/sclassifier/umap_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to UMAP Singularity container (default=/opt/containers/sclassifier/umap_latest.sif)'
+	)
+	
+	parser.add_argument(
+		'-outlier_finder_container',
+		'--outlier_finder_container', 
+		dest='outlier_finder_container', 
+		default='/opt/containers/sclassifier/outlier_finder_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to OutlierFinder Singularity container (default=/opt/containers/sclassifier/outlier_finder_latest.sif)'
+	)
+	
+	parser.add_argument(
+		'-hdbscan_container',
+		'--hdbscan_container', 
+		dest='hdbscan_container', 
+		default='/opt/containers/sclassifier/hdbscan_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to HDBSCAN Singularity container (default=/opt/containers/sclassifier/hdbscan_latest.sif)'
+	)
+	
+	parser.add_argument(
+		'-simsearch_container',
+		'--simsearch_container', 
+		dest='simsearch_container', 
+		default='/opt/containers/sclassifier/similarity-search_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to Similarity Search Singularity container (default=/opt/containers/sclassifier/similarity-search_latest.sif)'
+	)
+	
+	parser.add_argument(
+		'-caesar_yolo_container',
+		'--caesar_yolo_container', 
+		dest='caesar_yolo_container', 
+		default='/opt/containers/caesar-yolo/caesar-yolo-job_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to CAESAR-YOLO Singularity container (default=/opt/containers/caesar-yolo/caesar-yolo-job_latest.sif)'
+	)
+	
+	parser.add_argument(
+		'-sfforecaster_container',
+		'--sfforecaster_container', 
+		dest='sfforecaster_container', 
+		default='/opt/containers/sfforecaster/sfforecaster-job_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to Solar Flare Forecaster Singularity container (default=/opt/containers/sfforecaster/sfforecaster-job_latest.sif)'
+	)
+	
+	parser.add_argument(
+		'-fextractor_tf_container', 
+		'--fextractor_tf_container', 
+		dest='fextractor_tf_container', 
+		default='/opt/containers/fextractor/fextractor-tf_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to TensorFlow fextractor Singularity container'
+	)
+	
+	parser.add_argument(
+		'-fextractor_torch_container', 
+		'--fextractor_torch_container', 
+		dest='fextractor_torch_container', 
+		default='/opt/containers/fextractor/fextractor-torch_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to PyTorch fextractor Singularity container'
+	)
+	
+	parser.add_argument(
+		'-fextractor_chronos_container', 
+		'--fextractor_chronos_container', 
+		dest='fextractor_chronos_container', 
+		default='/opt/containers/fextractor/fextractor-chronos_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to Chronos fextractor Singularity container'
+	)
+	
+	parser.add_argument(
+		'-fextractor_moirai_container', 
+		'--fextractor_moirai_container', 
+		dest='fextractor_moirai_container', 
+		default='/opt/containers/fextractor/fextractor-moirai_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to Moirai fextractor Singularity container'
+	)
+	
+	parser.add_argument(
+		'-fextractor_fats_container', 
+		'--fextractor_fats_container', 
+		dest='fextractor_fats_container', 
+		default='/opt/containers/fextractor/fextractor-fats_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to FATS fextractor Singularity container'
+	)
+	
+	parser.add_argument(
+		'-fextractor_licu_container', 
+		'--fextractor_licu_container', 
+		dest='fextractor_licu_container', 
+		default='/opt/containers/fextractor/fextractor-licu_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to LightCurve (LICU) fextractor Singularity container'
+	)
+	
+	parser.add_argument(
+		'-fextractor_falcon_container', 
+		'--fextractor_falcon_container', 
+		dest='fextractor_falcon_container', 
+		default='/opt/containers/fextractor/fextractor-falcon_latest.sif', 
+		required=False, 
+		type=str, 
+		help='Path to Falcon1 fextractor Singularity container'
+	)
 	
 	# - Dataset options
 	parser.add_argument('-dataset_smgps','--dataset_smgps', dest='dataset_smgps', default='', required=False, type=str, help='Path to smgps dataset json filelist')
@@ -304,6 +475,7 @@ fextractor_chronos_container= args.fextractor_chronos_container
 fextractor_moirai_container= args.fextractor_moirai_container
 fextractor_fats_container= args.fextractor_fats_container
 fextractor_licu_container= args.fextractor_licu_container
+fextractor_falcon_container= args.fextractor_falcon_container
 
 # - Dataset options
 dataset_smgps= args.dataset_smgps
@@ -390,6 +562,7 @@ config.SLURM_FEXTRACTOR_CHRONOS_JOB_IMAGE= fextractor_chronos_container
 config.SLURM_FEXTRACTOR_MOIRAI_JOB_IMAGE= fextractor_moirai_container
 config.SLURM_FEXTRACTOR_FATS_JOB_IMAGE= fextractor_fats_container
 config.SLURM_FEXTRACTOR_LICU_JOB_IMAGE= fextractor_licu_container
+config.SLURM_FEXTRACTOR_FALCON_JOB_IMAGE= fextractor_falcon_container
 
 # - Create data manager (DEPRECATED BY MONGO)
 ##logger.info("Creating data manager ...")

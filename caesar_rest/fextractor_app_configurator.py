@@ -39,6 +39,7 @@ MODEL_CONTAINER_VARIANTS = {
 	"siglip2": "torch",
 	"chronos2": "chronos",
 	"moirai2": "moirai",
+	"falcon1": "falcon",
 	"fats": "fats",
 	"licu": "licu",	
 	"astromer1": "licu",
@@ -84,6 +85,7 @@ LICU_EMBED_MODELS = (
 TIMESERIES_MODELS = {
 	"chronos2",
 	"moirai2",
+	"falcon1",
 	"licu",
 	"fats",
 } | LICU_EMBED_MODELS
@@ -142,7 +144,8 @@ TIMESERIES_ONLY_OPTIONS = {
 	"input-sample-policy",
 }
 
-CHRONOS_ONLY_OPTIONS = {
+# - Common representation options not supported by Moirai-2
+MOIRAI_UNSUPPORTED_COMMON_OPTIONS = {
 	"context-length",
 	"batch-size",
 }
@@ -179,6 +182,10 @@ LICU_ALL_OPTIONS = (
 	| LICU_MULTIBAND_ONLY_OPTIONS
 	| LICU_COMMON_OPTIONS
 )
+
+FALCON_UNSUPPORTED_OPTIONS = {
+	"batch-size",
+} | MOIRAI_ONLY_OPTIONS | LICU_ALL_OPTIONS
 
 LICU_HANDCRAFTED_UNSUPPORTED_OPTIONS = {
 	"aggregation",
@@ -386,7 +393,9 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			],
 			"expected_data": input_data_expected,
 			"notes": [
-				"Chronos-2 and Moirai-2 support uni- and multivariate time series.",
+				"Chronos-2, Moirai-2, and Falcon-1 support uni- and multivariate time series.",
+				"Falcon-1 processes multiple value channels independently according to the "
+				"upstream model semantics and aggregates their contextual representations.",
 				"LiCu handcrafted feature extraction processes each value channel "
 				"independently and concatenates the resulting feature vectors.",
 				"LiCu ML single-channel embedding models include Astromer 1, Astromer 1 "
@@ -414,8 +423,13 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 		self.limitations = [
 			"Available preprocessing options depend on the selected model modality.",
 
-			"Chronos-2 requires regularly sampled time series unless "
+			"Chronos-2 and Falcon-1 require regularly sampled time series unless "
 			"regularization is enabled.",
+			
+			"Falcon-1 processes multiple time-series value channels independently; "
+			"cross-channel relationships are not modeled.",
+			"Falcon-1 supports aggregation and context-length options, but does not "
+			"support batch-size or Moirai-specific patching options.",
 
 			"LiCu handcrafted and single-channel ML embedding models process each "
 			"time-series value channel independently; cross-channel relationships "
@@ -464,6 +478,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 					'siglip2',
 					'chronos2',
 					'moirai2',
+					'falcon1',
 					'fats',
 					'licu',
 					'astromer1',
@@ -1307,6 +1322,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 			model in {
 				"chronos2",
 				"moirai2",
+				"falcon1",
 				"licu",
 			}
 			or model in LICU_EMBED_MODELS
@@ -1370,6 +1386,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 		default_profile_only_models = {
 			"chronos2",
 			"moirai2",
+			"falcon1",
 			"licu",
 		} | LICU_EMBED_MODELS
 
@@ -1397,6 +1414,7 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 		regularization_models = {
 			"chronos2",
 			"moirai2",
+			"falcon1",
 			"licu",
 		} | LICU_SINGLE_CHANNEL_EMBED_MODELS
 
@@ -1500,9 +1518,9 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 
 		# - Validate unsupported options
 		invalid_options = requested_options & (
-			CHRONOS_ONLY_OPTIONS
+			MOIRAI_UNSUPPORTED_COMMON_OPTIONS
 			| LICU_ALL_OPTIONS
-		)
+		)		
 
 		if invalid_options:
 			return self._validation_error(
@@ -1515,6 +1533,33 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 
 		return True
 
+	def _validate_falcon_options(self, model, requested_options):
+		"""Validate Falcon-1-specific option compatibility."""
+
+		# - Skip validation for unrelated models
+		if model != "falcon1":
+			return True
+
+		# - Validate unsupported options
+		invalid_options = requested_options & FALCON_UNSUPPORTED_OPTIONS
+
+		if invalid_options:
+			return self._validation_error(
+				"Option(s) not supported by model '%s': %s"
+				% (
+					model,
+					", ".join(sorted(invalid_options)),
+				)
+			)
+
+		# - Falcon-1 does not expose a REG token
+		if self.job_options.get("aggregation", "") == "reg":
+			return self._validation_error(
+				"'aggregation=reg' is not supported by model 'falcon1' "
+				"because Falcon-1 does not expose a REG token"
+			)
+
+		return True	
 	
 	def _validate_licu_handcrafted_options(self, model, requested_options):
 		"""Validate handcrafted LiCu option compatibility."""
@@ -2103,6 +2148,10 @@ class FeatExtractorAppConfigurator(AppConfigurator):
 		# - Validate Moirai options
 		if not self._validate_moirai_options(model, requested_options):
 			return False
+			
+		# - Validate Falcon options
+		if not self._validate_falcon_options(model, requested_options):
+			return False			
 
 		# - Validate handcrafted LiCu options
 		if not self._validate_licu_handcrafted_options(model, requested_options):

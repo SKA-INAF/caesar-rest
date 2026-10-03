@@ -78,6 +78,7 @@ class Config(object):
 	SLURM_FEXTRACTOR_MOIRAI_JOB_IMAGE= '/opt/containers/fextractor/fextractor-moirai_latest.sif'
 	SLURM_FEXTRACTOR_FATS_JOB_IMAGE= '/opt/containers/fextractor/fextractor-fats_latest.sif'
 	SLURM_FEXTRACTOR_LICU_JOB_IMAGE= '/opt/containers/fextractor/fextractor-licu_latest.sif'
+	SLURM_FEXTRACTOR_FALCON_JOB_IMAGE= '/opt/containers/fextractor/fextractor-falcon_latest.sif'
 
 	SLURM_MAX_CORE_PER_JOB= 4 # Maximum number of cores reserved for a job
 	
@@ -138,6 +139,7 @@ class Config(object):
 	FEXTRACTOR_MOIRAI_JOB_IMAGE= 'sriggi/fextractor-moirai:latest'
 	FEXTRACTOR_FATS_JOB_IMAGE= 'sriggi/fextractor-fats:latest'
 	FEXTRACTOR_LICU_JOB_IMAGE= 'sriggi/fextractor-licu:latest'
+	FEXTRACTOR_FALCON_JOB_IMAGE= 'sriggi/fextractor-falcon:latest'
 
 	# - DATASET app options
 	#   NB: paths are to be configured at app deployment phase.
